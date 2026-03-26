@@ -33,7 +33,7 @@ function buildStudyPlanHref(step: StudyPlanSnapshot['steps'][number]) {
   }
   return buildPracticeWorkspaceHref(writingAssessmentWorkspace, {
     promptId: step.promptId,
-    attemptId: step.submissionId,
+    attemptId: step.submissionId ?? undefined,
   });
 }
 
