@@ -1,4 +1,4 @@
-import type { AssessmentWarning, CriterionScore, EvidenceSignal, FeedbackAction } from '@/lib/domain';
+import type { AssessmentWarning, BandRange, CriterionScore, EvidenceSignal, FeedbackAction } from '@/lib/domain';
 
 export function generateFeedbackActions(scores: CriterionScore[], evidence: EvidenceSignal[]): FeedbackAction[] {
   const weakest = [...scores].sort((a, b) => a.band - b.band).slice(0, 3);
@@ -26,16 +26,16 @@ export function summarizeRisks(evidence: EvidenceSignal[]) {
   return evidence.filter((item) => item.strength !== 'strong').slice(0, 4).map((item) => item.detail);
 }
 
-export function buildSummary(overallBand: number, confidence: CriterionScore['confidence'], wordCount: number) {
+export function buildSummary(overallBandRange: BandRange, wordCount: number) {
   if (wordCount < 220) {
-    return 'The draft shows promise, but it is under-developed for a stable Task 2 estimate. Add depth before trusting the score.';
+    return 'The draft shows promise, but it is under-developed for a stable Task 2 estimate. Add depth before trusting the current score range.';
   }
 
-  if (overallBand >= 7) {
-    return `This draft looks competitive for a Band ${overallBand.toFixed(1)} practice estimate, with the main gains now coming from refinement rather than basic coverage.`;
+  if (overallBandRange.lower >= 7) {
+    return `This draft looks competitive for a Band ${overallBandRange.lower.toFixed(1)}-${overallBandRange.upper.toFixed(1)} practice range, with the main gains now coming from refinement rather than basic coverage.`;
   }
 
-  return `This draft is workable for a Band ${overallBand.toFixed(1)} practice estimate, but the biggest gains still come from clearer support, tighter organization, and more precise language.`;
+  return `This draft is workable for a Band ${overallBandRange.lower.toFixed(1)}-${overallBandRange.upper.toFixed(1)} practice range, but the biggest gains still come from clearer support, tighter organization, and more precise language.`;
 }
 
 export function buildWarnings(wordCount: number, confidence: CriterionScore['confidence']): AssessmentWarning[] {
@@ -56,7 +56,7 @@ export function buildWarnings(wordCount: number, confidence: CriterionScore['con
   if (confidence === 'low') {
     warnings.push({
       code: 'low-confidence',
-      message: 'The scoring signals are mixed, so review the evidence before trusting the estimated band too strongly.',
+      message: 'The scoring signals are mixed, so review the full score range and evidence before trusting the estimate too strongly.',
     });
   }
 

@@ -4,8 +4,8 @@ import type { AssessmentPipelineResult, AssessmentReport, EssaySubmission, Writi
 
 import { summarizeStrengths, summarizeRisks, buildSummary, buildWarnings, generateFeedbackActions } from './feedback-generator';
 import { extractWritingEvidence } from './evidence-extractor';
-import { countWords, clampBand } from './metrics';
-import { deriveOverallConfidence, predictCriterionScores } from './scoring-model';
+import { countWords } from './metrics';
+import { scoreWritingWithAdapter } from './scorer-adapter';
 
 export function createSubmissionRecord(submission: EssaySubmission): WritingSubmissionRecord {
   return {
@@ -18,28 +18,26 @@ export function createSubmissionRecord(submission: EssaySubmission): WritingSubm
 
 export function buildAssessmentReport(prompt: WritingPrompt, submission: WritingSubmissionRecord): AssessmentReport {
   const evidence = extractWritingEvidence(prompt, submission);
-  const criterionScores = predictCriterionScores(prompt, evidence);
-  const overallBand = clampBand(
-    criterionScores.reduce((sum, item) => sum + item.band, 0) / criterionScores.length,
-  );
-  const { confidence, reasons } = deriveOverallConfidence(criterionScores, evidence);
+  const scorecard = scoreWritingWithAdapter(prompt, evidence);
 
   return {
     reportId: randomUUID(),
     essayId: submission.submissionId,
     promptId: submission.promptId,
-    overallBand,
-    confidence,
-    confidenceReasons: reasons,
-    summary: buildSummary(overallBand, confidence, submission.wordCount),
+    overallBand: scorecard.overallBand,
+    overallBandRange: scorecard.overallBandRange,
+    confidence: scorecard.confidence,
+    confidenceReasons: scorecard.confidenceReasons,
+    summary: buildSummary(scorecard.overallBandRange, submission.wordCount),
     estimatedWordCount: submission.wordCount,
-    criterionScores,
+    criterionScores: scorecard.criterionScores,
     evidence,
     strengths: summarizeStrengths(evidence),
     risks: summarizeRisks(evidence),
-    nextSteps: generateFeedbackActions(criterionScores, evidence),
-    warnings: buildWarnings(submission.wordCount, confidence),
-    pipelineVersion: 'writing-task-2/v2-architecture-split',
+    nextSteps: generateFeedbackActions(scorecard.criterionScores, evidence),
+    warnings: buildWarnings(submission.wordCount, scorecard.confidence),
+    evaluationTrace: scorecard.evaluationTrace,
+    pipelineVersion: 'writing-task-2/v3-scorer-adapter-range-reporting',
     generatedAt: new Date().toISOString(),
   };
 }
