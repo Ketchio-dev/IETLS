@@ -195,6 +195,37 @@ export interface DashboardProviderSummary {
 export interface DashboardCriterionSummary {
   criterion: CriterionName;
   averageBand: number;
+  latestBand: number;
+  previousBand: number | null;
+  delta: number | null;
+  trend: 'improving' | 'steady' | 'slipping' | 'insufficient-data';
+  attemptsConsidered: number;
+  taskTypes: WritingTaskType[];
+}
+
+export interface DashboardAttemptCriterionComparison {
+  criterion: CriterionName;
+  currentBand: number;
+  comparedBand: number;
+  delta: number;
+}
+
+export interface DashboardAttemptComparison {
+  currentSubmissionId: string;
+  comparedSubmissionId: string;
+  currentTaskType: WritingTaskType;
+  comparedTaskType: WritingTaskType;
+  currentOverallBand: number;
+  comparedOverallBand: number;
+  overallBandDelta: number;
+  currentWordCount: number;
+  comparedWordCount: number;
+  wordCountDelta: number;
+  currentTimeSpentMinutes: number;
+  comparedTimeSpentMinutes: number;
+  timeSpentDelta: number;
+  criterionComparisons: DashboardAttemptCriterionComparison[];
+  taskSpecificCriterionOmitted: boolean;
 }
 
 export interface WritingDashboardSummary {
@@ -208,6 +239,7 @@ export interface WritingDashboardSummary {
   activeDays: number;
   latestAttemptAt: string | null;
   providerBreakdown: DashboardProviderSummary[];
+  criterionSummaries: DashboardCriterionSummary[];
   strongestCriterion: DashboardCriterionSummary | null;
   weakestCriterion: DashboardCriterionSummary | null;
 }
