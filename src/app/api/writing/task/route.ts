@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-import { samplePrompt, writingPromptBank } from '@/lib/fixtures/writing';
+import { loadWritingTaskData } from '@/lib/services/writing/application-service';
 
 export async function GET() {
-  return NextResponse.json({ prompt: samplePrompt, prompts: writingPromptBank });
+  return NextResponse.json(await loadWritingTaskData());
 }
