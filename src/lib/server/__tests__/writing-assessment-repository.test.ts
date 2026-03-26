@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { samplePrompt, writingPromptBank } from '@/lib/fixtures/writing';
 import {
+  createWritingAssessmentRepository,
   getDashboardStudyPlan,
   listPrompts,
   listRecentAttempts,
@@ -13,9 +14,24 @@ import {
   seedPrompt,
   seedPrompts,
 } from '@/lib/server/writing-assessment-repository';
+import type { JsonStoragePort, StorageFile } from '@/lib/server/storage';
 import { runAssessmentPipeline } from '@/lib/services/assessment';
 
 let tempDir = '';
+
+function createInMemoryStoragePort(): JsonStoragePort {
+  const files = new Map<StorageFile, unknown>();
+
+  return {
+    async readJsonFile<T>(file: StorageFile, fallback: T) {
+      return files.has(file) ? (structuredClone(files.get(file)) as T) : fallback;
+    },
+    async writeJsonFile<T>(file: StorageFile, value: T) {
+      files.set(file, structuredClone(value));
+      return `memory://${file}`;
+    },
+  };
+}
 
 describe('writing assessment repository', () => {
   beforeEach(async () => {
@@ -68,5 +84,31 @@ describe('writing assessment repository', () => {
     expect(firstPlan.version).toBe(2);
     expect(firstPlan.attemptsConsidered).toBe(0);
     expect(firstPlan.steps).toHaveLength(3);
+  });
+
+  it('supports swapping the file adapter for an injected storage port', async () => {
+    const repository = createWritingAssessmentRepository(createInMemoryStoragePort());
+
+    await repository.seedPrompts(writingPromptBank);
+    const prompts = await repository.listPrompts();
+    const result = await runAssessmentPipeline(samplePrompt, {
+      promptId: samplePrompt.id,
+      taskType: samplePrompt.taskType,
+      response:
+        'Public transport deserves more funding because it moves large numbers of commuters efficiently, lowers congestion, and cuts pollution. Roads still matter for freight and emergency access, but cities usually gain more when buses, rail, and coordinated ticketing make daily travel faster and more reliable.',
+      timeSpentMinutes: 31,
+    });
+
+    const stored = await repository.saveAssessmentResult(result);
+    const attempts = await repository.listRecentAttempts(5);
+    const savedAssessments = await repository.listSavedAssessments(5);
+    const firstPlan = await repository.getDashboardStudyPlan(prompts, savedAssessments);
+    const secondPlan = await repository.getDashboardStudyPlan(prompts, savedAssessments);
+
+    expect(stored.report.promptId).toBe(samplePrompt.id);
+    expect(attempts).toHaveLength(1);
+    expect(savedAssessments[0]?.submissionId).toBe(stored.submission.submissionId);
+    expect(secondPlan).toEqual(firstPlan);
+    expect(firstPlan.basedOnSubmissionId).toBe(stored.submission.submissionId);
   });
 });
