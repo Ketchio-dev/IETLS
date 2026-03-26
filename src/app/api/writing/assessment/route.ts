@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { samplePrompt } from '@/lib/fixtures/writing';
+import { writingPromptBank } from '@/lib/fixtures/writing';
 import { saveAssessmentResult, seedPrompt } from '@/lib/server/writing-assessment-repository';
 import { runAssessmentPipeline } from '@/lib/services/assessment';
 
@@ -17,12 +17,14 @@ export async function POST(request: Request) {
     );
   }
 
-  if (promptId !== samplePrompt.id) {
+  const prompt = writingPromptBank.find((item) => item.id === promptId);
+
+  if (!prompt) {
     return NextResponse.json({ error: 'Unknown writing prompt requested.' }, { status: 404 });
   }
 
-  await seedPrompt(samplePrompt);
-  const result = await runAssessmentPipeline(samplePrompt, { promptId, response, timeSpentMinutes });
+  await seedPrompt(prompt);
+  const result = await runAssessmentPipeline(prompt, { promptId, response, timeSpentMinutes });
   const stored = await saveAssessmentResult(result);
 
   return NextResponse.json({

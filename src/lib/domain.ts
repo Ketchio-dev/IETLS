@@ -18,6 +18,8 @@ export interface WritingPrompt {
   taskType: WritingTaskType;
   recommendedMinutes: number;
   suggestedWordCount: number;
+  questionType: string;
+  keywordTargets: string[];
   prompt: string;
   planningHints: string[];
   rubricFocus: string[];

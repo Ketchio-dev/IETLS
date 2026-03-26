@@ -2,11 +2,11 @@
 
 A Next.js MVP for IELTS Academic Writing practice with a writing-first vertical slice:
 
-- Task 2 prompt briefing and rubric focus
+- Task 2 prompt bank with multiple IELTS-style briefs
 - Timed essay editor with live word count
-- Practice estimate report with criterion bands, confidence reasons, warnings, and revision actions
+- Practice estimate report with criterion bands, scorer status, confidence reasons, warnings, and revision actions
 - Assessment architecture split into evidence extraction, scoring, and feedback generation
-- Local persistence for recent submissions and score history
+- Local persistence for recent submissions, saved scorecards, and prompt-specific history
 - API scaffolding for prompt delivery, assessment submission, and attempt history
 
 ## Getting started
@@ -29,7 +29,7 @@ npm run build
 
 ## API routes
 
-- `GET /api/writing/task` → returns the sample Writing Task 2 prompt fixture
+- `GET /api/writing/task` → returns the current prompt plus the prompt bank
 - `POST /api/writing/assessment` → generates a practice estimate and stores the attempt locally
 
 ## Scorer provider configuration

@@ -4,8 +4,8 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { samplePrompt } from '@/lib/fixtures/writing';
-import { saveAssessmentResult, listRecentAttempts, seedPrompt } from '@/lib/server/writing-assessment-repository';
+import { samplePrompt, writingPromptBank } from '@/lib/fixtures/writing';
+import { listPrompts, saveAssessmentResult, listRecentAttempts, seedPrompt, seedPrompts } from '@/lib/server/writing-assessment-repository';
 import { runAssessmentPipeline } from '@/lib/services/assessment';
 
 let tempDir = '';
@@ -38,5 +38,14 @@ describe('writing assessment repository', () => {
     expect(stored.report.promptId).toBe(samplePrompt.id);
     expect(attempts).toHaveLength(1);
     expect(attempts[0]?.submissionId).toBe(stored.submission.submissionId);
+  });
+
+  it('seeds and lists the prompt bank', async () => {
+    await seedPrompts(writingPromptBank);
+
+    const prompts = await listPrompts();
+
+    expect(prompts).toHaveLength(writingPromptBank.length);
+    expect(prompts.map((item) => item.id)).toEqual(writingPromptBank.map((item) => item.id));
   });
 });

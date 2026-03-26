@@ -8,16 +8,18 @@ import type {
   SavedAssessmentSnapshot,
   WritingPrompt,
 } from '@/lib/domain';
-import { sampleResponse } from '@/lib/fixtures/writing';
+import { getSampleResponse } from '@/lib/fixtures/writing';
 import { buildProgressSummary } from '@/lib/services/writing/progress-summary';
 
 import { AssessmentReportPanel } from './assessment-report';
 
 interface Props {
+  prompts: WritingPrompt[];
   prompt: WritingPrompt;
   initialReport: AssessmentReport;
   initialHistory: RecentAttemptSummary[];
   initialSavedAssessments: SavedAssessmentSnapshot[];
+  fallbackReports: Record<string, AssessmentReport>;
 }
 
 function formatRange(lower: number, upper: number) {
@@ -42,12 +44,15 @@ function buildAttemptStatus(attempt: SavedAssessmentSnapshot) {
 }
 
 export function WritingPracticeShell({
+  prompts,
   prompt,
   initialHistory,
   initialReport,
   initialSavedAssessments,
+  fallbackReports,
 }: Props) {
-  const [response, setResponse] = useState(sampleResponse);
+  const [selectedPromptId, setSelectedPromptId] = useState(prompt.id);
+  const [response, setResponse] = useState(getSampleResponse(prompt.id));
   const [secondsRemaining, setSecondsRemaining] = useState(prompt.recommendedMinutes * 60);
   const [report, setReport] = useState(initialReport);
   const [savedAssessments, setSavedAssessments] = useState(initialSavedAssessments);
@@ -55,6 +60,20 @@ export function WritingPracticeShell({
   const [activeAttemptId, setActiveAttemptId] = useState<string | null>(initialSavedAssessments[0]?.submissionId ?? null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const activePrompt = useMemo(
+    () => prompts.find((item) => item.id === selectedPromptId) ?? prompt,
+    [prompt, prompts, selectedPromptId],
+  );
+
+  const promptSavedAssessments = useMemo(
+    () => savedAssessments.filter((attempt) => attempt.promptId === activePrompt.id),
+    [activePrompt.id, savedAssessments],
+  );
+  const promptRecentAttempts = useMemo(
+    () => recentAttempts.filter((attempt) => attempt.promptId === activePrompt.id),
+    [activePrompt.id, recentAttempts],
+  );
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -64,12 +83,22 @@ export function WritingPracticeShell({
     return () => window.clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    setSecondsRemaining(activePrompt.recommendedMinutes * 60);
+    setResponse(getSampleResponse(activePrompt.id));
+    setError(null);
+
+    const latestForPrompt = promptSavedAssessments[0];
+    setActiveAttemptId(latestForPrompt?.submissionId ?? null);
+    setReport(latestForPrompt?.report ?? fallbackReports[activePrompt.id] ?? initialReport);
+  }, [activePrompt.id, activePrompt.recommendedMinutes, fallbackReports, initialReport, promptSavedAssessments]);
+
   const wordCount = useMemo(() => response.trim().split(/\s+/).filter(Boolean).length, [response]);
-  const progressSummary = useMemo(() => buildProgressSummary(recentAttempts), [recentAttempts]);
-  const timeSpentMinutes = prompt.recommendedMinutes - secondsRemaining / 60;
+  const progressSummary = useMemo(() => buildProgressSummary(promptRecentAttempts), [promptRecentAttempts]);
+  const timeSpentMinutes = activePrompt.recommendedMinutes - secondsRemaining / 60;
   const activeSavedAssessment = useMemo(
-    () => savedAssessments.find((attempt) => attempt.submissionId === activeAttemptId) ?? null,
-    [activeAttemptId, savedAssessments],
+    () => promptSavedAssessments.find((attempt) => attempt.submissionId === activeAttemptId) ?? null,
+    [activeAttemptId, promptSavedAssessments],
   );
 
   async function handleSubmit() {
@@ -81,7 +110,7 @@ export function WritingPracticeShell({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          promptId: prompt.id,
+          promptId: activePrompt.id,
           response,
           timeSpentMinutes,
         }),
@@ -114,6 +143,10 @@ export function WritingPracticeShell({
   function handleInspectAttempt(attempt: SavedAssessmentSnapshot) {
     setActiveAttemptId(attempt.submissionId);
     setReport(attempt.report);
+  }
+
+  function handlePromptChange(nextPromptId: string) {
+    setSelectedPromptId(nextPromptId);
   }
 
   const formattedClock = `${String(Math.floor(secondsRemaining / 60)).padStart(2, '0')}:${String(
@@ -151,14 +184,45 @@ export function WritingPracticeShell({
       <section className="workspace-grid">
         <div className="workspace-column left-column">
           <article className="panel">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Prompt bank</p>
+                <h2>Choose a Writing Task 2 brief</h2>
+              </div>
+              <span className="band-chip">{prompts.length} prompts</span>
+            </div>
+            <div className="prompt-selector">
+              {prompts.map((item) => {
+                const isActive = item.id === activePrompt.id;
+
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`history-card history-card-button prompt-card${isActive ? ' is-active' : ''}`}
+                    aria-pressed={isActive}
+                    onClick={() => handlePromptChange(item.id)}
+                  >
+                    <div className="history-card-header">
+                      <strong>{item.title}</strong>
+                      <span>{item.questionType}</span>
+                    </div>
+                    <p>{item.prompt}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </article>
+
+          <article className="panel">
             <p className="eyebrow">Live prompt</p>
-            <h2>{prompt.title}</h2>
-            <p className="prompt-copy">{prompt.prompt}</p>
+            <h2>{activePrompt.title}</h2>
+            <p className="prompt-copy">{activePrompt.prompt}</p>
             <div className="tip-grid">
               <div>
                 <h3>Planning hints</h3>
                 <ul>
-                  {prompt.planningHints.map((item) => (
+                  {activePrompt.planningHints.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
@@ -166,7 +230,7 @@ export function WritingPracticeShell({
               <div>
                 <h3>Rubric focus</h3>
                 <ul>
-                  {prompt.rubricFocus.map((item) => (
+                  {activePrompt.rubricFocus.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
@@ -192,12 +256,13 @@ export function WritingPracticeShell({
             <textarea
               aria-label="Essay response"
               className="essay-textarea"
+              placeholder="Write your full Task 2 response here…"
               onChange={(event) => setResponse(event.target.value)}
               value={response}
             />
             <div className="editor-footer">
               <span>
-                {wordCount} / {prompt.suggestedWordCount}+ words
+                {wordCount} / {activePrompt.suggestedWordCount}+ words
               </span>
               <span>{timeSpentMinutes.toFixed(1)} min spent</span>
             </div>
@@ -233,7 +298,7 @@ export function WritingPracticeShell({
                 <p className="eyebrow">Recent attempts</p>
                 <h2>Persistent practice history</h2>
               </div>
-              <span className="band-chip">{savedAssessments.length} saved</span>
+              <span className="band-chip">{promptSavedAssessments.length} for this prompt</span>
             </div>
             <article className="history-card inspection-card">
               <div className="history-card-header">
@@ -259,13 +324,13 @@ export function WritingPracticeShell({
                 </div>
               ) : null}
             </article>
-            {savedAssessments.length === 0 ? (
-              <p className="summary-copy">Submit your first draft to start building a reusable score history.</p>
+            {promptSavedAssessments.length === 0 ? (
+              <p className="summary-copy">Submit your first draft for this prompt to start building a reusable score history.</p>
             ) : (
               <>
                 <p className="summary-copy">Select a saved attempt to inspect its full scorecard above.</p>
                 <div className="history-list">
-                  {savedAssessments.map((attempt) => {
+                  {promptSavedAssessments.map((attempt) => {
                     const status = buildAttemptStatus(attempt);
                     const isActive = attempt.submissionId === activeAttemptId;
 

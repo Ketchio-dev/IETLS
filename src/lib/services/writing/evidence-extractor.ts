@@ -16,7 +16,7 @@ export function extractWritingEvidence(prompt: WritingPrompt, submission: EssayS
   const wordCount = countWords(response);
   const paragraphs = countParagraphs(response);
   const sentenceVariety = countMatches(response, /,|;| which | that | although | because | while /gi);
-  const promptKeywords = ['public', 'transport', 'roads', 'government', 'funds'];
+  const promptKeywords = prompt.keywordTargets;
   const keywordHits = promptKeywords.filter((keyword) => response.toLowerCase().includes(keyword)).length;
   const hasOpinion = /\b(I believe|I think|In my opinion|I would argue|Overall, I believe)\b/i.test(response);
   const hasBalancedDiscussion = /\b(on the one hand|on the other hand|however|while|whereas)\b/i.test(response);

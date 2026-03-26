@@ -75,6 +75,19 @@ export async function seedPrompt(prompt: WritingPrompt) {
   return prompt;
 }
 
+export async function seedPrompts(prompts: WritingPrompt[]) {
+  for (const prompt of prompts) {
+    await seedPrompt(prompt);
+  }
+
+  return prompts;
+}
+
+export async function listPrompts(): Promise<WritingPrompt[]> {
+  const prompts = await readJsonFile<WritingPrompt[]>(PROMPTS_FILE, []);
+  return prompts.slice();
+}
+
 export async function listRecentAttempts(limit = 5): Promise<RecentAttemptSummary[]> {
   const records = await readStoredAssessments();
   return records

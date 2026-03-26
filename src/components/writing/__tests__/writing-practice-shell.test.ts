@@ -2,7 +2,7 @@ import { createElement } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { sampleAssessmentReport, samplePrompt } from '@/lib/fixtures/writing';
+import { sampleAssessmentReport, sampleAssessmentReportsByPromptId, samplePrompt, writingPromptBank } from '@/lib/fixtures/writing';
 
 import { WritingPracticeShell } from '../writing-practice-shell';
 
@@ -61,13 +61,15 @@ describe('WritingPracticeShell', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     render(createElement(WritingPracticeShell, {
+      fallbackReports: sampleAssessmentReportsByPromptId,
       initialHistory: [],
       initialReport: sampleAssessmentReport,
       initialSavedAssessments: [],
       prompt: samplePrompt,
+      prompts: writingPromptBank,
     }));
 
-    expect(screen.getByText(samplePrompt.title)).toBeInTheDocument();
+    expect(screen.getAllByText(samplePrompt.title).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: /generate practice estimate/i }));
 
     await waitFor(() => {
@@ -79,10 +81,26 @@ describe('WritingPracticeShell', () => {
 
     const summaryMatches = await screen.findAllByText('Updated report summary');
     expect(summaryMatches.length).toBeGreaterThan(0);
-    expect(await screen.findByText(/1 saved/i)).toBeInTheDocument();
+    expect(await screen.findByText(/1 for this prompt/i)).toBeInTheDocument();
     const providerMatches = await screen.findAllByText(/Openrouter/i);
     expect(providerMatches.length).toBeGreaterThan(0);
     const modelMatches = await screen.findAllByText(/google\/gemini-3-flash/i);
     expect(modelMatches.length).toBeGreaterThan(0);
+  });
+
+  it('switches between prompts in the prompt bank', () => {
+    render(createElement(WritingPracticeShell, {
+      fallbackReports: sampleAssessmentReportsByPromptId,
+      initialHistory: [],
+      initialReport: sampleAssessmentReport,
+      initialSavedAssessments: [],
+      prompt: samplePrompt,
+      prompts: writingPromptBank,
+    }));
+
+    fireEvent.click(screen.getAllByRole('button', { name: /online education versus classroom learning/i })[0]);
+
+    expect(screen.getAllByText(/some people think online education is now a better alternative/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Agree \/ disagree/i).length).toBeGreaterThan(0);
   });
 });

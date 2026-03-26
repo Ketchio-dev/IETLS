@@ -96,7 +96,8 @@ li,
 .hero-metrics,
 .report-grid,
 .service-list,
-.history-list {
+.history-list,
+.prompt-selector {
   display: grid;
   gap: 1rem;
 }
@@ -257,6 +258,13 @@ li,
   box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.18);
 }
 
+.prompt-card p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+
 .inspection-card {
   border-style: dashed;
 }
@@ -280,7 +288,8 @@ li,
 
   .hero-metrics,
   .report-grid,
-  .service-list {
+  .service-list,
+  .prompt-selector {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
