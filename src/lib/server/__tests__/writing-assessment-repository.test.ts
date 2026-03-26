@@ -14,6 +14,7 @@ describe('writing assessment repository', () => {
   beforeEach(async () => {
     tempDir = await mkdtemp(path.join(os.tmpdir(), 'ielts-writing-repo-'));
     vi.stubEnv('IELTS_DATA_DIR', tempDir);
+    vi.stubEnv('IELTS_SCORER_PROVIDER', 'mock');
   });
 
   afterEach(async () => {
