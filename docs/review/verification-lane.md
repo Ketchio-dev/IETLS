@@ -29,7 +29,7 @@ A reviewer should be able to verify the current slice by:
 7. confirming the saved report shows overall band, criterion bands, evidence, feedback, and scorer metadata,
 8. inspecting the saved-attempt list for the active prompt inside the practice shell,
 9. opening `/dashboard`,
-10. confirming the dashboard shows recent saved-attempt metrics, scorer usage, and study-plan guidance,
+10. confirming the dashboard shows recent saved-attempt metrics, criterion trend summaries, compare controls, scorer usage, and study-plan guidance,
 11. using the dashboard return link to go back to the practice shell without losing the ability to inspect saved reports,
 12. confirming Task 1 / Task 2 scoring behavior remains stable and the live scorer still defaults to Gemini 3 Flash when enabled.
 
@@ -42,7 +42,7 @@ A reviewer should be able to verify the current slice by:
 - Saved attempts remain locally persisted and reusable across shell/dashboard views.
 - Lint passes.
 - Typecheck passes.
-- Tests cover prompt → session → report → saved-attempt inspection flows.
+- Tests cover prompt → session → report → saved-attempt inspection, dashboard compare, and resume-link flows.
 - No dead placeholder routes or broken navigation remain.
 
 ## Documentation contract
@@ -53,7 +53,7 @@ Before the current integration branch is declared complete, the repo should incl
 - one architecture note covering scoring/evidence/feedback seams,
 - one verification section listing the commands above,
 - one statement about fixture-driven development versus live AI scoring,
-- one documentation note covering the persisted dashboard/resume loop.
+- one documentation note covering the persisted dashboard/resume loop plus criterion-trend/compare/study-plan behavior.
 
 ## Current status note
 
