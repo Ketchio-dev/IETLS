@@ -6,12 +6,12 @@ import { sampleAssessmentReport, writingPromptBank } from '@/lib/fixtures/writin
 import type { WritingDashboardPageData } from '@/lib/services/writing/application-service';
 
 const mocks = vi.hoisted(() => ({
-  loadWritingDashboardPageData: vi.fn(),
+  loadDefaultAssessmentDashboardPageData: vi.fn(),
   dashboardSpy: vi.fn(),
 }));
 
-vi.mock('@/lib/services/writing/application-service', () => ({
-  loadWritingDashboardPageData: mocks.loadWritingDashboardPageData,
+vi.mock('@/lib/server/assessment-workspace', () => ({
+  loadDefaultAssessmentDashboardPageData: mocks.loadDefaultAssessmentDashboardPageData,
 }));
 
 vi.mock('@/components/writing/writing-dashboard', () => ({
@@ -88,11 +88,11 @@ describe('DashboardPage', () => {
       studyPlan,
     };
 
-    mocks.loadWritingDashboardPageData.mockResolvedValue(pageData);
+    mocks.loadDefaultAssessmentDashboardPageData.mockResolvedValue(pageData);
 
     render(await DashboardPage());
 
-    expect(mocks.loadWritingDashboardPageData).toHaveBeenCalledWith();
+    expect(mocks.loadDefaultAssessmentDashboardPageData).toHaveBeenCalledWith();
     expect(mocks.dashboardSpy).toHaveBeenCalledWith(pageData);
   });
 });

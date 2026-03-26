@@ -5,12 +5,12 @@ import { sampleAssessmentReport, samplePrompt, sampleTask1Prompt, writingPromptB
 import type { WritingPracticePageData } from '@/lib/services/writing/application-service';
 
 const mocks = vi.hoisted(() => ({
-  loadWritingPracticePageData: vi.fn(),
+  loadDefaultAssessmentPracticePageData: vi.fn(),
   shellSpy: vi.fn(),
 }));
 
-vi.mock('@/lib/services/writing/application-service', () => ({
-  loadWritingPracticePageData: mocks.loadWritingPracticePageData,
+vi.mock('@/lib/server/assessment-workspace', () => ({
+  loadDefaultAssessmentPracticePageData: mocks.loadDefaultAssessmentPracticePageData,
 }));
 
 vi.mock('@/components/writing/writing-practice-shell', () => ({
@@ -68,7 +68,7 @@ describe('HomePage', () => {
       fallbackReports: {},
     };
 
-    mocks.loadWritingPracticePageData.mockResolvedValue(pageData);
+    mocks.loadDefaultAssessmentPracticePageData.mockResolvedValue(pageData);
 
     render(await HomePage({
       searchParams: Promise.resolve({
@@ -77,7 +77,7 @@ describe('HomePage', () => {
       }),
     }));
 
-    expect(mocks.loadWritingPracticePageData).toHaveBeenCalledWith({
+    expect(mocks.loadDefaultAssessmentPracticePageData).toHaveBeenCalledWith({
       promptId: 'missing-prompt-id',
       attemptId: 'attempt-task-1',
     });
@@ -96,7 +96,7 @@ describe('HomePage', () => {
       initialReport: sampleAssessmentReport,
       fallbackReports: {},
     };
-    mocks.loadWritingPracticePageData.mockResolvedValue(pageData);
+    mocks.loadDefaultAssessmentPracticePageData.mockResolvedValue(pageData);
 
     render(await HomePage({
       searchParams: {
@@ -104,7 +104,7 @@ describe('HomePage', () => {
       },
     }));
 
-    expect(mocks.loadWritingPracticePageData).toHaveBeenCalledWith({
+    expect(mocks.loadDefaultAssessmentPracticePageData).toHaveBeenCalledWith({
       promptId: sampleTask1Prompt.id,
       attemptId: undefined,
     });

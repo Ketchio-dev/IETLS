@@ -16,7 +16,7 @@ This repo started from a clean baseline on **March 26, 2026**. These docs now se
 - `docs/review/writing-dashboard-recent-attempts-review.md` — review/documentation note for the dashboard-side recent saved-attempt inspection and quick resume links back into the practice shell.
 - `docs/review/writing-dashboard-criterion-trends-review.md` — review/documentation note for the implemented dashboard slice: criterion-trend summaries, saved-attempt compare support, and stronger persisted study-plan presentation on `/dashboard`.
 - `docs/review/writing-application-service-boundary-review.md` — review/documentation note for the route/page refactor that moves writing-shell and dashboard orchestration behind a narrow server-side application-service boundary.
-- `docs/review/assessment-module-registry-review.md` — review/documentation note for the next foundation slice: register writing through a shared assessment-module registry and workspace boundary without changing the current writing UX.
+- `docs/review/assessment-module-registry-review.md` — review/documentation note for the shared registry/workspace seam that keeps app entrypoints from importing writing-only orchestration directly.
 
 ## Current review snapshot
 
@@ -24,7 +24,6 @@ This repo started from a clean baseline on **March 26, 2026**. These docs now se
 - Saved attempts are persisted locally and reused by both the shell and the dashboard.
 - The dashboard summarizes recent saved attempts, scorer usage, task coverage, criterion trends, and a lightweight-but-actionable study plan without adding dependencies.
 - The dashboard now supports saved-attempt comparison and stronger study-plan presentation while preserving the same persistence-first resume flow.
-- Route/page orchestration is being documented around a narrow writing application-service boundary so Next.js entrypoints can stay thin as the MVP grows.
-- The next foundation slice is now documented around a shared assessment-module registry/workspace boundary so future modules can plug in without rewriting the current writing flow.
+- Route/page orchestration now resolves through a shared assessment-workspace registry while the writing application-service keeps owning the current writing data orchestration.
 - The live scorer path still defaults to **Gemini 3 Flash** when OpenRouter is enabled, while the mock scorer remains the deterministic fallback.
 - Older `next-slice` review notes are still worth keeping because they explain the design guardrails behind the current implementation.
