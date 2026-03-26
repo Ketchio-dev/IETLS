@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 import type {
@@ -192,6 +193,14 @@ export function WritingPracticeShell({
             Practice under time pressure, review a structured score estimate, and keep a reusable
             history of your latest mock attempts.
           </p>
+          <div className="hero-actions">
+            <Link className="secondary-link-button" href="/dashboard">
+              Open dashboard
+            </Link>
+            <p className="hero-action-copy">
+              Review saved writing trends and a lightweight next-step study plan.
+            </p>
+          </div>
         </div>
         <div className="hero-metrics">
           <div className="metric-card">
