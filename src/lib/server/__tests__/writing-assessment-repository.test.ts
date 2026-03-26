@@ -14,6 +14,7 @@ describe('writing assessment repository', () => {
   beforeEach(async () => {
     tempDir = await mkdtemp(path.join(os.tmpdir(), 'ielts-writing-repo-'));
     vi.stubEnv('IELTS_DATA_DIR', tempDir);
+    vi.stubEnv('IELTS_SCORER_PROVIDER', 'mock');
   });
 
   afterEach(async () => {
@@ -25,7 +26,7 @@ describe('writing assessment repository', () => {
 
   it('persists prompts and recent attempts for later sessions', async () => {
     await seedPrompt(samplePrompt);
-    const result = runAssessmentPipeline(samplePrompt, {
+    const result = await runAssessmentPipeline(samplePrompt, {
       promptId: samplePrompt.id,
       response: 'In my opinion, public transport should receive more funding because it reduces congestion and pollution. However, some road investment still matters for freight and safety. Overall, governments should prioritise transit while targeting only the worst road bottlenecks.',
       timeSpentMinutes: 29,

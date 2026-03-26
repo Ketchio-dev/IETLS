@@ -1,5 +1,5 @@
 import type { EssaySubmission, WritingPrompt } from '@/lib/domain';
-import { buildAssessmentReport, createSubmissionRecord } from '@/lib/services/assessment';
+import { buildMockAssessmentReport, createSubmissionRecord } from '@/lib/services/assessment';
 
 export const samplePrompt: WritingPrompt = {
   id: 'task-2-public-transport',
@@ -43,7 +43,7 @@ const seedSubmissionRecord = {
 };
 
 export const sampleAssessmentReport = {
-  ...buildAssessmentReport(samplePrompt, seedSubmissionRecord),
+  ...buildMockAssessmentReport(samplePrompt, seedSubmissionRecord),
   reportId: 'sample-report-001',
   essayId: seedSubmissionRecord.submissionId,
   generatedAt: '2026-03-26T15:00:00.000Z',
