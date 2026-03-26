@@ -26,6 +26,7 @@ describe('WritingPracticeShell', () => {
             submissionId: 'attempt-1',
             promptId: samplePrompt.id,
             overallBand: 7,
+            overallBandRange: { lower: 6.5, upper: 7.0 },
             confidence: 'medium',
             estimatedWordCount: 270,
             summary: 'Updated report summary',
@@ -56,5 +57,6 @@ describe('WritingPracticeShell', () => {
     const summaryMatches = await screen.findAllByText('Updated report summary');
     expect(summaryMatches.length).toBeGreaterThan(0);
     expect(await screen.findByText(/1 saved/i)).toBeInTheDocument();
+    expect(await screen.findByText(/First benchmark saved/i)).toBeInTheDocument();
   });
 });

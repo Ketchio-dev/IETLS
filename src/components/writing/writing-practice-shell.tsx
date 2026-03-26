@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import type { AssessmentReport, RecentAttemptSummary, WritingPrompt } from '@/lib/domain';
 import { sampleResponse } from '@/lib/fixtures/writing';
+import { buildProgressSummary } from '@/lib/services/writing/progress-summary';
 
 import { AssessmentReportPanel } from './assessment-report';
 
@@ -30,6 +31,7 @@ export function WritingPracticeShell({ prompt, initialHistory, initialReport }: 
   }, []);
 
   const wordCount = useMemo(() => response.trim().split(/\s+/).filter(Boolean).length, [response]);
+  const progressSummary = useMemo(() => buildProgressSummary(recentAttempts), [recentAttempts]);
   const timeSpentMinutes = prompt.recommendedMinutes - secondsRemaining / 60;
 
   async function handleSubmit() {
@@ -186,6 +188,22 @@ export function WritingPracticeShell({ prompt, initialHistory, initialReport }: 
               </div>
               <span className="band-chip">{recentAttempts.length} saved</span>
             </div>
+            <article className="history-card">
+              <div className="history-card-header">
+                <strong>{progressSummary.label}</strong>
+                <span>{progressSummary.attemptsConsidered} attempts used</span>
+              </div>
+              <p>{progressSummary.detail}</p>
+              <div className="history-meta">
+                <span>
+                  Latest range:{' '}
+                  {progressSummary.latestRange
+                    ? `Band ${progressSummary.latestRange.lower.toFixed(1)}-${progressSummary.latestRange.upper.toFixed(1)}`
+                    : 'Not enough data'}
+                </span>
+                <span>Avg words: {progressSummary.averageWordCount}</span>
+              </div>
+            </article>
             {recentAttempts.length === 0 ? (
               <p className="summary-copy">Submit your first draft to start building a reusable score history.</p>
             ) : (
