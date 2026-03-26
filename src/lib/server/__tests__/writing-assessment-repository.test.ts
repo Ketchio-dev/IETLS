@@ -65,6 +65,7 @@ describe('writing assessment repository', () => {
     const secondPlan = await getDashboardStudyPlan(prompts, []);
 
     expect(secondPlan).toEqual(firstPlan);
+    expect(firstPlan.version).toBe(2);
     expect(firstPlan.attemptsConsidered).toBe(0);
     expect(firstPlan.steps).toHaveLength(3);
   });

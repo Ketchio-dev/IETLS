@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import { formatBandRange, formatCountLabel, formatTaskTypeList } from './dashboard-formatting';
 import type { DashboardStudyPlan, DashboardStudyPlanStep } from './dashboard-types';
 
@@ -32,6 +34,14 @@ function StudyPlanStepCard({ step }: { step: DashboardStudyPlanStep }) {
             <li key={action}>{action}</li>
           ))}
         </ul>
+      ) : null}
+
+      {step.actionHref && step.actionLabel ? (
+        <div className="dashboard-step-actions">
+          <Link className="secondary-link-button" href={step.actionHref}>
+            {step.actionLabel}
+          </Link>
+        </div>
       ) : null}
     </article>
   );

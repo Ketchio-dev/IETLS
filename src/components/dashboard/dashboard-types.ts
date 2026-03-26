@@ -18,6 +18,8 @@ export interface DashboardStudyPlanStep {
   taskTypes?: WritingTaskType[];
   targetRange?: BandRange | null;
   sessionLabel?: string;
+  actionHref?: string;
+  actionLabel?: string;
 }
 
 export interface DashboardStudyPlan {

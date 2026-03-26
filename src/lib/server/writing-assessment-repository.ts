@@ -19,6 +19,7 @@ import { readJsonFile, writeJsonFile } from './storage';
 const PROMPTS_FILE = 'writing-prompts.json';
 const ASSESSMENTS_FILE = 'writing-assessments.json';
 const STUDY_PLAN_FILE = 'writing-study-plan.json';
+const STUDY_PLAN_VERSION = 2;
 
 function ensureBandRange(range: BandRange | undefined, overallBand: number): BandRange {
   if (range) {
@@ -120,6 +121,7 @@ export async function getDashboardStudyPlan(
 
   if (
     storedPlan &&
+    storedPlan.version === STUDY_PLAN_VERSION &&
     storedPlan.basedOnSubmissionId === latestSubmissionId &&
     storedPlan.attemptsConsidered === savedAssessments.length
   ) {

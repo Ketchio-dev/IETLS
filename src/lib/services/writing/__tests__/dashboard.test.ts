@@ -131,6 +131,7 @@ describe('dashboard helpers', () => {
       previousBand: 6.8,
       delta: 0.7,
       trend: 'improving',
+      recentBands: [7.5, 6.8, 7.5],
     });
     expect(summary.weakestCriterion?.criterion).toBe('Task Response');
   });
@@ -218,9 +219,14 @@ describe('dashboard helpers', () => {
     const plan = buildStudyPlan(assessments, writingPromptBank);
 
     expect(plan.basedOnSubmissionId).toBe('attempt-2');
+    expect(plan.version).toBe(2);
     expect(plan.steps).toHaveLength(3);
     expect(plan.headline).toMatch(/Task Response/i);
     expect(plan.steps[0]?.detail).toMatch(/Sharpen your position/i);
+    expect(plan.steps[0]?.actions[0]).toMatch(/Sharpen your position/i);
+    expect(plan.steps[0]?.submissionId).toBe('attempt-2');
+    expect(plan.steps[0]?.actionLabel).toMatch(/resume latest report/i);
     expect(plan.steps[1]?.title).toMatch(/Task 1|Task 2/i);
+    expect(plan.carryForward.length).toBeGreaterThan(0);
   });
 });
