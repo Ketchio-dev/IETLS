@@ -1,8 +1,8 @@
 import { WritingDashboard } from '@/components/writing/writing-dashboard';
-import { loadDefaultAssessmentDashboardPageData } from '@/lib/server/assessment-workspace';
+import { loadAssessmentWorkspaceDashboardPageData } from '@/lib/server/assessment-module-registry';
 
 export default async function DashboardPage() {
-  const pageData = await loadDefaultAssessmentDashboardPageData();
+  const pageData = await loadAssessmentWorkspaceDashboardPageData();
 
   return <WritingDashboard {...pageData} />;
 }

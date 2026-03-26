@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-import { loadDefaultAssessmentTaskData } from '@/lib/server/assessment-workspace';
+import { loadAssessmentWorkspaceTaskData } from '@/lib/server/assessment-module-registry';
 
 export async function GET() {
-  return NextResponse.json(await loadDefaultAssessmentTaskData());
+  return NextResponse.json(await loadAssessmentWorkspaceTaskData());
 }
