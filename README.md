@@ -64,6 +64,8 @@ IELTS_DATA_DIR=/custom/path npm run dev
 
 Persisted data now powers both the practice shell and the dashboard, so saved attempts can be re-opened in the shell while the dashboard reuses the same local-first storage for criterion trends, saved-attempt comparison, and study-plan guidance.
 
+The default runtime persistence adapter remains file-backed (`src/lib/server/storage.ts`), but the repository now reads and writes through a small storage port so the persistence boundary can be swapped in tests or future adapters without changing route/page callers.
+
 ## Review and implementation notes
 
 Current review notes for the implemented slices live under `docs/review/`, including:
