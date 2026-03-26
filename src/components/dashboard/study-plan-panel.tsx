@@ -26,11 +26,13 @@ function StudyPlanStepCard({ step }: { step: DashboardStudyPlanStep }) {
         <span>{formatBandRange(step.targetRange)}</span>
       </div>
 
-      <ul className="plain-list compact-list">
-        {step.actions.map((action) => (
-          <li key={action}>{action}</li>
-        ))}
-      </ul>
+      {step.actions.length > 0 ? (
+        <ul className="plain-list compact-list">
+          {step.actions.map((action) => (
+            <li key={action}>{action}</li>
+          ))}
+        </ul>
+      ) : null}
     </article>
   );
 }

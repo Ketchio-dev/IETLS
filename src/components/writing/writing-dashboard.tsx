@@ -1,15 +1,12 @@
 import Link from 'next/link';
 
 import type { ProgressSummary, StudyPlanSnapshot, WritingDashboardSummary } from '@/lib/domain';
+import { DashboardMetricGrid, StudyPlanPanel } from '@/components/dashboard';
 
 interface Props {
   summary: WritingDashboardSummary;
   progress: ProgressSummary;
   studyPlan: StudyPlanSnapshot;
-}
-
-function formatRange(lower: number, upper: number) {
-  return `Band ${lower.toFixed(1)}-${upper.toFixed(1)}`;
 }
 
 function formatDateTime(value: string | null) {
@@ -24,7 +21,71 @@ function formatTaskCoverage(taskCounts: WritingDashboardSummary['taskCounts']) {
   return `${taskCounts['task-1']} Task 1 • ${taskCounts['task-2']} Task 2`;
 }
 
+function buildDashboardMetrics(summary: WritingDashboardSummary, progress: ProgressSummary) {
+  return [
+    {
+      id: 'trend',
+      label: 'Trend',
+      value: progress.label,
+      detail: progress.detail,
+      eyebrow: 'Momentum',
+    },
+    {
+      id: 'average-band',
+      label: 'Average band',
+      value: summary.averageBand?.toFixed(1) ?? '—',
+      detail: `Across ${summary.totalAttempts} saved attempt(s).`,
+      eyebrow: 'Consistency',
+    },
+    {
+      id: 'average-words',
+      label: 'Average words',
+      value: String(summary.averageWordCount),
+      detail: 'Measured across your persisted drafts.',
+      eyebrow: 'Output',
+    },
+    {
+      id: 'active-days',
+      label: 'Active practice days',
+      value: String(summary.activeDays),
+      detail: `Last attempt: ${formatDateTime(summary.latestAttemptAt)}`,
+      eyebrow: 'Recency',
+    },
+  ];
+}
+
+function toTaskTypes(taskType: StudyPlanSnapshot['steps'][number]['taskType']) {
+  if (taskType === 'either') {
+    return ['task-1', 'task-2'] as const;
+  }
+
+  return [taskType] as const;
+}
+
+function toDashboardStudyPlan(plan: StudyPlanSnapshot) {
+  return {
+    summary: plan.focus,
+    horizonLabel: `${plan.attemptsConsidered} saved attempt${plan.attemptsConsidered === 1 ? '' : 's'}`,
+    recommendedSessionLabel: plan.basedOnSubmissionId ? 'Use the latest saved report first' : undefined,
+    steps: plan.steps.map((step, index) => ({
+      id: step.id,
+      title: step.title,
+      detail: step.detail,
+      actions: [],
+      taskTypes: [...toTaskTypes(step.taskType)],
+      sessionLabel: `Step ${index + 1}`,
+      targetRange: null,
+    })),
+    carryForward: plan.basedOnSubmissionId
+      ? ['Re-open the latest saved report before drafting the next response.']
+      : undefined,
+  };
+}
+
 export function WritingDashboard({ summary, progress, studyPlan }: Props) {
+  const dashboardMetrics = buildDashboardMetrics(summary, progress);
+  const presentationPlan = toDashboardStudyPlan(studyPlan);
+
   return (
     <main className="app-shell">
       <section className="hero panel dashboard-hero">
@@ -50,7 +111,7 @@ export function WritingDashboard({ summary, progress, studyPlan }: Props) {
             <span>Latest range</span>
             <strong>
               {summary.latestRange
-                ? formatRange(summary.latestRange.lower, summary.latestRange.upper)
+                ? `Band ${summary.latestRange.lower.toFixed(1)}-${summary.latestRange.upper.toFixed(1)}`
                 : 'No data yet'}
             </strong>
           </div>
@@ -67,37 +128,12 @@ export function WritingDashboard({ summary, progress, studyPlan }: Props) {
 
       <section className="workspace-grid dashboard-grid">
         <div className="workspace-column left-column">
-          <article className="panel">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Momentum</p>
-                <h2>Aggregated writing metrics</h2>
-              </div>
-              <span className="band-chip">{formatTaskCoverage(summary.taskCounts)}</span>
-            </div>
-            <div className="dashboard-stat-grid">
-              <div className="metric-card dashboard-metric-card">
-                <span>Trend</span>
-                <strong>{progress.label}</strong>
-                <p className="summary-copy">{progress.detail}</p>
-              </div>
-              <div className="metric-card dashboard-metric-card">
-                <span>Average band</span>
-                <strong>{summary.averageBand?.toFixed(1) ?? '—'}</strong>
-                <p className="summary-copy">Across {summary.totalAttempts} saved attempt(s).</p>
-              </div>
-              <div className="metric-card dashboard-metric-card">
-                <span>Average words</span>
-                <strong>{summary.averageWordCount}</strong>
-                <p className="summary-copy">Measured across your persisted drafts.</p>
-              </div>
-              <div className="metric-card dashboard-metric-card">
-                <span>Active practice days</span>
-                <strong>{summary.activeDays}</strong>
-                <p className="summary-copy">Last attempt: {formatDateTime(summary.latestAttemptAt)}</p>
-              </div>
-            </div>
-          </article>
+          <DashboardMetricGrid
+            title="Aggregated writing metrics"
+            description="Your saved Task 1 and Task 2 attempts condensed into one snapshot."
+            metrics={dashboardMetrics}
+            aside={<span className="band-chip">{formatTaskCoverage(summary.taskCounts)}</span>}
+          />
 
           <article className="panel">
             <div className="section-heading">
@@ -169,35 +205,7 @@ export function WritingDashboard({ summary, progress, studyPlan }: Props) {
             )}
           </section>
 
-          <section className="panel history-panel">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Persisted study plan</p>
-                <h2>Next lightweight practice cycle</h2>
-              </div>
-              <span className="band-chip">{studyPlan.attemptsConsidered} attempts used</span>
-            </div>
-            <article className="history-card inspection-card">
-              <div className="history-card-header">
-                <strong>{studyPlan.headline}</strong>
-                <span>{formatDateTime(studyPlan.generatedAt)}</span>
-              </div>
-              <p>{studyPlan.focus}</p>
-            </article>
-            <div className="study-plan-list">
-              {studyPlan.steps.map((step, index) => (
-                <article className="history-card study-plan-card" key={step.id}>
-                  <div className="history-card-header">
-                    <strong>
-                      {index + 1}. {step.title}
-                    </strong>
-                    <span>{step.taskType === 'either' ? 'Either task' : step.taskType === 'task-1' ? 'Task 1' : 'Task 2'}</span>
-                  </div>
-                  <p>{step.detail}</p>
-                </article>
-              ))}
-            </div>
-          </section>
+          <StudyPlanPanel plan={presentationPlan} title={studyPlan.headline} />
         </div>
       </section>
     </main>
