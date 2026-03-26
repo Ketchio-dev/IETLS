@@ -1,17 +1,31 @@
 import { randomUUID } from 'node:crypto';
 
-import type { AssessmentPipelineResult, RecentAttemptSummary, StoredAssessmentRecord, WritingPrompt } from '@/lib/domain';
+import type { AssessmentPipelineResult, BandRange, RecentAttemptSummary, StoredAssessmentRecord, WritingPrompt } from '@/lib/domain';
+
+import { clampBand } from '@/lib/services/writing/metrics';
 
 import { readJsonFile, writeJsonFile } from './storage';
 
 const PROMPTS_FILE = 'writing-prompts.json';
 const ASSESSMENTS_FILE = 'writing-assessments.json';
 
+function ensureBandRange(range: BandRange | undefined, overallBand: number): BandRange {
+  if (range) {
+    return range;
+  }
+
+  return {
+    lower: clampBand(overallBand - 0.5),
+    upper: clampBand(overallBand + 0.5),
+  };
+}
+
 function toSummary(record: StoredAssessmentRecord): RecentAttemptSummary {
   return {
     submissionId: record.submission.submissionId,
     promptId: record.submission.promptId,
     overallBand: record.report.overallBand,
+    overallBandRange: ensureBandRange(record.report.overallBandRange, record.report.overallBand),
     confidence: record.report.confidence,
     estimatedWordCount: record.report.estimatedWordCount,
     summary: record.report.summary,
@@ -45,6 +59,7 @@ export async function saveAssessmentResult(result: Omit<AssessmentPipelineResult
     report: {
       ...result.report,
       reportId: result.report.reportId || randomUUID(),
+      overallBandRange: ensureBandRange(result.report.overallBandRange, result.report.overallBand),
     },
   };
 

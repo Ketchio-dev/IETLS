@@ -7,6 +7,11 @@ export type CriterionName =
 export type ConfidenceLevel = 'high' | 'medium' | 'low';
 export type SignalStrength = 'strong' | 'developing' | 'weak';
 
+export interface BandRange {
+  lower: number;
+  upper: number;
+}
+
 export interface WritingPrompt {
   id: string;
   title: string;
@@ -30,8 +35,42 @@ export interface EvidenceSignal {
 export interface CriterionScore {
   criterion: CriterionName;
   band: number;
+  bandRange: BandRange;
   rationale: string;
   confidence: ConfidenceLevel;
+}
+
+export interface CriterionEvaluationTrace {
+  criterion: CriterionName;
+  signalIds: string[];
+  signalStrengths: SignalStrength[];
+  signalSources: EvidenceSignal['source'][];
+  notes: string[];
+}
+
+export interface EvaluationTrace {
+  schemaVersion: string;
+  scorerProvider: string;
+  scorerModel: string;
+  configuredProvider: string | null;
+  usedMockFallback: boolean;
+  rubricVersion: string;
+  calibrationVersion: string;
+  evidenceSignalCount: number;
+  evidenceFingerprint: string;
+  scoredAt: string;
+  notes: string[];
+  criterionTrace: CriterionEvaluationTrace[];
+}
+
+export interface StructuredRubricScorecard {
+  schemaVersion: string;
+  criterionScores: CriterionScore[];
+  overallBand: number;
+  overallBandRange: BandRange;
+  confidence: ConfidenceLevel;
+  confidenceReasons: string[];
+  evaluationTrace: EvaluationTrace;
 }
 
 export interface FeedbackAction {
@@ -51,6 +90,7 @@ export interface AssessmentReport {
   essayId: string;
   promptId: string;
   overallBand: number;
+  overallBandRange: BandRange;
   confidence: ConfidenceLevel;
   confidenceReasons: string[];
   summary: string;
@@ -61,6 +101,7 @@ export interface AssessmentReport {
   risks: string[];
   nextSteps: FeedbackAction[];
   warnings: AssessmentWarning[];
+  evaluationTrace: EvaluationTrace;
   pipelineVersion: string;
   generatedAt: string;
 }
@@ -81,6 +122,7 @@ export interface RecentAttemptSummary {
   submissionId: string;
   promptId: string;
   overallBand: number;
+  overallBandRange: BandRange;
   confidence: ConfidenceLevel;
   estimatedWordCount: number;
   summary: string;
@@ -96,4 +138,14 @@ export interface AssessmentPipelineResult {
   submission: WritingSubmissionRecord;
   report: AssessmentReport;
   recentAttempts: RecentAttemptSummary[];
+}
+
+export interface ProgressSummary {
+  direction: 'improving' | 'steady' | 'slipping' | 'insufficient-data';
+  label: string;
+  detail: string;
+  delta: number;
+  latestRange: BandRange | null;
+  attemptsConsidered: number;
+  averageWordCount: number;
 }

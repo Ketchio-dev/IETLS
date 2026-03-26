@@ -1,4 +1,4 @@
-import type { ConfidenceLevel, CriterionName, CriterionScore, EvidenceSignal, WritingPrompt } from '@/lib/domain';
+import type { BandRange, ConfidenceLevel, CriterionName, CriterionScore, EvidenceSignal, WritingPrompt } from '@/lib/domain';
 
 import { clampBand } from './metrics';
 
@@ -15,8 +15,26 @@ const strengthToWeight = {
   weak: 0,
 } as const;
 
+const rangePaddingByConfidence: Record<ConfidenceLevel, number> = {
+  high: 0.5,
+  medium: 1,
+  low: 1.5,
+};
+
+export function getCriterionEvidence(criterion: CriterionName, evidence: EvidenceSignal[]) {
+  return evidence.filter((item) => criterionMap[criterion].includes(item.id));
+}
+
+function deriveBandRange(band: number, confidence: ConfidenceLevel): BandRange {
+  const padding = rangePaddingByConfidence[confidence];
+  return {
+    lower: clampBand(band - padding),
+    upper: clampBand(band + padding),
+  };
+}
+
 function scoreCriterion(criterion: CriterionName, evidence: EvidenceSignal[], prompt: WritingPrompt): CriterionScore {
-  const relevant = evidence.filter((item) => criterionMap[criterion].includes(item.id));
+  const relevant = getCriterionEvidence(criterion, evidence);
   const weight = relevant.reduce((sum, item) => sum + strengthToWeight[item.strength], 0);
   const normalized = relevant.length ? weight / relevant.length : 0.5;
 
@@ -43,11 +61,24 @@ function scoreCriterion(criterion: CriterionName, evidence: EvidenceSignal[], pr
             ? 'The draft attempts a reasonable mix of clause patterns without obvious simplification.'
             : 'Sentence control is promising, but the current signals are not strong enough for a higher-confidence grammar estimate.';
 
-  return { criterion, band, rationale, confidence };
+  return {
+    criterion,
+    band,
+    bandRange: deriveBandRange(band, confidence),
+    rationale,
+    confidence,
+  };
 }
 
 export function predictCriterionScores(prompt: WritingPrompt, evidence: EvidenceSignal[]): CriterionScore[] {
   return (Object.keys(criterionMap) as CriterionName[]).map((criterion) => scoreCriterion(criterion, evidence, prompt));
+}
+
+export function deriveOverallBandRange(scores: CriterionScore[]): BandRange {
+  return {
+    lower: clampBand(scores.reduce((sum, score) => sum + score.bandRange.lower, 0) / scores.length),
+    upper: clampBand(scores.reduce((sum, score) => sum + score.bandRange.upper, 0) / scores.length),
+  };
 }
 
 export function deriveOverallConfidence(
@@ -56,11 +87,13 @@ export function deriveOverallConfidence(
 ): { confidence: ConfidenceLevel; reasons: string[] } {
   const lowConfidenceScores = scores.filter((score) => score.confidence === 'low').length;
   const weakSignals = evidence.filter((item) => item.strength === 'weak').length;
+  const overallBandRange = deriveOverallBandRange(scores);
 
   const reasons = [
     'This is a practice estimate, not an official IELTS score.',
+    `The current scoring range is Band ${overallBandRange.lower.toFixed(1)}-${overallBandRange.upper.toFixed(1)} based on the signals in this draft.`,
     ...(weakSignals > 0 ? [`${weakSignals} evidence signal(s) remain weak, so the score range could move after revision.`] : []),
-    ...(lowConfidenceScores > 0 ? ['At least one criterion relies on incomplete evidence, so confidence is reduced.'] : []),
+    ...(lowConfidenceScores > 0 ? ['At least one criterion relies on incomplete evidence, so the reported range is intentionally wider.'] : []),
   ];
 
   const confidence: ConfidenceLevel = lowConfidenceScores > 0 || weakSignals >= 3 ? 'low' : weakSignals >= 1 ? 'medium' : 'high';
