@@ -136,6 +136,53 @@ describe('WritingPracticeShell', () => {
     });
   });
 
+  it('hydrates the requested prompt and saved attempt for dashboard resume links', () => {
+    const resumeReport = {
+      ...sampleAssessmentReportsByPromptId[sampleTask1Prompt.id],
+      summary: 'Resume target report summary',
+      promptId: sampleTask1Prompt.id,
+      taskType: sampleTask1Prompt.taskType,
+    };
+
+    render(createElement(WritingPracticeShell, {
+      fallbackReports: sampleAssessmentReportsByPromptId,
+      initialAttemptId: 'attempt-task-1',
+      initialHistory: [
+        {
+          submissionId: 'attempt-task-1',
+          promptId: sampleTask1Prompt.id,
+          taskType: sampleTask1Prompt.taskType,
+          overallBand: 6.5,
+          overallBandRange: { lower: 6, upper: 6.5 },
+          confidence: 'medium',
+          estimatedWordCount: 181,
+          summary: 'Resume target report summary',
+          createdAt: '2026-03-26T15:00:00.000Z',
+        },
+      ],
+      initialPromptId: sampleTask1Prompt.id,
+      initialReport: resumeReport,
+      initialSavedAssessments: [
+        {
+          submissionId: 'attempt-task-1',
+          promptId: sampleTask1Prompt.id,
+          taskType: sampleTask1Prompt.taskType,
+          createdAt: '2026-03-26T15:00:00.000Z',
+          timeSpentMinutes: 19,
+          wordCount: 181,
+          report: resumeReport,
+        },
+      ],
+      prompt: samplePrompt,
+      prompts: writingPromptBank,
+    }));
+
+    expect(screen.getAllByText(sampleTask1Prompt.title).length).toBeGreaterThan(0);
+    expect(screen.getByText(/resume target report summary/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 for this prompt/i)).toBeInTheDocument();
+    expect(screen.getByText(/viewing report/i)).toBeInTheDocument();
+  });
+
   it('switches to Task 1 and renders the structured visual brief', () => {
     render(createElement(WritingPracticeShell, {
       fallbackReports: sampleAssessmentReportsByPromptId,

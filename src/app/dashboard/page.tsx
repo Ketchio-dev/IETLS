@@ -19,5 +19,13 @@ export default async function DashboardPage() {
   const progress = buildProgressSummary(recentAttempts);
   const studyPlan = await getDashboardStudyPlan(prompts, savedAssessments);
 
-  return <WritingDashboard progress={progress} studyPlan={studyPlan} summary={summary} />;
+  return (
+    <WritingDashboard
+      progress={progress}
+      prompts={prompts}
+      recentSavedAttempts={savedAssessments.slice(0, 6)}
+      studyPlan={studyPlan}
+      summary={summary}
+    />
+  );
 }
