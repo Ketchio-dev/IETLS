@@ -77,6 +77,7 @@ Current review notes for the implemented slices live under `docs/review/`, inclu
 - `docs/review/writing-dashboard-recent-attempts-review.md`
 - `docs/review/writing-dashboard-criterion-trends-review.md`
 - `docs/review/writing-application-service-boundary-review.md`
+- `docs/review/assessment-module-registry-review.md`
 - `docs/review/verification-lane.md`
 
-These notes capture the task-aware prompt/scoring/history contracts, the persisted dashboard/resume flow, the route/page application-service boundary, the implemented criterion-trend/compare dashboard slice, the stronger study-plan presentation guardrails, verification expectations, and the guardrails for keeping Gemini 3 Flash as the default live scorer without adding dependencies.
+These notes capture the task-aware prompt/scoring/history contracts, the persisted dashboard/resume flow, the route/page application-service boundary, the next shared assessment-module registry/workspace boundary, the implemented criterion-trend/compare dashboard slice, the stronger study-plan presentation guardrails, verification expectations, and the guardrails for keeping Gemini 3 Flash as the default live scorer without adding dependencies.
