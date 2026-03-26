@@ -23,6 +23,12 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   turbopack: {
     root: findTurbopackRoot(path.resolve(__dirname)),
+    ignoreIssue: [
+      {
+        path: /next\.config\.ts$/,
+        title: /^Encountered unexpected file in NFT list$/,
+      },
+    ],
   },
 };
 

@@ -14,11 +14,11 @@ import type {
 import { buildStudyPlan } from '@/lib/services/writing/dashboard';
 import { clampBand } from '@/lib/services/writing/metrics';
 
-import { readJsonFile, writeJsonFile } from './storage';
+import { readJsonFile, type StorageFile, writeJsonFile } from './storage';
 
-const PROMPTS_FILE = 'writing-prompts.json';
-const ASSESSMENTS_FILE = 'writing-assessments.json';
-const STUDY_PLAN_FILE = 'writing-study-plan.json';
+const PROMPTS_FILE: StorageFile = 'prompts';
+const ASSESSMENTS_FILE: StorageFile = 'assessments';
+const STUDY_PLAN_FILE: StorageFile = 'studyPlan';
 const STUDY_PLAN_VERSION = 2;
 
 function ensureBandRange(range: BandRange | undefined, overallBand: number): BandRange {
