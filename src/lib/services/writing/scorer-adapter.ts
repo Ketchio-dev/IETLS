@@ -1,4 +1,11 @@
-import type { CriterionName, EvidenceSignal, StructuredRubricScorecard, WritingPrompt } from '@/lib/domain';
+import type {
+  ConfidenceLevel,
+  CriterionName,
+  CriterionScore,
+  EvidenceSignal,
+  StructuredRubricScorecard,
+  WritingPrompt,
+} from '@/lib/domain';
 
 import { clampBand } from './metrics';
 import { deriveOverallBandRange, deriveOverallConfidence, getCriterionEvidence, predictCriterionScores } from './scoring-model';
@@ -6,17 +13,52 @@ import { deriveOverallBandRange, deriveOverallConfidence, getCriterionEvidence, 
 export const WRITING_RUBRIC_SCHEMA_VERSION = 'writing-rubric-scorecard/v1';
 const RUBRIC_VERSION = 'ielts-academic-writing-task-2/v1';
 const CALIBRATION_VERSION = 'seed-v1';
+const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+const DEFAULT_OPENROUTER_MODEL = 'google/gemini-2.5-flash';
+const OPENROUTER_TIMEOUT_MS = 15_000;
+const WRITING_CRITERIA: CriterionName[] = [
+  'Task Response',
+  'Coherence & Cohesion',
+  'Lexical Resource',
+  'Grammatical Range & Accuracy',
+];
 
-export const writingRubricOutputSchema = {
-  $schema: 'https://json-schema.org/draft/2020-12/schema',
-  title: 'WritingRubricScorecard',
+const criterionScoreSchema = {
   type: 'object',
-  required: ['schemaVersion', 'criterionScores', 'overallBand', 'overallBandRange', 'confidence', 'confidenceReasons', 'evaluationTrace'],
+  additionalProperties: false,
+  required: ['criterion', 'band', 'bandRange', 'rationale', 'confidence'],
+  properties: {
+    criterion: {
+      type: 'string',
+      enum: WRITING_CRITERIA,
+    },
+    band: { type: 'number' },
+    bandRange: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['lower', 'upper'],
+      properties: {
+        lower: { type: 'number' },
+        upper: { type: 'number' },
+      },
+    },
+    rationale: { type: 'string' },
+    confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
+  },
+} as const;
+
+const providerRubricResponseSchema = {
+  $schema: 'https://json-schema.org/draft/2020-12/schema',
+  title: 'WritingRubricScorecardPayload',
+  type: 'object',
+  additionalProperties: false,
+  required: ['schemaVersion', 'criterionScores', 'overallBand', 'overallBandRange', 'confidence', 'confidenceReasons'],
   properties: {
     schemaVersion: { type: 'string', const: WRITING_RUBRIC_SCHEMA_VERSION },
     overallBand: { type: 'number' },
     overallBandRange: {
       type: 'object',
+      additionalProperties: false,
       required: ['lower', 'upper'],
       properties: {
         lower: { type: 'number' },
@@ -25,13 +67,24 @@ export const writingRubricOutputSchema = {
     },
     criterionScores: {
       type: 'array',
-      items: {
-        type: 'object',
-        required: ['criterion', 'band', 'bandRange', 'rationale', 'confidence'],
-      },
+      items: criterionScoreSchema,
     },
     confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
-    confidenceReasons: { type: 'array', items: { type: 'string' } },
+    confidenceReasons: {
+      type: 'array',
+      items: { type: 'string' },
+    },
+  },
+} as const;
+
+export const writingRubricOutputSchema = {
+  $schema: 'https://json-schema.org/draft/2020-12/schema',
+  title: 'WritingRubricScorecard',
+  type: 'object',
+  additionalProperties: false,
+  required: ['schemaVersion', 'criterionScores', 'overallBand', 'overallBandRange', 'confidence', 'confidenceReasons', 'evaluationTrace'],
+  properties: {
+    ...providerRubricResponseSchema.properties,
     evaluationTrace: {
       type: 'object',
       required: ['schemaVersion', 'scorerProvider', 'scorerModel', 'usedMockFallback', 'rubricVersion', 'calibrationVersion', 'evidenceSignalCount', 'criterionTrace'],
@@ -39,7 +92,30 @@ export const writingRubricOutputSchema = {
   },
 } as const;
 
-export interface WritingScorerAdapterInput {
+interface ProviderRubricResponse {
+  schemaVersion: string;
+  criterionScores: CriterionScore[];
+  overallBand: number;
+  overallBandRange: StructuredRubricScorecard['overallBandRange'];
+  confidence: ConfidenceLevel;
+  confidenceReasons: string[];
+}
+
+interface OpenRouterConfig {
+  apiKey: string | null;
+  baseUrl: string;
+  model: string;
+  referer: string | null;
+  title: string | null;
+  timeoutMs: number;
+}
+
+interface MockScorecardOptions {
+  configuredProvider: string | null;
+  fallbackReason?: string;
+}
+
+interface WritingScorerAdapterInput {
   prompt: WritingPrompt;
   evidence: EvidenceSignal[];
 }
@@ -48,7 +124,7 @@ export interface WritingScorerAdapter {
   provider: string;
   model: string;
   schemaVersion: string;
-  score(input: WritingScorerAdapterInput): StructuredRubricScorecard;
+  score(input: WritingScorerAdapterInput): Promise<StructuredRubricScorecard>;
 }
 
 function buildEvidenceFingerprint(evidence: EvidenceSignal[]) {
@@ -69,14 +145,14 @@ function buildCriterionTrace(criterion: CriterionName, evidence: EvidenceSignal[
   };
 }
 
-function createMockScorecard(prompt: WritingPrompt, evidence: EvidenceSignal[], configuredProvider: string | null) {
+function createMockScorecard(prompt: WritingPrompt, evidence: EvidenceSignal[], options: MockScorecardOptions) {
   const criterionScores = predictCriterionScores(prompt, evidence);
   const overallBand = clampBand(
     criterionScores.reduce((sum, item) => sum + item.band, 0) / criterionScores.length,
   );
   const overallBandRange = deriveOverallBandRange(criterionScores);
   const { confidence, reasons } = deriveOverallConfidence(criterionScores, evidence);
-  const usedMockFallback = configuredProvider !== 'mock';
+  const usedMockFallback = options.configuredProvider !== 'mock' || Boolean(options.fallbackReason);
 
   return {
     schemaVersion: WRITING_RUBRIC_SCHEMA_VERSION,
@@ -89,40 +165,365 @@ function createMockScorecard(prompt: WritingPrompt, evidence: EvidenceSignal[], 
       schemaVersion: WRITING_RUBRIC_SCHEMA_VERSION,
       scorerProvider: 'mock-rule-based',
       scorerModel: 'heuristic-v1',
-      configuredProvider,
+      configuredProvider: options.configuredProvider,
       usedMockFallback,
       rubricVersion: RUBRIC_VERSION,
       calibrationVersion: CALIBRATION_VERSION,
       evidenceSignalCount: evidence.length,
       evidenceFingerprint: buildEvidenceFingerprint(evidence),
       scoredAt: new Date().toISOString(),
-      notes:
-        configuredProvider === 'mock'
-          ? ['Using the built-in mock scorer adapter.']
-          : [
-              configuredProvider
-                ? `Configured scorer "${configuredProvider}" is not wired yet, so the mock scorer was used.`
-                : 'No external scorer is configured yet, so the mock scorer provided the structured rubric output.',
-            ],
+      notes: buildMockNotes(options),
       criterionTrace: criterionScores.map((score) => buildCriterionTrace(score.criterion, evidence)),
     },
   } satisfies StructuredRubricScorecard;
+}
+
+function buildMockNotes(options: MockScorecardOptions) {
+  if (options.fallbackReason) {
+    return [options.fallbackReason];
+  }
+
+  if (options.configuredProvider === 'mock') {
+    return ['Using the built-in mock scorer adapter.'];
+  }
+
+  return [
+    options.configuredProvider
+      ? `Configured scorer "${options.configuredProvider}" is unavailable, so the mock scorer was used.`
+      : 'No external scorer is configured yet, so the mock scorer provided the structured rubric output.',
+  ];
+}
+
+function getConfiguredProvider() {
+  const configuredProvider = process.env.IELTS_SCORER_PROVIDER?.trim().toLowerCase();
+  return configuredProvider || null;
+}
+
+function getOpenRouterConfig(): OpenRouterConfig {
+  const timeoutMs = Number.parseInt(process.env.OPENROUTER_TIMEOUT_MS ?? '', 10);
+
+  return {
+    apiKey: process.env.OPENROUTER_API_KEY?.trim() || null,
+    baseUrl: process.env.OPENROUTER_BASE_URL?.trim() || OPENROUTER_BASE_URL,
+    model: process.env.IELTS_SCORER_MODEL?.trim() || DEFAULT_OPENROUTER_MODEL,
+    referer: process.env.OPENROUTER_HTTP_REFERER?.trim() || null,
+    title: process.env.OPENROUTER_APP_TITLE?.trim() || null,
+    timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : OPENROUTER_TIMEOUT_MS,
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isBandValue(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 9 && Number.isInteger(value * 2);
+}
+
+function isConfidenceLevel(value: unknown): value is ConfidenceLevel {
+  return value === 'high' || value === 'medium' || value === 'low';
+}
+
+function isCriterionName(value: unknown): value is CriterionName {
+  return typeof value === 'string' && WRITING_CRITERIA.includes(value as CriterionName);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string' && item.trim().length > 0);
+}
+
+function isBandRange(value: unknown): value is StructuredRubricScorecard['overallBandRange'] {
+  return (
+    isRecord(value)
+    && isBandValue(value.lower)
+    && isBandValue(value.upper)
+    && value.lower <= value.upper
+  );
+}
+
+function normalizeCriterionScores(value: unknown): CriterionScore[] | null {
+  if (!Array.isArray(value) || value.length !== WRITING_CRITERIA.length) {
+    return null;
+  }
+
+  const byCriterion = new Map<CriterionName, CriterionScore>();
+
+  for (const item of value) {
+    if (!isRecord(item)) {
+      return null;
+    }
+
+    if (
+      !isCriterionName(item.criterion)
+      || !isBandValue(item.band)
+      || !isBandRange(item.bandRange)
+      || typeof item.rationale !== 'string'
+      || item.rationale.trim().length === 0
+      || !isConfidenceLevel(item.confidence)
+    ) {
+      return null;
+    }
+
+    if (byCriterion.has(item.criterion)) {
+      return null;
+    }
+
+    byCriterion.set(item.criterion, {
+      criterion: item.criterion,
+      band: item.band,
+      bandRange: item.bandRange,
+      rationale: item.rationale.trim(),
+      confidence: item.confidence,
+    });
+  }
+
+  if (byCriterion.size !== WRITING_CRITERIA.length) {
+    return null;
+  }
+
+  return WRITING_CRITERIA.map((criterion) => byCriterion.get(criterion) ?? null).filter(Boolean) as CriterionScore[];
+}
+
+function normalizeProviderRubricResponse(value: unknown): ProviderRubricResponse | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  if (
+    value.schemaVersion !== WRITING_RUBRIC_SCHEMA_VERSION
+    || !isBandValue(value.overallBand)
+    || !isBandRange(value.overallBandRange)
+    || !isConfidenceLevel(value.confidence)
+    || !isStringArray(value.confidenceReasons)
+  ) {
+    return null;
+  }
+
+  const criterionScores = normalizeCriterionScores(value.criterionScores);
+
+  if (!criterionScores) {
+    return null;
+  }
+
+  return {
+    schemaVersion: value.schemaVersion,
+    criterionScores,
+    overallBand: value.overallBand,
+    overallBandRange: value.overallBandRange,
+    confidence: value.confidence,
+    confidenceReasons: value.confidenceReasons,
+  };
+}
+
+function extractJsonPayload(rawContent: string) {
+  const trimmed = rawContent.trim();
+
+  if (trimmed.startsWith('```')) {
+    return trimmed.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+  }
+
+  return trimmed;
+}
+
+function getAssistantMessageContent(value: unknown): string | null {
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value;
+  }
+
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  const text = value
+    .map((item) => {
+      if (!isRecord(item)) {
+        return '';
+      }
+
+      if (item.type === 'text' && typeof item.text === 'string') {
+        return item.text;
+      }
+
+      return '';
+    })
+    .join('')
+    .trim();
+
+  return text || null;
+}
+
+function buildOpenRouterScoringPrompt(prompt: WritingPrompt, evidence: EvidenceSignal[]) {
+  return [
+    'Score this IELTS Academic Writing Task 2 response and return only JSON that matches the provided schema.',
+    'Use only these exact criteria names: Task Response, Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy.',
+    'Use IELTS whole or half bands from 0 to 9.',
+    `Prompt title: ${prompt.title}`,
+    `Prompt: ${prompt.prompt}`,
+    `Rubric focus: ${prompt.rubricFocus.join('; ')}`,
+    'Evidence signals:',
+    JSON.stringify(evidence, null, 2),
+  ].join('\n\n');
+}
+
+async function requestOpenRouterScore(input: WritingScorerAdapterInput, config: OpenRouterConfig) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
+
+  try {
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${config.apiKey}`,
+      'Content-Type': 'application/json',
+    };
+
+    if (config.referer) {
+      headers['HTTP-Referer'] = config.referer;
+    }
+
+    if (config.title) {
+      headers['X-Title'] = config.title;
+    }
+
+    const response = await fetch(`${config.baseUrl.replace(/\/$/, '')}/chat/completions`, {
+      method: 'POST',
+      headers,
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: config.model,
+        temperature: 0.2,
+        max_tokens: 1_200,
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'writing_rubric_scorecard_payload',
+            strict: true,
+            schema: providerRubricResponseSchema,
+          },
+        },
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are an IELTS Academic Writing Task 2 scorer. Return strict JSON only. Do not include markdown or prose outside the JSON object.',
+          },
+          {
+            role: 'user',
+            content: buildOpenRouterScoringPrompt(input.prompt, input.evidence),
+          },
+        ],
+      }),
+    });
+
+    const body = (await response.json()) as Record<string, unknown>;
+
+    if (!response.ok) {
+      const message = isRecord(body.error) && typeof body.error.message === 'string'
+        ? body.error.message
+        : `HTTP ${response.status}`;
+      throw new Error(`OpenRouter request failed: ${message}`);
+    }
+
+    const choice = Array.isArray(body.choices) ? body.choices[0] : null;
+    const message = isRecord(choice) && isRecord(choice.message) ? choice.message : null;
+    const content = getAssistantMessageContent(message?.content);
+
+    if (!content) {
+      throw new Error('OpenRouter response did not include a JSON message payload.');
+    }
+
+    const parsed = JSON.parse(extractJsonPayload(content)) as unknown;
+    const payload = normalizeProviderRubricResponse(parsed);
+
+    if (!payload) {
+      throw new Error('OpenRouter output did not match the writing rubric scorecard contract.');
+    }
+
+    const responseModel = typeof body.model === 'string' && body.model.trim().length > 0 ? body.model : config.model;
+    const totalTokens = isRecord(body.usage) && typeof body.usage.total_tokens === 'number' ? body.usage.total_tokens : null;
+    const responseId = typeof body.id === 'string' && body.id.trim().length > 0 ? body.id : null;
+
+    return {
+      ...payload,
+      evaluationTrace: {
+        schemaVersion: WRITING_RUBRIC_SCHEMA_VERSION,
+        scorerProvider: 'openrouter',
+        scorerModel: responseModel,
+        configuredProvider: 'openrouter',
+        usedMockFallback: false,
+        rubricVersion: RUBRIC_VERSION,
+        calibrationVersion: CALIBRATION_VERSION,
+        evidenceSignalCount: input.evidence.length,
+        evidenceFingerprint: buildEvidenceFingerprint(input.evidence),
+        scoredAt: new Date().toISOString(),
+        notes: [
+          'OpenRouter returned a structured rubric scorecard.',
+          ...(responseId ? [`OpenRouter response id: ${responseId}.`] : []),
+          ...(totalTokens !== null ? [`OpenRouter total tokens: ${totalTokens}.`] : []),
+        ],
+        criterionTrace: payload.criterionScores.map((score) => buildCriterionTrace(score.criterion, input.evidence)),
+      },
+    } satisfies StructuredRubricScorecard;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 const mockScorerAdapter: WritingScorerAdapter = {
   provider: 'mock-rule-based',
   model: 'heuristic-v1',
   schemaVersion: WRITING_RUBRIC_SCHEMA_VERSION,
-  score({ prompt, evidence }) {
-    const configuredProvider = process.env.IELTS_SCORER_PROVIDER?.trim() || null;
-    return createMockScorecard(prompt, evidence, configuredProvider);
+  async score({ prompt, evidence }) {
+    return createMockScorecard(prompt, evidence, {
+      configuredProvider: getConfiguredProvider(),
+    });
   },
 };
 
+const openRouterScorerAdapter: WritingScorerAdapter = {
+  provider: 'openrouter',
+  model: DEFAULT_OPENROUTER_MODEL,
+  schemaVersion: WRITING_RUBRIC_SCHEMA_VERSION,
+  async score(input) {
+    const configuredProvider = getConfiguredProvider();
+    const config = getOpenRouterConfig();
+
+    if (!config.apiKey) {
+      return createMockScorecard(input.prompt, input.evidence, {
+        configuredProvider,
+        fallbackReason: 'OpenRouter fallback: OPENROUTER_API_KEY is missing, so the mock scorer was used.',
+      });
+    }
+
+    try {
+      return await requestOpenRouterScore(input, config);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown OpenRouter failure.';
+
+      return createMockScorecard(input.prompt, input.evidence, {
+        configuredProvider,
+        fallbackReason: `OpenRouter fallback: ${message}`,
+      });
+    }
+  },
+};
+
+export function scoreWritingWithMockAdapter(
+  prompt: WritingPrompt,
+  evidence: EvidenceSignal[],
+  options: MockScorecardOptions = { configuredProvider: 'mock' },
+) {
+  return createMockScorecard(prompt, evidence, options);
+}
+
 export function resolveWritingScorerAdapter(): WritingScorerAdapter {
+  const configuredProvider = getConfiguredProvider();
+
+  if (configuredProvider === 'openrouter') {
+    return openRouterScorerAdapter;
+  }
+
   return mockScorerAdapter;
 }
 
-export function scoreWritingWithAdapter(prompt: WritingPrompt, evidence: EvidenceSignal[]) {
+export async function scoreWritingWithAdapter(prompt: WritingPrompt, evidence: EvidenceSignal[]) {
   return resolveWritingScorerAdapter().score({ prompt, evidence });
 }
