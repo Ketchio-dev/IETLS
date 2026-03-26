@@ -2,33 +2,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/react';
 
 import type { ProgressSummary, StudyPlanSnapshot, WritingDashboardSummary } from '@/lib/domain';
-import { sampleAssessmentReport, samplePrompt, writingPromptBank } from '@/lib/fixtures/writing';
+import { sampleAssessmentReport, writingPromptBank } from '@/lib/fixtures/writing';
+import type { WritingDashboardPageData } from '@/lib/services/writing/application-service';
 
 const mocks = vi.hoisted(() => ({
-  seedPrompts: vi.fn(),
-  listPrompts: vi.fn(),
-  listRecentAttempts: vi.fn(),
-  listSavedAssessments: vi.fn(),
-  getDashboardStudyPlan: vi.fn(),
-  buildDashboardSummary: vi.fn(),
-  buildProgressSummary: vi.fn(),
+  loadWritingDashboardPageData: vi.fn(),
   dashboardSpy: vi.fn(),
 }));
 
-vi.mock('@/lib/server/writing-assessment-repository', () => ({
-  seedPrompts: mocks.seedPrompts,
-  listPrompts: mocks.listPrompts,
-  listRecentAttempts: mocks.listRecentAttempts,
-  listSavedAssessments: mocks.listSavedAssessments,
-  getDashboardStudyPlan: mocks.getDashboardStudyPlan,
-}));
-
-vi.mock('@/lib/services/writing/dashboard', () => ({
-  buildDashboardSummary: mocks.buildDashboardSummary,
-}));
-
-vi.mock('@/lib/services/writing/progress-summary', () => ({
-  buildProgressSummary: mocks.buildProgressSummary,
+vi.mock('@/lib/services/writing/application-service', () => ({
+  loadWritingDashboardPageData: mocks.loadWritingDashboardPageData,
 }));
 
 vi.mock('@/components/writing/writing-dashboard', () => ({
@@ -45,19 +28,8 @@ afterEach(() => {
 });
 
 describe('DashboardPage', () => {
-  it('keeps the dashboard route thin by wiring the persisted loaders into the summary builders', async () => {
+  it('keeps the dashboard route thin by delegating to the application boundary', async () => {
     const prompts = writingPromptBank;
-    const recentAttempts = Array.from({ length: 3 }, (_, index) => ({
-      submissionId: `recent-${index + 1}`,
-      promptId: writingPromptBank[index + 2]?.id ?? samplePrompt.id,
-      taskType: 'task-2' as const,
-      overallBand: 6.5 + index * 0.5,
-      overallBandRange: { lower: 6 + index * 0.5, upper: 6.5 + index * 0.5 },
-      confidence: 'medium' as const,
-      estimatedWordCount: 260 + index * 10,
-      summary: `Recent summary ${index + 1}`,
-      createdAt: `2026-03-2${index}T15:00:00.000Z`,
-    }));
     const savedAssessments = Array.from({ length: 8 }, (_, index) => ({
       submissionId: `saved-${index + 1}`,
       promptId: writingPromptBank[index % writingPromptBank.length]!.id,
@@ -108,32 +80,19 @@ describe('DashboardPage', () => {
       steps: [],
       carryForward: [],
     };
+    const pageData: WritingDashboardPageData = {
+      prompts,
+      recentSavedAttempts: savedAssessments.slice(0, 6),
+      summary,
+      progress,
+      studyPlan,
+    };
 
-    mocks.seedPrompts.mockResolvedValue(prompts);
-    mocks.listPrompts.mockResolvedValue(prompts);
-    mocks.listRecentAttempts.mockResolvedValue(recentAttempts);
-    mocks.listSavedAssessments.mockResolvedValue(savedAssessments);
-    mocks.getDashboardStudyPlan.mockResolvedValue(studyPlan);
-    mocks.buildDashboardSummary.mockReturnValue(summary);
-    mocks.buildProgressSummary.mockReturnValue(progress);
+    mocks.loadWritingDashboardPageData.mockResolvedValue(pageData);
 
     render(await DashboardPage());
 
-    expect(mocks.seedPrompts).toHaveBeenCalledWith(writingPromptBank);
-    expect(mocks.listPrompts).toHaveBeenCalledWith();
-    expect(mocks.listRecentAttempts).toHaveBeenCalledWith(12);
-    expect(mocks.listSavedAssessments).toHaveBeenCalledWith(50);
-    expect(mocks.buildDashboardSummary).toHaveBeenCalledWith(savedAssessments);
-    expect(mocks.buildProgressSummary).toHaveBeenCalledWith(recentAttempts);
-    expect(mocks.getDashboardStudyPlan).toHaveBeenCalledWith(prompts, savedAssessments);
-    expect(mocks.dashboardSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        progress,
-        prompts,
-        recentSavedAttempts: savedAssessments.slice(0, 6),
-        studyPlan,
-        summary,
-      }),
-    );
+    expect(mocks.loadWritingDashboardPageData).toHaveBeenCalledWith();
+    expect(mocks.dashboardSpy).toHaveBeenCalledWith(pageData);
   });
 });

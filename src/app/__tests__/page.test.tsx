@@ -2,20 +2,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/react';
 
 import { sampleAssessmentReport, samplePrompt, sampleTask1Prompt, writingPromptBank } from '@/lib/fixtures/writing';
+import type { WritingPracticePageData } from '@/lib/services/writing/application-service';
 
 const mocks = vi.hoisted(() => ({
-  seedPrompts: vi.fn(),
-  listPrompts: vi.fn(),
-  listRecentAttempts: vi.fn(),
-  listSavedAssessments: vi.fn(),
+  loadWritingPracticePageData: vi.fn(),
   shellSpy: vi.fn(),
 }));
 
-vi.mock('@/lib/server/writing-assessment-repository', () => ({
-  seedPrompts: mocks.seedPrompts,
-  listPrompts: mocks.listPrompts,
-  listRecentAttempts: mocks.listRecentAttempts,
-  listSavedAssessments: mocks.listSavedAssessments,
+vi.mock('@/lib/services/writing/application-service', () => ({
+  loadWritingPracticePageData: mocks.loadWritingPracticePageData,
 }));
 
 vi.mock('@/components/writing/writing-practice-shell', () => ({
@@ -62,11 +57,18 @@ describe('HomePage', () => {
         },
       },
     ];
+    const pageData: WritingPracticePageData = {
+      prompts: writingPromptBank,
+      prompt: samplePrompt,
+      initialHistory: recentAttempts,
+      initialSavedAssessments: savedAssessments,
+      initialAttemptId: 'attempt-task-1',
+      initialPromptId: sampleTask1Prompt.id,
+      initialReport: savedAssessments[0]!.report,
+      fallbackReports: {},
+    };
 
-    mocks.seedPrompts.mockResolvedValue(writingPromptBank);
-    mocks.listPrompts.mockResolvedValue(writingPromptBank);
-    mocks.listRecentAttempts.mockResolvedValue(recentAttempts);
-    mocks.listSavedAssessments.mockResolvedValue(savedAssessments);
+    mocks.loadWritingPracticePageData.mockResolvedValue(pageData);
 
     render(await HomePage({
       searchParams: Promise.resolve({
@@ -75,29 +77,26 @@ describe('HomePage', () => {
       }),
     }));
 
-    expect(mocks.seedPrompts).toHaveBeenCalledWith(writingPromptBank);
-    expect(mocks.listPrompts).toHaveBeenCalledWith();
-    expect(mocks.listRecentAttempts).toHaveBeenCalledWith(50);
-    expect(mocks.listSavedAssessments).toHaveBeenCalledWith(50);
+    expect(mocks.loadWritingPracticePageData).toHaveBeenCalledWith({
+      promptId: 'missing-prompt-id',
+      attemptId: 'attempt-task-1',
+    });
     expect(mocks.shellSpy).toHaveBeenCalledTimes(1);
-    expect(mocks.shellSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        initialHistory: recentAttempts,
-        initialAttemptId: 'attempt-task-1',
-        initialPromptId: sampleTask1Prompt.id,
-        initialReport: savedAssessments[0]?.report,
-        initialSavedAssessments: savedAssessments,
-        prompt: samplePrompt,
-        prompts: writingPromptBank,
-      }),
-    );
+    expect(mocks.shellSpy).toHaveBeenCalledWith(pageData);
   });
 
-  it('prefers an explicitly requested prompt when it exists in the seeded prompt bank', async () => {
-    mocks.seedPrompts.mockResolvedValue(writingPromptBank);
-    mocks.listPrompts.mockResolvedValue(writingPromptBank);
-    mocks.listRecentAttempts.mockResolvedValue([]);
-    mocks.listSavedAssessments.mockResolvedValue([]);
+  it('passes through an explicitly requested prompt when it exists', async () => {
+    const pageData: WritingPracticePageData = {
+      prompts: writingPromptBank,
+      prompt: samplePrompt,
+      initialHistory: [],
+      initialSavedAssessments: [],
+      initialAttemptId: undefined,
+      initialPromptId: sampleTask1Prompt.id,
+      initialReport: sampleAssessmentReport,
+      fallbackReports: {},
+    };
+    mocks.loadWritingPracticePageData.mockResolvedValue(pageData);
 
     render(await HomePage({
       searchParams: {
@@ -105,13 +104,10 @@ describe('HomePage', () => {
       },
     }));
 
-    expect(mocks.shellSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        initialAttemptId: undefined,
-        initialPromptId: sampleTask1Prompt.id,
-        initialReport: sampleAssessmentReport,
-        initialSavedAssessments: [],
-      }),
-    );
+    expect(mocks.loadWritingPracticePageData).toHaveBeenCalledWith({
+      promptId: sampleTask1Prompt.id,
+      attemptId: undefined,
+    });
+    expect(mocks.shellSpy).toHaveBeenCalledWith(pageData);
   });
 });

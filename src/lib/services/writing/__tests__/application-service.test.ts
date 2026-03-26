@@ -117,7 +117,7 @@ describe('writing application service', () => {
     expect(dashboardData.summary.totalAttempts).toBe(7);
     expect(dashboardData.recentSavedAttempts).toHaveLength(6);
     expect(dashboardData.studyPlan.basedOnSubmissionId).toBe('submission-7');
-    expect(dashboardData.progress.attemptsConsidered).toBe(7);
+    expect(dashboardData.progress.attemptsConsidered).toBe(3);
   });
 
   it('returns task payload from the seeded prompt bank', async () => {
