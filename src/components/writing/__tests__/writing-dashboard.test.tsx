@@ -37,6 +37,7 @@ const summary: WritingDashboardSummary = {
       delta: 0.5,
       trend: 'improving',
       attemptsConsidered: 4,
+      recentBands: [6.2, 6.4, 6.5, 7],
       taskTypes: ['task-1', 'task-2'],
     },
     {
@@ -47,6 +48,7 @@ const summary: WritingDashboardSummary = {
       delta: 0.5,
       trend: 'improving',
       attemptsConsidered: 3,
+      recentBands: [5.2, 5.5, 6],
       taskTypes: ['task-2'],
     },
   ],
@@ -58,6 +60,7 @@ const summary: WritingDashboardSummary = {
     delta: 0.5,
     trend: 'improving',
     attemptsConsidered: 4,
+    recentBands: [6.2, 6.4, 6.5, 7],
     taskTypes: ['task-1', 'task-2'],
   },
   weakestCriterion: {
@@ -68,6 +71,7 @@ const summary: WritingDashboardSummary = {
     delta: 0.5,
     trend: 'improving',
     attemptsConsidered: 3,
+    recentBands: [5.2, 5.5, 6],
     taskTypes: ['task-2'],
   },
 };
@@ -83,25 +87,49 @@ const progress: ProgressSummary = {
 };
 
 const studyPlan: StudyPlanSnapshot = {
+  version: 2,
   generatedAt: '2026-03-26T17:05:00.000Z',
   basedOnSubmissionId: 'attempt-4',
   attemptsConsidered: 4,
   headline: 'Prioritise Task Response next',
   focus: 'Use the latest report to make your argument structure more explicit.',
+  horizonLabel: 'Next 3 practice blocks',
+  recommendedSessionLabel: '38 min from latest attempt',
   steps: [
     {
       id: 'repair-task-response',
       title: 'Repair the weakest criterion first',
       detail: 'Rewrite one body paragraph so the topic sentence matches the thesis exactly.',
+      actions: [
+        'Rewrite one body paragraph so the topic sentence matches the thesis exactly.',
+        'Check that each example supports the position stated in the introduction.',
+      ],
+      criterion: 'Task Response',
       taskType: 'task-2',
+      targetRange: { lower: 6.5, upper: 7 },
+      promptId: writingPromptBank[3]!.id,
+      submissionId: 'attempt-4',
+      actionLabel: 'Resume latest report',
+      sessionLabel: 'Session 1',
     },
     {
       id: 'balance-practice',
       title: 'Add one Task 1 benchmark',
       detail: 'Keep your task coverage balanced with one timed Task 1 response this week.',
+      actions: [
+        'Aim for 150+ words in 20 minutes.',
+        'Write the overview before the detail paragraphs.',
+      ],
+      criterion: 'Overall',
       taskType: 'task-1',
+      targetRange: null,
+      promptId: sampleTask1Prompt.id,
+      submissionId: null,
+      actionLabel: 'Open Task 1 prompt',
+      sessionLabel: 'Session 2',
     },
   ],
+  carryForward: ['Keep the introduction concise and explicit.'],
 };
 
 const prompts: WritingPrompt[] = writingPromptBank;
@@ -170,9 +198,18 @@ describe('WritingDashboard', () => {
     expect(screen.getAllByText(/improving/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/1 task 1 • 3 task 2/i)).toBeInTheDocument();
     expect(screen.getAllByText(/\+0\.5 band vs previous/i).length).toBeGreaterThan(0);
+    expect(screen.getByLabelText(/recent lexical resource bands: 6\.2, 6\.4, 6\.5, 7\.0/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /prioritise task response next/i })).toBeInTheDocument();
     expect(screen.getByText(/rewrite one body paragraph so the topic sentence matches the thesis exactly/i)).toBeInTheDocument();
-    expect(screen.getByText(/use the latest saved report first/i)).toBeInTheDocument();
+    expect(screen.getByText(/38 min from latest attempt/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /resume latest report/i })).toHaveAttribute(
+      'href',
+      `/?promptId=${writingPromptBank[3]!.id}&attemptId=attempt-4`,
+    );
+    expect(screen.getByRole('link', { name: /open task 1 prompt/i })).toHaveAttribute(
+      'href',
+      `/?promptId=${sampleTask1Prompt.id}`,
+    );
     expect(screen.getByRole('link', { name: /return to practice shell/i })).toHaveAttribute('href', '/');
 
     fireEvent.click(screen.getByRole('button', { name: /inspect here/i }));
