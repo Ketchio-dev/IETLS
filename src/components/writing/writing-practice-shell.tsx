@@ -22,6 +22,8 @@ interface Props {
   initialReport: AssessmentReport;
   initialHistory: RecentAttemptSummary[];
   initialSavedAssessments: SavedAssessmentSnapshot[];
+  initialPromptId?: string;
+  initialAttemptId?: string;
   fallbackReports: Record<string, AssessmentReport>;
 }
 
@@ -66,16 +68,19 @@ export function WritingPracticeShell({
   initialHistory,
   initialReport,
   initialSavedAssessments,
+  initialPromptId,
+  initialAttemptId,
   fallbackReports,
 }: Props) {
-  const [selectedTaskType, setSelectedTaskType] = useState<WritingTaskType>(prompt.taskType);
-  const [selectedPromptId, setSelectedPromptId] = useState(prompt.id);
-  const [response, setResponse] = useState(getSampleResponse(prompt.id));
-  const [secondsRemaining, setSecondsRemaining] = useState(prompt.recommendedMinutes * 60);
+  const initialPromptSelection = prompts.find((item) => item.id === initialPromptId) ?? prompt;
+  const [selectedTaskType, setSelectedTaskType] = useState<WritingTaskType>(initialPromptSelection.taskType);
+  const [selectedPromptId, setSelectedPromptId] = useState(initialPromptSelection.id);
+  const [response, setResponse] = useState(getSampleResponse(initialPromptSelection.id));
+  const [secondsRemaining, setSecondsRemaining] = useState(initialPromptSelection.recommendedMinutes * 60);
   const [report, setReport] = useState(initialReport);
   const [savedAssessments, setSavedAssessments] = useState(initialSavedAssessments);
   const [recentAttempts, setRecentAttempts] = useState(initialHistory);
-  const [activeAttemptId, setActiveAttemptId] = useState<string | null>(initialSavedAssessments[0]?.submissionId ?? null);
+  const [activeAttemptId, setActiveAttemptId] = useState<string | null>(initialAttemptId ?? initialSavedAssessments[0]?.submissionId ?? null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -110,10 +115,18 @@ export function WritingPracticeShell({
     setResponse(getSampleResponse(activePrompt.id));
     setError(null);
 
-    const latestForPrompt = promptSavedAssessments[0];
-    setActiveAttemptId(latestForPrompt?.submissionId ?? null);
-    setReport(latestForPrompt?.report ?? fallbackReports[activePrompt.id] ?? initialReport);
-  }, [activePrompt.id, activePrompt.recommendedMinutes, fallbackReports, initialReport, promptSavedAssessments]);
+    const selectedForPrompt =
+      promptSavedAssessments.find((attempt) => attempt.submissionId === activeAttemptId) ?? promptSavedAssessments[0];
+    setActiveAttemptId(selectedForPrompt?.submissionId ?? null);
+    setReport(selectedForPrompt?.report ?? fallbackReports[activePrompt.id] ?? initialReport);
+  }, [
+    activeAttemptId,
+    activePrompt.id,
+    activePrompt.recommendedMinutes,
+    fallbackReports,
+    initialReport,
+    promptSavedAssessments,
+  ]);
 
   const wordCount = useMemo(() => response.trim().split(/\s+/).filter(Boolean).length, [response]);
   const progressSummary = useMemo(() => buildProgressSummary(promptRecentAttempts), [promptRecentAttempts]);

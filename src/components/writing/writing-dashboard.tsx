@@ -1,9 +1,18 @@
 import Link from 'next/link';
 
-import type { ProgressSummary, StudyPlanSnapshot, WritingDashboardSummary } from '@/lib/domain';
+import type {
+  ProgressSummary,
+  SavedAssessmentSnapshot,
+  StudyPlanSnapshot,
+  WritingDashboardSummary,
+  WritingPrompt,
+} from '@/lib/domain';
 import { DashboardMetricGrid, StudyPlanPanel } from '@/components/dashboard';
+import { DashboardRecentAttemptsPanel } from '@/components/dashboard/dashboard-recent-attempts-panel';
 
 interface Props {
+  prompts: WritingPrompt[];
+  recentSavedAttempts: SavedAssessmentSnapshot[];
   summary: WritingDashboardSummary;
   progress: ProgressSummary;
   studyPlan: StudyPlanSnapshot;
@@ -82,7 +91,7 @@ function toDashboardStudyPlan(plan: StudyPlanSnapshot) {
   };
 }
 
-export function WritingDashboard({ summary, progress, studyPlan }: Props) {
+export function WritingDashboard({ prompts, recentSavedAttempts, summary, progress, studyPlan }: Props) {
   const dashboardMetrics = buildDashboardMetrics(summary, progress);
   const presentationPlan = toDashboardStudyPlan(studyPlan);
 
@@ -178,6 +187,8 @@ export function WritingDashboard({ summary, progress, studyPlan }: Props) {
         </div>
 
         <div className="workspace-column right-column">
+          <DashboardRecentAttemptsPanel attempts={recentSavedAttempts} prompts={prompts} />
+
           <section className="panel history-panel">
             <div className="section-heading">
               <div>

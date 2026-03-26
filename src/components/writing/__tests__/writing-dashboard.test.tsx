@@ -1,8 +1,15 @@
 import { createElement } from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import type { ProgressSummary, StudyPlanSnapshot, WritingDashboardSummary } from '@/lib/domain';
+import type {
+  ProgressSummary,
+  SavedAssessmentSnapshot,
+  StudyPlanSnapshot,
+  WritingDashboardSummary,
+  WritingPrompt,
+} from '@/lib/domain';
+import { sampleAssessmentReport, sampleTask1Prompt, writingPromptBank } from '@/lib/fixtures/writing';
 
 import { WritingDashboard } from '../writing-dashboard';
 
@@ -57,17 +64,81 @@ const studyPlan: StudyPlanSnapshot = {
   ],
 };
 
+const prompts: WritingPrompt[] = writingPromptBank;
+
+const recentSavedAttempts: SavedAssessmentSnapshot[] = [
+  {
+    submissionId: 'attempt-4',
+    promptId: writingPromptBank[3]!.id,
+    taskType: 'task-2',
+    createdAt: '2026-03-26T17:00:00.000Z',
+    timeSpentMinutes: 38,
+    wordCount: 286,
+    report: {
+      ...sampleAssessmentReport,
+      promptId: writingPromptBank[3]!.id,
+      reportId: 'report-4',
+      essayId: 'attempt-4',
+      taskType: 'task-2',
+      summary: 'Latest Task 2 report summary',
+      overallBand: 7,
+      overallBandRange: { lower: 6.5, upper: 7 },
+      evaluationTrace: {
+        ...sampleAssessmentReport.evaluationTrace,
+        scorerProvider: 'openrouter',
+        scorerModel: 'google/gemini-3-flash',
+        configuredProvider: 'openrouter',
+        usedMockFallback: false,
+      },
+    },
+  },
+  {
+    submissionId: 'attempt-3',
+    promptId: sampleTask1Prompt.id,
+    taskType: 'task-1',
+    createdAt: '2026-03-25T17:00:00.000Z',
+    timeSpentMinutes: 19,
+    wordCount: 181,
+    report: {
+      ...sampleAssessmentReport,
+      promptId: sampleTask1Prompt.id,
+      reportId: 'report-3',
+      essayId: 'attempt-3',
+      taskType: 'task-1',
+      summary: 'Task 1 inspection summary',
+      overallBand: 6.5,
+      overallBandRange: { lower: 6, upper: 6.5 },
+      evaluationTrace: {
+        ...sampleAssessmentReport.evaluationTrace,
+        scorerProvider: 'openrouter',
+        scorerModel: 'google/gemini-3-flash',
+        configuredProvider: 'openrouter',
+        usedMockFallback: false,
+      },
+    },
+  },
+];
+
 describe('WritingDashboard', () => {
-  it('renders aggregated metrics and the persisted study plan', () => {
-    render(createElement(WritingDashboard, { summary, progress, studyPlan }));
+  it('renders aggregated metrics, recent attempt inspection, and the persisted study plan', () => {
+    render(createElement(WritingDashboard, { summary, progress, prompts, recentSavedAttempts, studyPlan }));
 
     expect(screen.getByRole('heading', { name: /track writing momentum across every saved assessment/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /aggregated writing metrics/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /inspect and resume from the dashboard/i })).toBeInTheDocument();
     expect(screen.getByText(/improving/i)).toBeInTheDocument();
     expect(screen.getByText(/1 task 1 • 3 task 2/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /prioritise task response next/i })).toBeInTheDocument();
     expect(screen.getByText(/rewrite one body paragraph so the topic sentence matches the thesis exactly/i)).toBeInTheDocument();
     expect(screen.getByText(/use the latest saved report first/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /return to practice shell/i })).toHaveAttribute('href', '/');
+
+    fireEvent.click(screen.getByRole('button', { name: /inspect here/i }));
+
+    expect(screen.getAllByText(/task 1 inspection summary/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole('link', { name: /resume this attempt/i })).toHaveAttribute(
+      'href',
+      `/?promptId=${sampleTask1Prompt.id}&attemptId=attempt-3`,
+    );
   });
 });
