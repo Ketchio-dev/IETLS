@@ -7,15 +7,18 @@ import type {
   RecentAttemptSummary,
   SavedAssessmentSnapshot,
   StoredAssessmentRecord,
+  StudyPlanSnapshot,
   WritingPrompt,
 } from '@/lib/domain';
 
+import { buildStudyPlan } from '@/lib/services/writing/dashboard';
 import { clampBand } from '@/lib/services/writing/metrics';
 
 import { readJsonFile, writeJsonFile } from './storage';
 
 const PROMPTS_FILE = 'writing-prompts.json';
 const ASSESSMENTS_FILE = 'writing-assessments.json';
+const STUDY_PLAN_FILE = 'writing-study-plan.json';
 
 function ensureBandRange(range: BandRange | undefined, overallBand: number): BandRange {
   if (range) {
@@ -106,6 +109,26 @@ export async function listSavedAssessments(limit = 5): Promise<SavedAssessmentSn
     .sort((a, b) => b.submission.createdAt.localeCompare(a.submission.createdAt))
     .slice(0, limit)
     .map(toSavedAssessment);
+}
+
+export async function getDashboardStudyPlan(
+  prompts: WritingPrompt[],
+  savedAssessments: SavedAssessmentSnapshot[],
+): Promise<StudyPlanSnapshot> {
+  const storedPlan = await readJsonFile<StudyPlanSnapshot | null>(STUDY_PLAN_FILE, null);
+  const latestSubmissionId = savedAssessments[0]?.submissionId ?? null;
+
+  if (
+    storedPlan &&
+    storedPlan.basedOnSubmissionId === latestSubmissionId &&
+    storedPlan.attemptsConsidered === savedAssessments.length
+  ) {
+    return storedPlan;
+  }
+
+  const nextPlan = buildStudyPlan(savedAssessments, prompts);
+  await writeJsonFile(STUDY_PLAN_FILE, nextPlan);
+  return nextPlan;
 }
 
 export async function saveAssessmentResult(result: Omit<AssessmentPipelineResult, 'recentAttempts'>) {
