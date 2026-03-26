@@ -11,15 +11,23 @@ export const samplePrompt: WritingPrompt = {
   planningHints: [
     'State your position early and keep it consistent in both body paragraphs and conclusion.',
     'Use one body paragraph per viewpoint before defending your own judgement.',
-    'Include a real-world style example to strengthen Task Response.'
+    'Include a real-world style example to strengthen Task Response.',
   ],
   rubricFocus: [
     'Clear position with balanced discussion',
     'Logical paragraphing and progression',
     'Precise vocabulary for policy and infrastructure',
-    'Mix of complex and accurate sentence forms'
+    'Mix of complex and accurate sentence forms',
   ],
 };
+
+export const sampleResponse = `In my opinion, governments should prioritise public transport, although road upgrades still matter in specific regions.
+
+On the one hand, supporters of new roads argue that drivers and delivery services need faster routes because economic activity slows when congestion becomes severe. However, expanding roads alone often creates extra demand from private cars, which means traffic soon returns.
+
+On the other hand, investment in rail, bus, and metro systems can move more commuters at lower environmental cost. For example, when a city subsidises reliable buses and protected station access, workers are more willing to leave their cars at home and employers face fewer delays.
+
+Overall, I believe transport budgets should focus mainly on public systems while reserving targeted road spending for safety bottlenecks.`;
 
 export const sampleAssessmentReport: AssessmentReport = {
   essayId: 'sample-essay-001',
@@ -62,7 +70,7 @@ export const sampleAssessmentReport: AssessmentReport = {
   ],
   risks: [
     'Second viewpoint paragraph lacks a fully extended example.',
-    'Several connectors repeat, which weakens cohesion.'
+    'Several connectors repeat, which weakens cohesion.',
   ],
   nextSteps: [
     {
