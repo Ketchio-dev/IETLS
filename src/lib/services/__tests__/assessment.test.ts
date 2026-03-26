@@ -23,7 +23,7 @@ describe('runAssessmentPipeline', () => {
     expect(result.report.criterionScores).toHaveLength(4);
     expect(result.report.evidence.length).toBeGreaterThan(3);
     expect(result.report.nextSteps.length).toBeGreaterThan(0);
-    expect(result.report.pipelineVersion).toContain('architecture-split');
+    expect(result.report.pipelineVersion).toContain('scorer-adapter');
     expect(result.report.confidenceReasons[0]).toContain('practice estimate');
     expect(result.submission.wordCount).toBeGreaterThan(80);
   });
