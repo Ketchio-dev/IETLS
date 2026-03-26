@@ -97,7 +97,8 @@ li,
 .report-grid,
 .service-list,
 .history-list,
-.prompt-selector {
+.prompt-selector,
+.visual-grid {
   display: grid;
   gap: 1rem;
 }
@@ -258,6 +259,51 @@ li,
   box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.18);
 }
 
+.task-switcher {
+  display: inline-flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.task-tab {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 999px;
+  padding: 0.65rem 0.95rem;
+  background: rgba(15, 23, 42, 0.45);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.task-tab.is-active {
+  border-color: rgba(56, 189, 248, 0.52);
+  color: var(--text);
+  background: rgba(56, 189, 248, 0.14);
+}
+
+.visual-panel {
+  margin: 1.25rem 0;
+  padding: 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.visual-panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.visual-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0.75rem 0 1rem;
+  color: var(--muted);
+}
+
 .prompt-card p {
   display: -webkit-box;
   overflow: hidden;
@@ -289,7 +335,8 @@ li,
   .hero-metrics,
   .report-grid,
   .service-list,
-  .prompt-selector {
+  .prompt-selector,
+  .visual-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 

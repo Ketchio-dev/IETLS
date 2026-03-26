@@ -41,6 +41,7 @@ function toSummary(record: StoredAssessmentRecord): RecentAttemptSummary {
   return {
     submissionId: record.submission.submissionId,
     promptId: record.submission.promptId,
+    taskType: record.submission.taskType,
     overallBand: report.overallBand,
     overallBandRange: report.overallBandRange,
     confidence: report.confidence,
@@ -54,6 +55,7 @@ function toSavedAssessment(record: StoredAssessmentRecord): SavedAssessmentSnaps
   return {
     submissionId: record.submission.submissionId,
     promptId: record.submission.promptId,
+    taskType: record.submission.taskType,
     createdAt: record.submission.createdAt,
     timeSpentMinutes: record.submission.timeSpentMinutes,
     wordCount: record.submission.wordCount,

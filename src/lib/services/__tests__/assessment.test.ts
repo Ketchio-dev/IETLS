@@ -21,6 +21,7 @@ describe('runAssessmentPipeline', () => {
 
     const result = await runAssessmentPipeline(samplePrompt, {
       promptId: samplePrompt.id,
+      taskType: samplePrompt.taskType,
       response: essay,
       timeSpentMinutes: 32,
     });

@@ -5,17 +5,39 @@ import type {
   EvidenceSignal,
   StructuredRubricScorecard,
   WritingPrompt,
+  WritingTaskType,
 } from '@/lib/domain';
 
 import { clampBand } from './metrics';
-import { deriveOverallBandRange, deriveOverallConfidence, getCriterionEvidence, predictCriterionScores } from './scoring-model';
+import {
+  deriveOverallBandRange,
+  deriveOverallConfidence,
+  getCriteriaForTaskType,
+  getCriterionEvidence,
+  predictCriterionScores,
+} from './scoring-model';
 
 export const WRITING_RUBRIC_SCHEMA_VERSION = 'writing-rubric-scorecard/v1';
 const CALIBRATION_VERSION = 'seed-v1';
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 const DEFAULT_OPENROUTER_MODEL = 'google/gemini-3-flash';
 const OPENROUTER_TIMEOUT_MS = 15_000;
-const WRITING_CRITERIA: CriterionName[] = [
+const WRITING_CRITERIA_BY_TASK_TYPE: Record<WritingTaskType, CriterionName[]> = {
+  'task-1': [
+    'Task Achievement',
+    'Coherence & Cohesion',
+    'Lexical Resource',
+    'Grammatical Range & Accuracy',
+  ],
+  'task-2': [
+    'Task Response',
+    'Coherence & Cohesion',
+    'Lexical Resource',
+    'Grammatical Range & Accuracy',
+  ],
+};
+const ALL_WRITING_CRITERIA: CriterionName[] = [
+  'Task Achievement',
   'Task Response',
   'Coherence & Cohesion',
   'Lexical Resource',
@@ -33,7 +55,7 @@ const criterionScoreSchema = {
   properties: {
     criterion: {
       type: 'string',
-      enum: WRITING_CRITERIA,
+      enum: ALL_WRITING_CRITERIA,
     },
     band: { type: 'number' },
     bandRange: {
@@ -139,8 +161,12 @@ function getRubricVersion(prompt: WritingPrompt) {
   return RUBRIC_VERSION_BY_TASK_TYPE[prompt.taskType];
 }
 
-function buildCriterionTrace(criterion: CriterionName, evidence: EvidenceSignal[]) {
-  const relevantSignals = getCriterionEvidence(criterion, evidence);
+function buildCriterionTrace(
+  prompt: WritingPrompt,
+  criterion: CriterionName,
+  evidence: EvidenceSignal[],
+) {
+  const relevantSignals = getCriterionEvidence(criterion, evidence, prompt.taskType);
 
   return {
     criterion,
@@ -169,19 +195,19 @@ function createMockScorecard(prompt: WritingPrompt, evidence: EvidenceSignal[], 
     overallBandRange,
     confidence,
     confidenceReasons: reasons,
-      evaluationTrace: {
-        schemaVersion: WRITING_RUBRIC_SCHEMA_VERSION,
-        scorerProvider: 'mock-rule-based',
-        scorerModel: 'heuristic-v1',
-        configuredProvider: options.configuredProvider,
-        usedMockFallback,
-        rubricVersion: getRubricVersion(prompt),
-        calibrationVersion: CALIBRATION_VERSION,
+    evaluationTrace: {
+      schemaVersion: WRITING_RUBRIC_SCHEMA_VERSION,
+      scorerProvider: 'mock-rule-based',
+      scorerModel: 'heuristic-v1',
+      configuredProvider: options.configuredProvider,
+      usedMockFallback,
+      rubricVersion: getRubricVersion(prompt),
+      calibrationVersion: CALIBRATION_VERSION,
       evidenceSignalCount: evidence.length,
       evidenceFingerprint: buildEvidenceFingerprint(evidence),
       scoredAt: new Date().toISOString(),
       notes: buildMockNotes(options),
-      criterionTrace: criterionScores.map((score) => buildCriterionTrace(score.criterion, evidence)),
+      criterionTrace: criterionScores.map((score) => buildCriterionTrace(prompt, score.criterion, evidence)),
     },
   } satisfies StructuredRubricScorecard;
 }
@@ -232,8 +258,11 @@ function isConfidenceLevel(value: unknown): value is ConfidenceLevel {
   return value === 'high' || value === 'medium' || value === 'low';
 }
 
-function isCriterionName(value: unknown): value is CriterionName {
-  return typeof value === 'string' && WRITING_CRITERIA.includes(value as CriterionName);
+function isCriterionNameForTaskType(
+  value: unknown,
+  taskType: WritingTaskType,
+): value is CriterionName {
+  return typeof value === 'string' && WRITING_CRITERIA_BY_TASK_TYPE[taskType].includes(value as CriterionName);
 }
 
 function isStringArray(value: unknown): value is string[] {
@@ -249,8 +278,13 @@ function isBandRange(value: unknown): value is StructuredRubricScorecard['overal
   );
 }
 
-function normalizeCriterionScores(value: unknown): CriterionScore[] | null {
-  if (!Array.isArray(value) || value.length !== WRITING_CRITERIA.length) {
+function normalizeCriterionScores(
+  value: unknown,
+  taskType: WritingTaskType,
+): CriterionScore[] | null {
+  const criteria = WRITING_CRITERIA_BY_TASK_TYPE[taskType];
+
+  if (!Array.isArray(value) || value.length !== criteria.length) {
     return null;
   }
 
@@ -262,7 +296,7 @@ function normalizeCriterionScores(value: unknown): CriterionScore[] | null {
     }
 
     if (
-      !isCriterionName(item.criterion)
+      !isCriterionNameForTaskType(item.criterion, taskType)
       || !isBandValue(item.band)
       || !isBandRange(item.bandRange)
       || typeof item.rationale !== 'string'
@@ -285,14 +319,17 @@ function normalizeCriterionScores(value: unknown): CriterionScore[] | null {
     });
   }
 
-  if (byCriterion.size !== WRITING_CRITERIA.length) {
+  if (byCriterion.size !== criteria.length) {
     return null;
   }
 
-  return WRITING_CRITERIA.map((criterion) => byCriterion.get(criterion) ?? null).filter(Boolean) as CriterionScore[];
+  return criteria.map((criterion) => byCriterion.get(criterion) ?? null).filter(Boolean) as CriterionScore[];
 }
 
-function normalizeProviderRubricResponse(value: unknown): ProviderRubricResponse | null {
+function normalizeProviderRubricResponse(
+  value: unknown,
+  taskType: WritingTaskType,
+): ProviderRubricResponse | null {
   if (!isRecord(value)) {
     return null;
   }
@@ -307,7 +344,7 @@ function normalizeProviderRubricResponse(value: unknown): ProviderRubricResponse
     return null;
   }
 
-  const criterionScores = normalizeCriterionScores(value.criterionScores);
+  const criterionScores = normalizeCriterionScores(value.criterionScores, taskType);
 
   if (!criterionScores) {
     return null;
@@ -361,13 +398,25 @@ function getAssistantMessageContent(value: unknown): string | null {
 }
 
 function buildOpenRouterScoringPrompt(prompt: WritingPrompt, evidence: EvidenceSignal[], responseText: string) {
+  const criteria = getCriteriaForTaskType(prompt.taskType);
+  const criteriaText = criteria.join(', ');
+  const taskInstruction = prompt.taskType === 'task-1'
+    ? 'Score this IELTS Academic Writing Task 1 response.'
+    : 'Score this IELTS Academic Writing Task 2 response.';
+
   return [
-    'Score this IELTS Academic Writing Task 2 response and return only JSON that matches the provided schema.',
-    'Use only these exact criteria names: Task Response, Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy.',
+    `${taskInstruction} Return only JSON that matches the provided schema.`,
+    `Use only these exact criteria names: ${criteriaText}.`,
     'Use IELTS whole or half bands from 0 to 9.',
     `Prompt title: ${prompt.title}`,
     `Prompt: ${prompt.prompt}`,
     `Rubric focus: ${prompt.rubricFocus.join('; ')}`,
+    ...(prompt.visual
+      ? [
+          'Structured visual prompt:',
+          JSON.stringify(prompt.visual, null, 2),
+        ]
+      : []),
     'Essay response:',
     responseText,
     'Evidence signals:',
@@ -441,7 +490,7 @@ async function requestOpenRouterScore(input: WritingScorerAdapterInput, config: 
     }
 
     const parsed = JSON.parse(extractJsonPayload(content)) as unknown;
-    const payload = normalizeProviderRubricResponse(parsed);
+    const payload = normalizeProviderRubricResponse(parsed, input.prompt.taskType);
 
     if (!payload) {
       throw new Error('OpenRouter output did not match the writing rubric scorecard contract.');
@@ -469,7 +518,9 @@ async function requestOpenRouterScore(input: WritingScorerAdapterInput, config: 
           ...(responseId ? [`OpenRouter response id: ${responseId}.`] : []),
           ...(totalTokens !== null ? [`OpenRouter total tokens: ${totalTokens}.`] : []),
         ],
-        criterionTrace: payload.criterionScores.map((score) => buildCriterionTrace(score.criterion, input.evidence)),
+        criterionTrace: payload.criterionScores.map((score) =>
+          buildCriterionTrace(input.prompt, score.criterion, input.evidence),
+        ),
       },
     } satisfies StructuredRubricScorecard;
   } finally {

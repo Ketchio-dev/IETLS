@@ -22,6 +22,7 @@ export function createSubmissionRecord(submission: EssaySubmission): WritingSubm
 }
 
 function buildAssessmentReportFromScorecard(
+  prompt: WritingPrompt,
   submission: WritingSubmissionRecord,
   evidence: ReturnType<typeof extractWritingEvidence>,
   scorecard: StructuredRubricScorecard,
@@ -30,6 +31,7 @@ function buildAssessmentReportFromScorecard(
     reportId: randomUUID(),
     essayId: submission.submissionId,
     promptId: submission.promptId,
+    taskType: submission.taskType,
     overallBand: scorecard.overallBand,
     overallBandRange: scorecard.overallBandRange,
     confidence: scorecard.confidence,
@@ -52,7 +54,7 @@ export async function buildAssessmentReport(prompt: WritingPrompt, submission: W
   const evidence = extractWritingEvidence(prompt, submission);
   const scorecard = await scoreWritingWithAdapter(prompt, evidence, submission.response);
 
-  return buildAssessmentReportFromScorecard(submission, evidence, scorecard);
+  return buildAssessmentReportFromScorecard(prompt, submission, evidence, scorecard);
 }
 
 export function buildMockAssessmentReport(prompt: WritingPrompt, submission: WritingSubmissionRecord): AssessmentReport {
@@ -61,7 +63,7 @@ export function buildMockAssessmentReport(prompt: WritingPrompt, submission: Wri
     configuredProvider: 'mock',
   });
 
-  return buildAssessmentReportFromScorecard(submission, evidence, scorecard);
+  return buildAssessmentReportFromScorecard(prompt, submission, evidence, scorecard);
 }
 
 export async function runAssessmentPipeline(

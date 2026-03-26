@@ -66,6 +66,7 @@ export function WritingPracticeShell({
   initialSavedAssessments,
   fallbackReports,
 }: Props) {
+  const [selectedTaskType, setSelectedTaskType] = useState<WritingTaskType>(prompt.taskType);
   const [selectedPromptId, setSelectedPromptId] = useState(prompt.id);
   const [response, setResponse] = useState(getSampleResponse(prompt.id));
   const [secondsRemaining, setSecondsRemaining] = useState(prompt.recommendedMinutes * 60);
@@ -79,6 +80,10 @@ export function WritingPracticeShell({
   const activePrompt = useMemo(
     () => prompts.find((item) => item.id === selectedPromptId) ?? prompt,
     [prompt, prompts, selectedPromptId],
+  );
+  const visiblePrompts = useMemo(
+    () => prompts.filter((item) => item.taskType === selectedTaskType),
+    [prompts, selectedTaskType],
   );
 
   const promptSavedAssessments = useMemo(
@@ -165,6 +170,12 @@ export function WritingPracticeShell({
     setSelectedPromptId(nextPromptId);
   }
 
+  function handleTaskTypeChange(nextTaskType: WritingTaskType) {
+    setSelectedTaskType(nextTaskType);
+    const nextPrompt = prompts.find((item) => item.taskType === nextTaskType) ?? prompt;
+    setSelectedPromptId(nextPrompt.id);
+  }
+
   const formattedClock = `${String(Math.floor(secondsRemaining / 60)).padStart(2, '0')}:${String(
     secondsRemaining % 60,
   ).padStart(2, '0')}`;
@@ -205,10 +216,28 @@ export function WritingPracticeShell({
                 <p className="eyebrow">Prompt bank</p>
                 <h2>{getTaskPromptHeading(activePrompt.taskType)}</h2>
               </div>
-              <span className="band-chip">{prompts.length} prompts</span>
+              <span className="band-chip">{visiblePrompts.length} prompts</span>
+            </div>
+            <div className="task-switcher" role="tablist" aria-label="Writing task type">
+              {(['task-1', 'task-2'] as const).map((taskType) => {
+                const isActive = taskType === selectedTaskType;
+
+                return (
+                  <button
+                    key={taskType}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    className={`task-tab${isActive ? ' is-active' : ''}`}
+                    onClick={() => handleTaskTypeChange(taskType)}
+                  >
+                    {getTaskLabel(taskType)}
+                  </button>
+                );
+              })}
             </div>
             <div className="prompt-selector">
-              {prompts.map((item) => {
+              {visiblePrompts.map((item) => {
                 const isActive = item.id === activePrompt.id;
 
                 return (
@@ -234,6 +263,48 @@ export function WritingPracticeShell({
             <p className="eyebrow">Live prompt</p>
             <h2>{activePrompt.title}</h2>
             <p className="prompt-copy">{activePrompt.prompt}</p>
+            {activePrompt.visual ? (
+              <div className="visual-panel">
+                <div className="visual-panel-header">
+                  <div>
+                    <p className="eyebrow">Structured visual brief</p>
+                    <h3>{activePrompt.visual.title}</h3>
+                  </div>
+                  <span className="band-chip">{activePrompt.visual.type}</span>
+                </div>
+                <p className="summary-copy">{activePrompt.visual.summary}</p>
+                <div className="visual-meta">
+                  {activePrompt.visual.xAxisLabel ? <span>X-axis: {activePrompt.visual.xAxisLabel}</span> : null}
+                  {activePrompt.visual.yAxisLabel ? <span>Y-axis: {activePrompt.visual.yAxisLabel}</span> : null}
+                  {activePrompt.visual.units ? <span>Units: {activePrompt.visual.units}</span> : null}
+                </div>
+                <div className="visual-grid">
+                  <article className="history-card">
+                    <div className="history-card-header">
+                      <strong>Key features</strong>
+                    </div>
+                    <ul className="plain-list compact-list">
+                      {activePrompt.visual.keyFeatures.map((feature) => (
+                        <li key={feature}>{feature}</li>
+                      ))}
+                    </ul>
+                  </article>
+                  <article className="history-card">
+                    <div className="history-card-header">
+                      <strong>Data checkpoints</strong>
+                    </div>
+                    <ul className="plain-list compact-list">
+                      {activePrompt.visual.dataPoints.map((point) => (
+                        <li key={`${point.label}-${point.value}`}>
+                          <strong>{point.label}:</strong> {point.value}
+                          {point.note ? ` (${point.note})` : ''}
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                </div>
+              </div>
+            ) : null}
             <div className="tip-grid">
               <div>
                 <h3>Planning hints</h3>

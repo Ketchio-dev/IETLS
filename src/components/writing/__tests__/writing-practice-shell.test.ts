@@ -2,7 +2,13 @@ import { createElement } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { sampleAssessmentReport, sampleAssessmentReportsByPromptId, samplePrompt, writingPromptBank } from '@/lib/fixtures/writing';
+import {
+  sampleAssessmentReport,
+  sampleAssessmentReportsByPromptId,
+  samplePrompt,
+  sampleTask1Prompt,
+  writingPromptBank,
+} from '@/lib/fixtures/writing';
 
 import { WritingPracticeShell } from '../writing-practice-shell';
 
@@ -31,6 +37,7 @@ describe('WritingPracticeShell', () => {
       {
         submissionId: 'attempt-1',
         promptId: samplePrompt.id,
+        taskType: samplePrompt.taskType,
         createdAt: '2026-03-26T16:00:00.000Z',
         timeSpentMinutes: 33,
         wordCount: 270,
@@ -46,6 +53,7 @@ describe('WritingPracticeShell', () => {
           {
             submissionId: 'attempt-1',
             promptId: samplePrompt.id,
+            taskType: samplePrompt.taskType,
             overallBand: 7,
             overallBandRange: { lower: 6.5, upper: 7.0 },
             confidence: 'medium',
@@ -102,5 +110,22 @@ describe('WritingPracticeShell', () => {
 
     expect(screen.getAllByText(/some people think online education is now a better alternative/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Agree \/ disagree/i).length).toBeGreaterThan(0);
+  });
+
+  it('switches to Task 1 and renders the structured visual brief', () => {
+    render(createElement(WritingPracticeShell, {
+      fallbackReports: sampleAssessmentReportsByPromptId,
+      initialHistory: [],
+      initialReport: sampleAssessmentReport,
+      initialSavedAssessments: [],
+      prompt: samplePrompt,
+      prompts: writingPromptBank,
+    }));
+
+    fireEvent.click(screen.getAllByRole('tab', { name: /writing task 1/i })[0]!);
+
+    expect(screen.getAllByText(sampleTask1Prompt.title).length).toBeGreaterThan(0);
+    expect(screen.getByText(/structured visual brief/i)).toBeInTheDocument();
+    expect(screen.getByText(/passengers at a london underground station/i)).toBeInTheDocument();
   });
 });

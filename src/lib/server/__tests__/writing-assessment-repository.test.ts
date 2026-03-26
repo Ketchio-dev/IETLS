@@ -28,6 +28,7 @@ describe('writing assessment repository', () => {
     await seedPrompt(samplePrompt);
     const result = await runAssessmentPipeline(samplePrompt, {
       promptId: samplePrompt.id,
+      taskType: samplePrompt.taskType,
       response: 'In my opinion, public transport should receive more funding because it reduces congestion and pollution. However, some road investment still matters for freight and safety. Overall, governments should prioritise transit while targeting only the worst road bottlenecks.',
       timeSpentMinutes: 29,
     });
