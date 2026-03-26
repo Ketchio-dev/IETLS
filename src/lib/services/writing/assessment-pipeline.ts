@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto';
 
-import type { AssessmentPipelineResult, AssessmentReport, EssaySubmission, WritingPrompt, WritingSubmissionRecord } from '@/lib/domain';
+import type { AssessmentPipelineResult, AssessmentReport, EssaySubmission, StructuredRubricScorecard, WritingPrompt, WritingSubmissionRecord } from '@/lib/domain';
 
 import { summarizeStrengths, summarizeRisks, buildSummary, buildWarnings, generateFeedbackActions } from './feedback-generator';
 import { extractWritingEvidence } from './evidence-extractor';
 import { countWords } from './metrics';
-import { scoreWritingWithAdapter } from './scorer-adapter';
+import { scoreWritingWithAdapter, scoreWritingWithMockAdapter } from './scorer-adapter';
 
 export function createSubmissionRecord(submission: EssaySubmission): WritingSubmissionRecord {
   return {
@@ -16,10 +16,11 @@ export function createSubmissionRecord(submission: EssaySubmission): WritingSubm
   };
 }
 
-export function buildAssessmentReport(prompt: WritingPrompt, submission: WritingSubmissionRecord): AssessmentReport {
-  const evidence = extractWritingEvidence(prompt, submission);
-  const scorecard = scoreWritingWithAdapter(prompt, evidence);
-
+function buildAssessmentReportFromScorecard(
+  submission: WritingSubmissionRecord,
+  evidence: ReturnType<typeof extractWritingEvidence>,
+  scorecard: StructuredRubricScorecard,
+): AssessmentReport {
   return {
     reportId: randomUUID(),
     essayId: submission.submissionId,
@@ -37,14 +38,46 @@ export function buildAssessmentReport(prompt: WritingPrompt, submission: Writing
     nextSteps: generateFeedbackActions(scorecard.criterionScores, evidence),
     warnings: buildWarnings(submission.wordCount, scorecard.confidence),
     evaluationTrace: scorecard.evaluationTrace,
-    pipelineVersion: 'writing-task-2/v3-scorer-adapter-range-reporting',
+    pipelineVersion: 'writing-task-2/v4-openrouter-adapter',
     generatedAt: new Date().toISOString(),
   };
 }
 
-export function runAssessmentPipeline(prompt: WritingPrompt, submission: EssaySubmission): Omit<AssessmentPipelineResult, 'recentAttempts'> {
+export async function buildAssessmentReport(prompt: WritingPrompt, submission: WritingSubmissionRecord): Promise<AssessmentReport> {
+  const evidence = extractWritingEvidence(prompt, submission);
+  const scorecard = await scoreWritingWithAdapter(prompt, evidence, submission.response);
+
+  return buildAssessmentReportFromScorecard(submission, evidence, scorecard);
+}
+
+export function buildMockAssessmentReport(prompt: WritingPrompt, submission: WritingSubmissionRecord): AssessmentReport {
+  const evidence = extractWritingEvidence(prompt, submission);
+  const scorecard = scoreWritingWithMockAdapter(prompt, evidence, {
+    configuredProvider: 'mock',
+  });
+
+  return buildAssessmentReportFromScorecard(submission, evidence, scorecard);
+}
+
+export async function runAssessmentPipeline(
+  prompt: WritingPrompt,
+  submission: EssaySubmission,
+): Promise<Omit<AssessmentPipelineResult, 'recentAttempts'>> {
   const submissionRecord = createSubmissionRecord(submission);
-  const report = buildAssessmentReport(prompt, submissionRecord);
+  const report = await buildAssessmentReport(prompt, submissionRecord);
+
+  return {
+    submission: submissionRecord,
+    report,
+  };
+}
+
+export function runMockAssessmentPipeline(
+  prompt: WritingPrompt,
+  submission: EssaySubmission,
+): Omit<AssessmentPipelineResult, 'recentAttempts'> {
+  const submissionRecord = createSubmissionRecord(submission);
+  const report = buildMockAssessmentReport(prompt, submissionRecord);
 
   return {
     submission: submissionRecord,

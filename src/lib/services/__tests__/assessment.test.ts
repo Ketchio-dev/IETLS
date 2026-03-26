@@ -12,8 +12,8 @@ On the other hand, better bus lanes and rail systems reduce congestion and pollu
 Overall, governments should prioritise public transport while fixing only the most dangerous road bottlenecks.`;
 
 describe('runAssessmentPipeline', () => {
-  it('returns a report backed by separated evidence, scoring, and feedback layers', () => {
-    const result = runAssessmentPipeline(samplePrompt, {
+  it('returns a report backed by separated evidence, scoring, and feedback layers', async () => {
+    const result = await runAssessmentPipeline(samplePrompt, {
       promptId: samplePrompt.id,
       response: essay,
       timeSpentMinutes: 32,

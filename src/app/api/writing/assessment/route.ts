@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   }
 
   await seedPrompt(samplePrompt);
-  const result = runAssessmentPipeline(samplePrompt, { promptId, response, timeSpentMinutes });
+  const result = await runAssessmentPipeline(samplePrompt, { promptId, response, timeSpentMinutes });
   const stored = await saveAssessmentResult(result);
 
   return NextResponse.json({

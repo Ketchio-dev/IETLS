@@ -118,6 +118,7 @@ interface MockScorecardOptions {
 interface WritingScorerAdapterInput {
   prompt: WritingPrompt;
   evidence: EvidenceSignal[];
+  responseText: string;
 }
 
 export interface WritingScorerAdapter {
@@ -352,7 +353,7 @@ function getAssistantMessageContent(value: unknown): string | null {
   return text || null;
 }
 
-function buildOpenRouterScoringPrompt(prompt: WritingPrompt, evidence: EvidenceSignal[]) {
+function buildOpenRouterScoringPrompt(prompt: WritingPrompt, evidence: EvidenceSignal[], responseText: string) {
   return [
     'Score this IELTS Academic Writing Task 2 response and return only JSON that matches the provided schema.',
     'Use only these exact criteria names: Task Response, Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy.',
@@ -360,6 +361,8 @@ function buildOpenRouterScoringPrompt(prompt: WritingPrompt, evidence: EvidenceS
     `Prompt title: ${prompt.title}`,
     `Prompt: ${prompt.prompt}`,
     `Rubric focus: ${prompt.rubricFocus.join('; ')}`,
+    'Essay response:',
+    responseText,
     'Evidence signals:',
     JSON.stringify(evidence, null, 2),
   ].join('\n\n');
@@ -407,7 +410,7 @@ async function requestOpenRouterScore(input: WritingScorerAdapterInput, config: 
           },
           {
             role: 'user',
-            content: buildOpenRouterScoringPrompt(input.prompt, input.evidence),
+            content: buildOpenRouterScoringPrompt(input.prompt, input.evidence, input.responseText),
           },
         ],
       }),
@@ -524,6 +527,6 @@ export function resolveWritingScorerAdapter(): WritingScorerAdapter {
   return mockScorerAdapter;
 }
 
-export async function scoreWritingWithAdapter(prompt: WritingPrompt, evidence: EvidenceSignal[]) {
-  return resolveWritingScorerAdapter().score({ prompt, evidence });
+export async function scoreWritingWithAdapter(prompt: WritingPrompt, evidence: EvidenceSignal[], responseText: string) {
+  return resolveWritingScorerAdapter().score({ prompt, evidence, responseText });
 }
