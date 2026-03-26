@@ -1,4 +1,5 @@
 import type {
+  DashboardAttemptComparison,
   CriterionName,
   DashboardCriterionSummary,
   DashboardProviderSummary,
@@ -38,23 +39,56 @@ function formatProviderLabel(value: string) {
     .join(' ');
 }
 
+function roundBand(value: number) {
+  return Number(value.toFixed(1));
+}
+
+function buildCriterionTrend(delta: number | null): DashboardCriterionSummary['trend'] {
+  if (delta === null) {
+    return 'insufficient-data';
+  }
+
+  if (delta >= 0.25) {
+    return 'improving';
+  }
+
+  if (delta <= -0.25) {
+    return 'slipping';
+  }
+
+  return 'steady';
+}
+
 function summarizeCriterionBands(savedAssessments: SavedAssessmentSnapshot[]) {
-  const totals = new Map<CriterionName, { total: number; count: number }>();
+  const totals = new Map<CriterionName, { total: number; count: number; attempts: Array<{ band: number; taskType: WritingTaskType }> }>();
 
   for (const assessment of savedAssessments) {
     for (const score of assessment.report.criterionScores) {
-      const current = totals.get(score.criterion) ?? { total: 0, count: 0 };
+      const current = totals.get(score.criterion) ?? { total: 0, count: 0, attempts: [] };
       current.total += score.band;
       current.count += 1;
+      current.attempts.push({ band: score.band, taskType: assessment.taskType });
       totals.set(score.criterion, current);
     }
   }
 
   return [...totals.entries()]
-    .map(([criterion, value]) => ({
-      criterion,
-      averageBand: Number((value.total / value.count).toFixed(1)),
-    }))
+    .map(([criterion, value]) => {
+      const latest = value.attempts[0] ?? null;
+      const previous = value.attempts[1] ?? null;
+      const delta = latest && previous ? roundBand(latest.band - previous.band) : null;
+
+      return {
+        criterion,
+        averageBand: roundBand(value.total / value.count),
+        latestBand: latest?.band ?? 0,
+        previousBand: previous?.band ?? null,
+        delta,
+        trend: buildCriterionTrend(delta),
+        attemptsConsidered: value.count,
+        taskTypes: Array.from(new Set(value.attempts.map((attempt) => attempt.taskType))).sort(),
+      };
+    })
     .sort((a, b) => b.averageBand - a.averageBand);
 }
 
@@ -104,6 +138,7 @@ export function buildDashboardSummary(savedAssessments: SavedAssessmentSnapshot[
       activeDays: 0,
       latestAttemptAt: null,
       providerBreakdown: [],
+      criterionSummaries: [],
       strongestCriterion: null,
       weakestCriterion: null,
     };
@@ -119,17 +154,13 @@ export function buildDashboardSummary(savedAssessments: SavedAssessmentSnapshot[
     { ...EMPTY_TASK_COUNTS },
   );
   const criterionBands = summarizeCriterionBands(ordered);
-  const averageBand = Number(
-    (ordered.reduce((sum, attempt) => sum + attempt.report.overallBand, 0) / ordered.length).toFixed(1),
-  );
+  const averageBand = roundBand(ordered.reduce((sum, attempt) => sum + attempt.report.overallBand, 0) / ordered.length);
 
   return {
     totalAttempts: ordered.length,
     taskCounts,
     latestRange: latestAssessment.report.overallBandRange,
-    bestBand: Number(
-      Math.max(...ordered.map((attempt) => attempt.report.overallBand)).toFixed(1),
-    ),
+    bestBand: roundBand(Math.max(...ordered.map((attempt) => attempt.report.overallBand))),
     averageBand,
     averageWordCount: Math.round(
       ordered.reduce((sum, attempt) => sum + attempt.wordCount, 0) / ordered.length,
@@ -140,8 +171,51 @@ export function buildDashboardSummary(savedAssessments: SavedAssessmentSnapshot[
     activeDays: new Set(ordered.map((attempt) => attempt.createdAt.slice(0, 10))).size,
     latestAttemptAt: latestAssessment.createdAt,
     providerBreakdown: buildProviderBreakdown(ordered),
+    criterionSummaries: criterionBands,
     strongestCriterion: buildCriterionSummary(criterionBands, 0),
     weakestCriterion: buildCriterionSummary(criterionBands, criterionBands.length - 1),
+  };
+}
+
+export function buildAttemptComparison(
+  currentAttempt: SavedAssessmentSnapshot,
+  comparedAttempt: SavedAssessmentSnapshot,
+): DashboardAttemptComparison {
+  const comparedScores = new Map(
+    comparedAttempt.report.criterionScores.map((score) => [score.criterion, score.band]),
+  );
+  const criterionComparisons = currentAttempt.report.criterionScores
+    .filter((score) => comparedScores.has(score.criterion))
+    .map((score) => {
+      const comparedBand = comparedScores.get(score.criterion)!;
+
+      return {
+        criterion: score.criterion,
+        currentBand: score.band,
+        comparedBand,
+        delta: roundBand(score.band - comparedBand),
+      };
+    });
+  const taskSpecificCriterionOmitted =
+    currentAttempt.report.criterionScores.length !== criterionComparisons.length ||
+    comparedAttempt.report.criterionScores.length !== criterionComparisons.length;
+
+  return {
+    currentSubmissionId: currentAttempt.submissionId,
+    comparedSubmissionId: comparedAttempt.submissionId,
+    currentTaskType: currentAttempt.taskType,
+    comparedTaskType: comparedAttempt.taskType,
+    currentOverallBand: currentAttempt.report.overallBand,
+    comparedOverallBand: comparedAttempt.report.overallBand,
+    overallBandDelta: roundBand(currentAttempt.report.overallBand - comparedAttempt.report.overallBand),
+    currentWordCount: currentAttempt.wordCount,
+    comparedWordCount: comparedAttempt.wordCount,
+    wordCountDelta: currentAttempt.wordCount - comparedAttempt.wordCount,
+    currentTimeSpentMinutes: currentAttempt.timeSpentMinutes,
+    comparedTimeSpentMinutes: comparedAttempt.timeSpentMinutes,
+    timeSpentDelta: roundBand(currentAttempt.timeSpentMinutes - comparedAttempt.timeSpentMinutes),
+    criterionComparisons,
+    taskSpecificCriterionOmitted,
   };
 }
 
