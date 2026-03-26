@@ -7,14 +7,18 @@ import { sampleAssessmentReport, writingPromptBank } from '@/lib/fixtures/writin
 import type { WritingDashboardPageData } from '@/lib/services/writing/application-service';
 
 const mocks = vi.hoisted(() => ({
-  loadDashboardPageData: vi.fn(),
+  loadWritingPracticePageData: vi.fn(),
+  loadWritingDashboardPageData: vi.fn(),
+  loadWritingTaskData: vi.fn(),
+  submitWritingAssessment: vi.fn(),
   dashboardSpy: vi.fn(),
 }));
 
-vi.mock('@/lib/assessment-workspace', () => ({
-  getAssessmentWorkspace: () => ({
-    loadDashboardPageData: mocks.loadDashboardPageData,
-  }),
+vi.mock('@/lib/services/writing/application-service', () => ({
+  loadWritingPracticePageData: mocks.loadWritingPracticePageData,
+  loadWritingDashboardPageData: mocks.loadWritingDashboardPageData,
+  loadWritingTaskData: mocks.loadWritingTaskData,
+  submitWritingAssessment: mocks.submitWritingAssessment,
 }));
 
 vi.mock('@/components/writing/writing-dashboard', () => ({

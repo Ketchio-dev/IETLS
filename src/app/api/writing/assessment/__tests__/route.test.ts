@@ -5,13 +5,17 @@ import { sampleAssessmentReport, samplePrompt, sampleTask1Prompt } from '@/lib/f
 import type { SubmitWritingAssessmentResult } from '@/lib/services/writing/application-service';
 
 const mocks = vi.hoisted(() => ({
-  submitAssessment: vi.fn(),
+  loadWritingPracticePageData: vi.fn(),
+  loadWritingDashboardPageData: vi.fn(),
+  loadWritingTaskData: vi.fn(),
+  submitWritingAssessment: vi.fn(),
 }));
 
-vi.mock('@/lib/assessment-workspace', () => ({
-  getAssessmentWorkspace: () => ({
-    submitAssessment: mocks.submitAssessment,
-  }),
+vi.mock('@/lib/services/writing/application-service', () => ({
+  loadWritingPracticePageData: mocks.loadWritingPracticePageData,
+  loadWritingDashboardPageData: mocks.loadWritingDashboardPageData,
+  loadWritingTaskData: mocks.loadWritingTaskData,
+  submitWritingAssessment: mocks.submitWritingAssessment,
 }));
 
 import { POST } from '../route';
