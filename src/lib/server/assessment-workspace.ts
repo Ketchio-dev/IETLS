@@ -1,99 +1,50 @@
 import {
-  loadWritingDashboardPageData,
-  loadWritingPracticePageData,
-  loadWritingTaskData,
-  submitWritingAssessment,
-  type SubmitWritingAssessmentInput,
-  type SubmitWritingAssessmentResult,
-  type WritingDashboardPageData,
-  type WritingPracticePageData,
-  type WritingTaskData,
+  getAssessmentModuleRegistry,
+  WRITING_ASSESSMENT_MODULE_ID,
+  type AssessmentSearchParams,
+} from '@/lib/assessment-modules/registry';
+import {
+  writingAssessmentWorkspaceDefinition,
+  type AssessmentWorkspaceDefinition,
+} from '@/lib/assessment-modules/workspace';
+import type {
+  SubmitWritingAssessmentInput,
+  SubmitWritingAssessmentResult,
+  WritingDashboardPageData,
+  WritingPracticePageData,
+  WritingTaskData,
 } from '@/lib/services/writing/application-service';
 
-type SearchParamValue = string | string[] | undefined;
+export const defaultAssessmentModuleId = WRITING_ASSESSMENT_MODULE_ID;
 
-export interface AssessmentWorkspaceRoutes {
-  practice: string;
-  dashboard: string;
-  taskApi: string;
-  assessmentApi: string;
+function getDefaultAssessmentModule() {
+  return getAssessmentModuleRegistry().requireModule(defaultAssessmentModuleId);
 }
-
-export interface AssessmentWorkspaceDefinition {
-  id: string;
-  label: string;
-  summary: string;
-  routes: AssessmentWorkspaceRoutes;
-}
-
-interface AssessmentModuleDefinition<PracticePageData, DashboardPageData, TaskData, SubmitInput, SubmitResult> {
-  workspace: AssessmentWorkspaceDefinition;
-  loadPracticePageData(searchParams?: Record<string, SearchParamValue>): Promise<PracticePageData>;
-  loadDashboardPageData(): Promise<DashboardPageData>;
-  loadTaskData(): Promise<TaskData>;
-  submitAssessment(input: SubmitInput): Promise<SubmitResult>;
-}
-
-type AssessmentModuleRegistry = {
-  writing: AssessmentModuleDefinition<
-    WritingPracticePageData,
-    WritingDashboardPageData,
-    WritingTaskData,
-    SubmitWritingAssessmentInput,
-    SubmitWritingAssessmentResult
-  >;
-};
-
-export type AssessmentModuleId = keyof AssessmentModuleRegistry;
-
-const assessmentModuleRegistry: AssessmentModuleRegistry = {
-  writing: {
-    workspace: {
-      id: 'writing',
-      label: 'IELTS Academic Writing',
-      summary: 'Timed writing practice with persisted reports, dashboard trends, and Gemini 3 Flash scoring by default.',
-      routes: {
-        practice: '/',
-        dashboard: '/dashboard',
-        taskApi: '/api/writing/task',
-        assessmentApi: '/api/writing/assessment',
-      },
-    },
-    loadPracticePageData: loadWritingPracticePageData,
-    loadDashboardPageData: loadWritingDashboardPageData,
-    loadTaskData: loadWritingTaskData,
-    submitAssessment: submitWritingAssessment,
-  },
-};
-
-export const defaultAssessmentModuleId: AssessmentModuleId = 'writing';
 
 export function listAssessmentWorkspaces(): AssessmentWorkspaceDefinition[] {
-  return Object.values(assessmentModuleRegistry).map((module) => module.workspace);
-}
-
-export function getAssessmentModule(moduleId: AssessmentModuleId = defaultAssessmentModuleId) {
-  return assessmentModuleRegistry[moduleId];
+  return [writingAssessmentWorkspaceDefinition];
 }
 
 export function getDefaultAssessmentWorkspace() {
-  return getAssessmentModule().workspace;
+  return writingAssessmentWorkspaceDefinition;
 }
 
 export function loadDefaultAssessmentPracticePageData(
-  searchParams: Record<string, SearchParamValue> = {},
-) {
-  return getAssessmentModule().loadPracticePageData(searchParams);
+  searchParams: AssessmentSearchParams = {},
+): Promise<WritingPracticePageData> {
+  return getDefaultAssessmentModule().loadPracticePageData(searchParams);
 }
 
-export function loadDefaultAssessmentDashboardPageData() {
-  return getAssessmentModule().loadDashboardPageData();
+export function loadDefaultAssessmentDashboardPageData(): Promise<WritingDashboardPageData> {
+  return getDefaultAssessmentModule().loadDashboardPageData();
 }
 
-export function loadDefaultAssessmentTaskData() {
-  return getAssessmentModule().loadTaskData();
+export function loadDefaultAssessmentTaskData(): Promise<WritingTaskData> {
+  return getDefaultAssessmentModule().loadTaskData();
 }
 
-export function submitDefaultAssessment(input: SubmitWritingAssessmentInput) {
-  return getAssessmentModule().submitAssessment(input);
+export function submitDefaultAssessment(
+  input: SubmitWritingAssessmentInput,
+): Promise<SubmitWritingAssessmentResult> {
+  return getDefaultAssessmentModule().submitAssessment(input);
 }

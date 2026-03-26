@@ -6,7 +6,6 @@ import {
   getAssessmentModuleRegistry,
   type AssessmentModuleDefinition,
 } from '../registry';
-import { createAssessmentWorkspace } from '@/lib/assessment-workspace';
 
 function createModuleSpies(): AssessmentModuleDefinition<typeof WRITING_ASSESSMENT_MODULE_ID> {
   return {
@@ -23,19 +22,26 @@ describe('assessment module registry', () => {
     expect(getAssessmentModuleRegistry().listModuleIds()).toEqual([WRITING_ASSESSMENT_MODULE_ID]);
   });
 
-  it('routes workspace operations through the resolved assessment module', async () => {
+  it('routes operations through the resolved assessment module', async () => {
     const assessmentModule = createModuleSpies();
     const registry = createAssessmentModuleRegistry([assessmentModule]);
-    const workspace = createAssessmentWorkspace(registry);
     const searchParams = { promptId: 'prompt-1', attemptId: 'attempt-1' };
-    const submission = { promptId: 'prompt-1', response: 'Long enough response text for the workspace handoff.', timeSpentMinutes: 22 };
+    const submission = {
+      promptId: 'prompt-1',
+      response: 'Long enough response text for the registry handoff.',
+      timeSpentMinutes: 22,
+    };
 
-    await expect(workspace.loadPracticePageData(WRITING_ASSESSMENT_MODULE_ID, searchParams)).resolves.toEqual({
+    await expect(registry.requireModule(WRITING_ASSESSMENT_MODULE_ID).loadPracticePageData(searchParams)).resolves.toEqual({
       kind: 'practice',
     });
-    await expect(workspace.loadDashboardPageData(WRITING_ASSESSMENT_MODULE_ID)).resolves.toEqual({ kind: 'dashboard' });
-    await expect(workspace.loadTaskData(WRITING_ASSESSMENT_MODULE_ID)).resolves.toEqual({ kind: 'task' });
-    await expect(workspace.submitAssessment(WRITING_ASSESSMENT_MODULE_ID, submission)).resolves.toEqual({
+    await expect(registry.requireModule(WRITING_ASSESSMENT_MODULE_ID).loadDashboardPageData()).resolves.toEqual({
+      kind: 'dashboard',
+    });
+    await expect(registry.requireModule(WRITING_ASSESSMENT_MODULE_ID).loadTaskData()).resolves.toEqual({
+      kind: 'task',
+    });
+    await expect(registry.requireModule(WRITING_ASSESSMENT_MODULE_ID).submitAssessment(submission)).resolves.toEqual({
       ok: true,
       payload: { kind: 'submit' },
     });

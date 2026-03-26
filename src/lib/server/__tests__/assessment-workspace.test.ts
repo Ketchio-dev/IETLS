@@ -10,18 +10,27 @@ import type {
 } from '@/lib/services/writing/application-service';
 
 const mocks = vi.hoisted(() => ({
-  loadWritingPracticePageData: vi.fn(),
-  loadWritingDashboardPageData: vi.fn(),
-  loadWritingTaskData: vi.fn(),
-  submitWritingAssessment: vi.fn(),
+  assessmentModule: {
+    loadPracticePageData: vi.fn(),
+    loadDashboardPageData: vi.fn(),
+    loadTaskData: vi.fn(),
+    submitAssessment: vi.fn(),
+  },
+  requireModule: vi.fn(),
 }));
 
-vi.mock('@/lib/services/writing/application-service', () => ({
-  loadWritingPracticePageData: mocks.loadWritingPracticePageData,
-  loadWritingDashboardPageData: mocks.loadWritingDashboardPageData,
-  loadWritingTaskData: mocks.loadWritingTaskData,
-  submitWritingAssessment: mocks.submitWritingAssessment,
-}));
+vi.mock('@/lib/assessment-modules/registry', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/assessment-modules/registry')>('@/lib/assessment-modules/registry');
+
+  return {
+    ...actual,
+    getAssessmentModuleRegistry: () => ({
+      getModule: vi.fn(),
+      listModuleIds: vi.fn(() => [actual.WRITING_ASSESSMENT_MODULE_ID]),
+      requireModule: mocks.requireModule,
+    }),
+  };
+});
 
 import {
   defaultAssessmentModuleId,
@@ -35,6 +44,7 @@ import {
 
 afterEach(() => {
   vi.clearAllMocks();
+  mocks.requireModule.mockReturnValue(mocks.assessmentModule);
 });
 
 describe('assessment workspace registry', () => {
@@ -55,7 +65,7 @@ describe('assessment workspace registry', () => {
     expect(listAssessmentWorkspaces()).toEqual([getDefaultAssessmentWorkspace()]);
   });
 
-  it('delegates the default page loaders to the writing application-service boundary', async () => {
+  it('delegates the default page loaders through the registered assessment module', async () => {
     const practicePageData: WritingPracticePageData = {
       prompts: writingPromptBank,
       prompt: samplePrompt,
@@ -109,9 +119,10 @@ describe('assessment workspace registry', () => {
       prompts: writingPromptBank,
     };
 
-    mocks.loadWritingPracticePageData.mockResolvedValue(practicePageData);
-    mocks.loadWritingDashboardPageData.mockResolvedValue(dashboardPageData);
-    mocks.loadWritingTaskData.mockResolvedValue(taskData);
+    mocks.requireModule.mockReturnValue(mocks.assessmentModule);
+    mocks.assessmentModule.loadPracticePageData.mockResolvedValue(practicePageData);
+    mocks.assessmentModule.loadDashboardPageData.mockResolvedValue(dashboardPageData);
+    mocks.assessmentModule.loadTaskData.mockResolvedValue(taskData);
 
     await expect(
       loadDefaultAssessmentPracticePageData({ promptId: samplePrompt.id, attemptId: 'attempt-1' }),
@@ -119,15 +130,16 @@ describe('assessment workspace registry', () => {
     await expect(loadDefaultAssessmentDashboardPageData()).resolves.toEqual(dashboardPageData);
     await expect(loadDefaultAssessmentTaskData()).resolves.toEqual(taskData);
 
-    expect(mocks.loadWritingPracticePageData).toHaveBeenCalledWith({
+    expect(mocks.requireModule).toHaveBeenCalledWith(defaultAssessmentModuleId);
+    expect(mocks.assessmentModule.loadPracticePageData).toHaveBeenCalledWith({
       promptId: samplePrompt.id,
       attemptId: 'attempt-1',
     });
-    expect(mocks.loadWritingDashboardPageData).toHaveBeenCalledWith();
-    expect(mocks.loadWritingTaskData).toHaveBeenCalledWith();
+    expect(mocks.assessmentModule.loadDashboardPageData).toHaveBeenCalledWith();
+    expect(mocks.assessmentModule.loadTaskData).toHaveBeenCalledWith();
   });
 
-  it('delegates assessment submission to the registered writing module', async () => {
+  it('delegates assessment submission to the registered module', async () => {
     const response =
       'This response is intentionally long enough to pass the submission gate while keeping the registry delegation test focused.';
     const input: SubmitWritingAssessmentInput = {
@@ -153,9 +165,11 @@ describe('assessment workspace registry', () => {
       },
     };
 
-    mocks.submitWritingAssessment.mockResolvedValue(result);
+    mocks.requireModule.mockReturnValue(mocks.assessmentModule);
+    mocks.assessmentModule.submitAssessment.mockResolvedValue(result);
 
     await expect(submitDefaultAssessment(input)).resolves.toEqual(result);
-    expect(mocks.submitWritingAssessment).toHaveBeenCalledWith(input);
+    expect(mocks.requireModule).toHaveBeenCalledWith(defaultAssessmentModuleId);
+    expect(mocks.assessmentModule.submitAssessment).toHaveBeenCalledWith(input);
   });
 });
