@@ -32,10 +32,12 @@ describe('POST /api/speaking/assessment', () => {
       transcript: 'Too short',
       durationSeconds: 18,
     };
-    const response = await POST(new Request('http://localhost/api/speaking/assessment', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    }));
+    const response = await POST(
+      new Request('http://localhost/api/speaking/assessment', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    );
 
     expect(response.status).toBe(400);
     expect(mocks.submitAssessmentForModule).toHaveBeenCalledWith(SPEAKING_ASSESSMENT_MODULE_ID, body);
@@ -44,7 +46,7 @@ describe('POST /api/speaking/assessment', () => {
     });
   });
 
-  it('returns a scored payload for valid transcripts', async () => {
+  it('returns a scored payload for valid transcripts and audio metadata', async () => {
     const payload: Extract<SubmitSpeakingAssessmentResult, { ok: true }>['payload'] = {
       report: sampleSpeakingAssessmentReport,
       session: {
@@ -56,6 +58,15 @@ describe('POST /api/speaking/assessment', () => {
         transcript:
           'I enjoy living in my city because it is convenient and there are many useful services nearby.',
         transcriptWordCount: 15,
+        transcriptSource: 'manual',
+        audioArtifact: {
+          status: 'attached',
+          source: 'upload',
+          fileName: 'city-response.webm',
+          mimeType: 'audio/webm',
+          sizeBytes: 345000,
+          durationSeconds: 41,
+        },
         report: sampleSpeakingAssessmentReport,
       },
       recentSessions: [],
@@ -68,11 +79,19 @@ describe('POST /api/speaking/assessment', () => {
       transcript:
         'I enjoy living in my city because it is convenient and there are many useful services nearby.',
       durationSeconds: 42,
+      audioArtifact: {
+        fileName: 'city-response.webm',
+        mimeType: 'audio/webm',
+        sizeBytes: 345000,
+        durationSeconds: 41,
+      },
     };
-    const response = await POST(new Request('http://localhost/api/speaking/assessment', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    }));
+    const response = await POST(
+      new Request('http://localhost/api/speaking/assessment', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    );
 
     expect(response.status).toBe(200);
     expect(mocks.submitAssessmentForModule).toHaveBeenCalledWith(SPEAKING_ASSESSMENT_MODULE_ID, body);

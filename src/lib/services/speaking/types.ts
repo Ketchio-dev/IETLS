@@ -1,6 +1,7 @@
 import type { BandRange, ConfidenceLevel } from '@/lib/domain';
 
 export type SpeakingPart = 'part-1' | 'part-2' | 'part-3';
+export type SpeakingEvidenceMode = 'transcript-only' | 'transcript-plus-audio-metadata';
 
 export type SpeakingCriterionName =
   | 'Fluency & Coherence'
@@ -19,6 +20,22 @@ export interface SpeakingPrompt {
   recommendedSeconds: number;
   keywordTargets?: string[];
   focusAreas: string[];
+}
+
+export interface SpeakingAudioArtifact {
+  status: 'missing' | 'attached';
+  source: 'none' | 'upload';
+  fileName: string | null;
+  mimeType: string | null;
+  sizeBytes: number | null;
+  durationSeconds: number | null;
+}
+
+export interface SpeakingAudioArtifactInput {
+  fileName?: string | null;
+  mimeType?: string | null;
+  sizeBytes?: number | null;
+  durationSeconds?: number | null;
 }
 
 export interface SpeakingCriterionScore {
@@ -41,6 +58,7 @@ export interface SpeakingAssessmentReport {
   summary: string;
   transcriptWordCount: number;
   estimatedDurationSeconds: number;
+  evidenceMode: SpeakingEvidenceMode;
   criterionScores: SpeakingCriterionScore[];
   strengths: string[];
   risks: string[];
@@ -59,7 +77,9 @@ export interface SpeakingSessionSnapshot {
   createdAt: string;
   durationSeconds: number;
   transcript: string;
+  transcriptSource: 'seed' | 'manual';
   transcriptWordCount: number;
+  audioArtifact: SpeakingAudioArtifact;
   report: SpeakingAssessmentReport;
 }
 
@@ -73,6 +93,8 @@ export interface SpeakingRecentSessionSummary {
   summary: string;
   durationSeconds: number;
   transcriptWordCount: number;
+  audioStatus: SpeakingAudioArtifact['status'];
+  evidenceMode: SpeakingEvidenceMode;
   createdAt: string;
 }
 
@@ -84,6 +106,7 @@ export interface SpeakingDashboardSummary {
   averageDurationSeconds: number;
   latestAttemptAt: string | null;
   lowConfidenceCount: number;
+  sessionsWithAudio: number;
   partBreakdown: Record<SpeakingPart, number>;
 }
 
@@ -116,6 +139,7 @@ export interface SubmitSpeakingAssessmentInput {
   promptId?: string | string[];
   transcript?: string | string[];
   durationSeconds?: unknown;
+  audioArtifact?: SpeakingAudioArtifactInput;
 }
 
 export type SubmitSpeakingAssessmentResult =

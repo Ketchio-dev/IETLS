@@ -5,6 +5,7 @@ const STORAGE_FILES = {
   prompts: 'writing-prompts.json',
   assessments: 'writing-assessments.json',
   studyPlan: 'writing-study-plan.json',
+  speakingSessions: 'speaking-sessions.json',
 } as const;
 
 const defaultDataDir = path.join('data', 'runtime');

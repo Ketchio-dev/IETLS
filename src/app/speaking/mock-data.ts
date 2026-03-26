@@ -41,7 +41,7 @@ export function getSampleSpeakingPracticePageData(
 }
 
 export async function getSampleSpeakingDashboardPageData(): Promise<SpeakingDashboardPageData> {
-  const service = createSpeakingApplicationService({ initialSavedSessions: sampleSpeakingSavedSessions });
+  const service = createSpeakingApplicationService();
   return service.loadDashboardPageData();
 }
 

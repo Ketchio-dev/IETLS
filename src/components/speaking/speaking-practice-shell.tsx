@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 
-import { getPromptTranscriptSeed } from '@/lib/services/speaking/application-service';
+import { getSampleSpeakingTranscript } from '@/lib/fixtures/speaking';
 import type {
   SpeakingAssessmentReport,
+  SpeakingAudioArtifact,
   SpeakingPracticePageData,
   SpeakingPrompt,
   SpeakingRecentSessionSummary,
@@ -13,6 +14,17 @@ import type {
 } from '@/lib/services/speaking/types';
 
 import { SpeakingAssessmentReportPanel } from './speaking-assessment-report';
+
+function createMissingAudioArtifact(): SpeakingAudioArtifact {
+  return {
+    status: 'missing',
+    source: 'none',
+    fileName: null,
+    mimeType: null,
+    sizeBytes: null,
+    durationSeconds: null,
+  };
+}
 
 function formatBandRange(lower: number, upper: number) {
   return `Band ${lower.toFixed(1)}-${upper.toFixed(1)}`;
@@ -24,6 +36,46 @@ function formatPart(part: SpeakingPrompt['part']) {
 
 function buildResumeHref(session: SpeakingSessionSnapshot) {
   return `/speaking?promptId=${encodeURIComponent(session.promptId)}&sessionId=${encodeURIComponent(session.sessionId)}`;
+}
+
+function formatFileSize(bytes: number | null) {
+  if (bytes == null) {
+    return 'Size unavailable';
+  }
+  if (bytes >= 1_000_000) {
+    return `${(bytes / 1_000_000).toFixed(1)} MB`;
+  }
+  if (bytes >= 1_000) {
+    return `${(bytes / 1_000).toFixed(1)} KB`;
+  }
+  return `${bytes} B`;
+}
+
+async function readAudioArtifact(file: File): Promise<SpeakingAudioArtifact> {
+  const durationSeconds = await new Promise<number | null>((resolve) => {
+    const objectUrl = URL.createObjectURL(file);
+    const audio = document.createElement('audio');
+    audio.preload = 'metadata';
+    audio.src = objectUrl;
+    audio.onloadedmetadata = () => {
+      const duration = Number.isFinite(audio.duration) ? Math.max(0, Math.round(audio.duration)) : null;
+      URL.revokeObjectURL(objectUrl);
+      resolve(duration);
+    };
+    audio.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(null);
+    };
+  });
+
+  return {
+    status: 'attached',
+    source: 'upload',
+    fileName: file.name,
+    mimeType: file.type || 'application/octet-stream',
+    sizeBytes: file.size,
+    durationSeconds,
+  };
 }
 
 type SpeakingPracticeShellProps = SpeakingPracticePageData;
@@ -64,6 +116,7 @@ function RecentSessionsPanel({
                 <span>{formatPart(session.part)}</span>
                 <span>{session.transcriptWordCount} words</span>
                 <span>{session.durationSeconds}s</span>
+                <span>{session.audioArtifact.status === 'attached' ? 'audio attached' : 'no audio metadata'}</span>
               </div>
               <div className="hero-actions">
                 <button className="primary-button" onClick={() => onInspect(session)} type="button">
@@ -95,11 +148,17 @@ export function SpeakingPracticeShell({
   const [transcript, setTranscript] = useState(initialTranscript);
   const [secondsRemaining, setSecondsRemaining] = useState(initialDurationSeconds);
   const [savedSessions, setSavedSessions] = useState(initialSavedSessions);
-  const [recentSessions, setRecentSessions] = useState(initialRecentSessions);
+  const [, setRecentSessions] = useState(initialRecentSessions);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(
     initialSessionId ?? initialSavedSessions[0]?.sessionId ?? null,
   );
   const [report, setReport] = useState<SpeakingAssessmentReport>(initialReport);
+  const [audioArtifact, setAudioArtifact] = useState<SpeakingAudioArtifact>(
+    initialSavedSessions.find((session) => session.sessionId === initialSessionId)?.audioArtifact ?? createMissingAudioArtifact(),
+  );
+  const [transcriptSource, setTranscriptSource] = useState<'seed' | 'manual'>(
+    initialSavedSessions.find((session) => session.sessionId === initialSessionId)?.transcriptSource ?? 'manual',
+  );
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -111,10 +170,11 @@ export function SpeakingPracticeShell({
     () => savedSessions.filter((session) => session.promptId === activePrompt.id),
     [activePrompt.id, savedSessions],
   );
-  const wordCount = useMemo(
-    () => transcript.trim().split(/\s+/).filter(Boolean).length,
-    [transcript],
+  const activeSession = useMemo(
+    () => promptSessions.find((session) => session.sessionId === activeSessionId) ?? promptSessions[0] ?? null,
+    [activeSessionId, promptSessions],
   );
+  const wordCount = useMemo(() => transcript.trim().split(/\s+/).filter(Boolean).length, [transcript]);
   const elapsedSeconds = Math.max(activePrompt.recommendedSeconds - secondsRemaining, 0);
 
   useEffect(() => {
@@ -126,21 +186,31 @@ export function SpeakingPracticeShell({
   }, []);
 
   useEffect(() => {
-    const selectedSession =
-      promptSessions.find((session) => session.sessionId === activeSessionId) ?? promptSessions[0] ?? null;
-
-    setSecondsRemaining(selectedSession?.durationSeconds ?? activePrompt.recommendedSeconds);
+    setSecondsRemaining(activeSession?.durationSeconds ?? activePrompt.recommendedSeconds);
     setError(null);
-    setTranscript(selectedSession?.transcript ?? getPromptTranscriptSeed(activePrompt.id));
+    setTranscript(activeSession?.transcript ?? getSampleSpeakingTranscript(activePrompt.id));
+    setTranscriptSource(activeSession?.transcriptSource ?? 'manual');
+    setAudioArtifact(activeSession?.audioArtifact ?? createMissingAudioArtifact());
     setReport(
-      selectedSession?.report ?? {
+      activeSession?.report ?? {
         ...initialReport,
         promptId: activePrompt.id,
         part: activePrompt.part,
-        sessionId: initialReport.sessionId,
+        evidenceMode: 'transcript-only',
       },
     );
-  }, [activePrompt.id, activePrompt.part, activePrompt.recommendedSeconds, activeSessionId, initialReport, promptSessions]);
+  }, [activePrompt.id, activePrompt.part, activePrompt.recommendedSeconds, activeSession, initialReport]);
+
+  async function handleAudioSelection(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      setAudioArtifact(createMissingAudioArtifact());
+      return;
+    }
+
+    const nextArtifact = await readAudioArtifact(file);
+    setAudioArtifact(nextArtifact);
+  }
 
   async function handleSubmit() {
     setIsSubmitting(true);
@@ -154,23 +224,27 @@ export function SpeakingPracticeShell({
           promptId: activePrompt.id,
           transcript,
           durationSeconds: elapsedSeconds > 0 ? elapsedSeconds : activePrompt.recommendedSeconds,
+          audioArtifact: audioArtifact.status === 'attached' ? audioArtifact : undefined,
         }),
       });
       const payload = (await response.json()) as {
         error?: string;
         report?: SpeakingAssessmentReport;
+        session?: SpeakingSessionSnapshot;
         recentSessions?: SpeakingRecentSessionSummary[];
         savedSessions?: SpeakingSessionSnapshot[];
       };
 
-      if (!response.ok || !payload.report || !payload.savedSessions) {
+      if (!response.ok || !payload.report || !payload.savedSessions || !payload.session) {
         throw new Error(payload.error ?? 'Unable to generate the speaking report');
       }
 
       setReport(payload.report);
       setRecentSessions(payload.recentSessions ?? []);
       setSavedSessions(payload.savedSessions);
-      setActiveSessionId(payload.savedSessions[0]?.sessionId ?? null);
+      setActiveSessionId(payload.session.sessionId);
+      setTranscriptSource(payload.session.transcriptSource);
+      setAudioArtifact(payload.session.audioArtifact);
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : 'Unexpected speaking submission error');
     } finally {
@@ -183,7 +257,9 @@ export function SpeakingPracticeShell({
     setActiveSessionId(session.sessionId);
     setReport(session.report);
     setTranscript(session.transcript);
+    setTranscriptSource(session.transcriptSource);
     setSecondsRemaining(session.durationSeconds);
+    setAudioArtifact(session.audioArtifact);
   }
 
   return (
@@ -191,17 +267,17 @@ export function SpeakingPracticeShell({
       <section className="hero panel">
         <div>
           <p className="eyebrow">IELTS Academic • Speaking alpha</p>
-          <h1>Run a timed speaking practice flow with a plausible local scorecard</h1>
+          <h1>Run a timed speaking practice flow with transcript scoring and audio-ready evidence</h1>
           <p className="hero-copy">
-            Pick a Part 1, Part 2, or Part 3 prompt, draft or paste your transcript, and keep a
-            light recent-session trail while audio capture is still pending.
+            Pick a prompt, attach audio metadata if you have it, keep your transcript aligned to the same session,
+            and build a local session history that is ready for a future STT pipeline.
           </p>
           <div className="hero-actions">
             <Link className="secondary-link-button" href="/speaking/dashboard">
               Open speaking dashboard
             </Link>
             <p className="hero-action-copy">
-              Review recent sessions, part coverage, and the next local study focus.
+              Review recent sessions, part coverage, and whether audio metadata is attached for later analysis.
             </p>
           </div>
         </div>
@@ -217,8 +293,8 @@ export function SpeakingPracticeShell({
             <strong>{wordCount}</strong>
           </div>
           <div className="metric-card">
-            <span>Speaking part</span>
-            <strong>{activePrompt.part.toUpperCase()}</strong>
+            <span>Audio</span>
+            <strong>{audioArtifact.status === 'attached' ? 'Attached' : 'Optional'}</strong>
           </div>
         </div>
       </section>
@@ -296,6 +372,32 @@ export function SpeakingPracticeShell({
                 </ul>
               </div>
             )}
+            <label className="eyebrow" htmlFor="speaking-audio-file">
+              Audio file (optional)
+            </label>
+            <input id="speaking-audio-file" type="file" accept="audio/*" onChange={handleAudioSelection} />
+            <div className="visual-card" style={{ margin: '0.75rem 0 1rem' }}>
+              <strong>Audio evidence status</strong>
+              {audioArtifact.status === 'attached' ? (
+                <ul className="plain-list compact-list">
+                  <li>{audioArtifact.fileName}</li>
+                  <li>{audioArtifact.mimeType}</li>
+                  <li>{formatFileSize(audioArtifact.sizeBytes)}</li>
+                  <li>
+                    {audioArtifact.durationSeconds
+                      ? `${audioArtifact.durationSeconds}s measured duration`
+                      : 'Duration could not be measured in-browser'}
+                  </li>
+                </ul>
+              ) : (
+                <p className="summary-copy">No audio file attached yet. You can still score with transcript and timing only.</p>
+              )}
+              {audioArtifact.status === 'attached' ? (
+                <button className="secondary-link-button" style={{ marginTop: '0.75rem' }} type="button" onClick={() => setAudioArtifact(createMissingAudioArtifact())}>
+                  Remove audio metadata
+                </button>
+              ) : null}
+            </div>
             <label className="eyebrow" htmlFor="speaking-transcript">
               Speaking transcript
             </label>
@@ -303,7 +405,10 @@ export function SpeakingPracticeShell({
               id="speaking-transcript"
               className="essay-textarea"
               value={transcript}
-              onChange={(event) => setTranscript(event.target.value)}
+              onChange={(event) => {
+                setTranscriptSource('manual');
+                setTranscript(event.target.value);
+              }}
               placeholder="Paste or draft a transcript here while the alpha remains transcript-first."
             />
             {error ? <p className="error-text">{error}</p> : null}
@@ -312,36 +417,25 @@ export function SpeakingPracticeShell({
                 {isSubmitting ? 'Scoring…' : 'Generate speaking scorecard'}
               </button>
               <p className="hero-action-copy">
-                Current alpha uses transcript + timing heuristics and stores the latest session locally.
+                This slice stores transcript plus audio metadata only. Raw audio bytes are not persisted or transcribed yet.
               </p>
             </div>
           </article>
         </div>
 
         <div className="workspace-column right-column">
-          <SpeakingAssessmentReportPanel report={report} prompt={activePrompt} />
+          <SpeakingAssessmentReportPanel
+            report={report}
+            prompt={activePrompt}
+            transcriptSource={transcriptSource}
+            audioArtifact={audioArtifact}
+          />
           <RecentSessionsPanel
             prompts={prompts}
             sessions={savedSessions}
             activeSessionId={activeSessionId}
             onInspect={handleInspectSession}
           />
-          <article className="panel">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Recent summary</p>
-                <h2>Latest local scoring snapshots</h2>
-              </div>
-              <span className="band-chip">{recentSessions.length} entries</span>
-            </div>
-            <ul className="plain-list compact-list">
-              {recentSessions.map((session) => (
-                <li key={session.sessionId}>
-                  <strong>{formatPart(session.part)}</strong> · {formatBandRange(session.overallBandRange.lower, session.overallBandRange.upper)} · {session.confidence} confidence
-                </li>
-              ))}
-            </ul>
-          </article>
         </div>
       </section>
     </main>

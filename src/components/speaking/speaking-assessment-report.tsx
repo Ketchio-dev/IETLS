@@ -1,15 +1,30 @@
-import type { SpeakingAssessmentReport, SpeakingPrompt } from '@/app/speaking/mock-data';
+import type { SpeakingAssessmentReport, SpeakingAudioArtifact, SpeakingPrompt } from '@/lib/services/speaking/types';
 
 interface Props {
   report: SpeakingAssessmentReport;
   prompt: SpeakingPrompt;
+  transcriptSource: 'seed' | 'manual';
+  audioArtifact: SpeakingAudioArtifact;
 }
 
 function formatRange(lower: number, upper: number) {
   return `Band ${lower.toFixed(1)}-${upper.toFixed(1)}`;
 }
 
-export function SpeakingAssessmentReportPanel({ report, prompt }: Props) {
+function formatFileSize(bytes: number | null) {
+  if (bytes == null) {
+    return 'Size unavailable';
+  }
+  if (bytes >= 1_000_000) {
+    return `${(bytes / 1_000_000).toFixed(1)} MB`;
+  }
+  if (bytes >= 1_000) {
+    return `${(bytes / 1_000).toFixed(1)} KB`;
+  }
+  return `${bytes} B`;
+}
+
+export function SpeakingAssessmentReportPanel({ report, prompt, transcriptSource, audioArtifact }: Props) {
   return (
     <article className="panel report-panel">
       <div className="report-header">
@@ -56,6 +71,22 @@ export function SpeakingAssessmentReportPanel({ report, prompt }: Props) {
           </ul>
         </section>
       </div>
+
+      <section className="panel" style={{ marginTop: '1rem' }}>
+        <p className="eyebrow">Evidence intake</p>
+        <div className="history-meta">
+          <span>Transcript source: {transcriptSource}</span>
+          <span>{report.evidenceMode === 'transcript-plus-audio-metadata' ? 'Audio metadata attached' : 'Transcript only'}</span>
+        </div>
+        {audioArtifact.status === 'attached' ? (
+          <div className="history-meta" style={{ marginTop: '0.5rem' }}>
+            <span>{audioArtifact.fileName}</span>
+            <span>{audioArtifact.mimeType}</span>
+            <span>{formatFileSize(audioArtifact.sizeBytes)}</span>
+            <span>{audioArtifact.durationSeconds ? `${audioArtifact.durationSeconds}s measured` : 'Duration pending'}</span>
+          </div>
+        ) : null}
+      </section>
 
       <div className="report-footer">
         <span>{report.providerLabel}</span>

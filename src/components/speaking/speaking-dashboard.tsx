@@ -38,6 +38,13 @@ export function SpeakingDashboard({ prompts = [], recentSessions, summary, study
       eyebrow: 'Timing',
     },
     {
+      id: 'audio-sessions',
+      label: 'Audio-backed sessions',
+      value: String(summary.sessionsWithAudio),
+      detail: 'Metadata only for now; raw audio is not persisted yet.',
+      eyebrow: 'STT readiness',
+    },
+    {
       id: 'latest-attempt',
       label: 'Latest session',
       value: summary.latestAttemptAt ? formatDateTime(summary.latestAttemptAt) : '—',
@@ -51,10 +58,10 @@ export function SpeakingDashboard({ prompts = [], recentSessions, summary, study
       <section className="hero panel dashboard-hero">
         <div>
           <p className="eyebrow">IELTS Academic • Speaking dashboard</p>
-          <h1>Track part coverage and recent speaking confidence</h1>
+          <h1>Track part coverage, confidence, and audio readiness</h1>
           <p className="hero-copy">
-            Use this alpha dashboard to see how often you practise each speaking part and which
-            local improvement moves should come next.
+            Use this alpha dashboard to see how often you practise each speaking part and whether your
+            recent sessions are ready for a future STT or audio-analysis pass.
           </p>
           <div className="dashboard-actions">
             <Link className="primary-button dashboard-link-button" href="/speaking">
@@ -120,7 +127,7 @@ export function SpeakingDashboard({ prompts = [], recentSessions, summary, study
                       <strong>{promptTitle}</strong>
                       <span>{formatPart(session.part)}</span>
                     </div>
-                    <p>{session.transcript}</p>
+                    <p>{session.report.summary}</p>
                     <div className="history-meta">
                       <span>{formatBandRange(session.report.overallBandRange.lower, session.report.overallBandRange.upper)}</span>
                       <span>{session.report.confidence} confidence</span>
@@ -128,6 +135,7 @@ export function SpeakingDashboard({ prompts = [], recentSessions, summary, study
                     <div className="history-meta">
                       <span>{session.transcriptWordCount} words</span>
                       <span>{session.durationSeconds}s</span>
+                      <span>{session.audioArtifact.status === 'attached' ? 'audio attached' : 'no audio metadata'}</span>
                       <span>{new Date(session.createdAt).toLocaleString()}</span>
                     </div>
                     <div className="hero-actions">

@@ -40,6 +40,7 @@ describe('SpeakingDashboardPage', () => {
         averageDurationSeconds: 78,
         latestAttemptAt: sampleSpeakingSavedSessions[0]!.createdAt,
         lowConfidenceCount: 1,
+        sessionsWithAudio: 1,
         partBreakdown: { 'part-1': 1, 'part-2': 1, 'part-3': 1 },
       },
       studyFocus: ['Repeat the latest prompt with one better example.'],

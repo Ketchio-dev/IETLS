@@ -1,5 +1,6 @@
 import type {
   SpeakingAssessmentReport,
+  SpeakingAudioArtifact,
   SpeakingPrompt,
   SpeakingRecentSessionSummary,
   SpeakingSessionSnapshot,
@@ -7,6 +8,17 @@ import type {
 
 function countWords(transcript: string) {
   return transcript.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function createMissingAudioArtifact(): SpeakingAudioArtifact {
+  return {
+    status: 'missing',
+    source: 'none',
+    fileName: null,
+    mimeType: null,
+    sizeBytes: null,
+    durationSeconds: null,
+  };
 }
 
 export const speakingPromptBank: SpeakingPrompt[] = [
@@ -75,6 +87,21 @@ export function getSampleSpeakingTranscript(promptId: string) {
   return sampleTranscriptsByPromptId[promptId] ?? '';
 }
 
+function buildAudioArtifact(index: number): SpeakingAudioArtifact {
+  if (index !== 2) {
+    return createMissingAudioArtifact();
+  }
+
+  return {
+    status: 'attached',
+    source: 'upload',
+    fileName: 'teacher-response.m4a',
+    mimeType: 'audio/mp4',
+    sizeBytes: 1_248_000,
+    durationSeconds: 114,
+  };
+}
+
 function buildSampleSpeakingReport(
   prompt: SpeakingPrompt,
   sessionId: string,
@@ -82,8 +109,10 @@ function buildSampleSpeakingReport(
   transcript: string,
   durationSeconds: number,
   overallBand: number,
+  audioArtifact: SpeakingAudioArtifact,
 ): SpeakingAssessmentReport {
   const transcriptWordCount = countWords(transcript);
+  const evidenceMode = audioArtifact.status === 'attached' ? 'transcript-plus-audio-metadata' : 'transcript-only';
 
   return {
     reportId: `speaking-report-${sessionId}`,
@@ -93,13 +122,14 @@ function buildSampleSpeakingReport(
     overallBand,
     overallBandRange: { lower: Math.max(4.5, overallBand - 0.5), upper: Math.min(8, overallBand) },
     confidence: prompt.part === 'part-2' ? 'medium' : 'high',
-    confidenceReasons: ['Mock local speaking alpha report', 'Transcript-only evidence with timed-response heuristics'],
+    confidenceReasons: ['Mock local speaking alpha report', 'Transcript-first evidence with metadata-only audio readiness'],
     summary:
       prompt.part === 'part-2'
         ? 'The response keeps a clear narrative and enough development to sound plausible for a sustained long turn.'
         : 'The response is clear and relevant, but a fuller example or contrast would create a stronger IELTS-style answer.',
     transcriptWordCount,
     estimatedDurationSeconds: durationSeconds,
+    evidenceMode,
     criterionScores: [
       {
         criterion: 'Fluency & Coherence',
@@ -139,6 +169,7 @@ function buildSampleSpeakingReport(
     warnings: [
       'Speaking alpha reports are local practice estimates, not official IELTS scores.',
       'Pronunciation is estimated conservatively until real audio analysis is added.',
+      ...(audioArtifact.status === 'attached' ? ['Only audio metadata is attached in the sample data; raw audio is not persisted.'] : []),
     ],
     providerLabel: 'Local mock scorer',
     scorerModel: 'gemini-3-flash-style-heuristic',
@@ -152,7 +183,8 @@ function buildSession(prompt: SpeakingPrompt, index: number, overallBand: number
   const createdAt = `2026-03-${String(26 - index).padStart(2, '0')}T1${index}:10:00.000Z`;
   const transcript = getSampleSpeakingTranscript(prompt.id);
   const durationSeconds = prompt.recommendedSeconds - (prompt.part === 'part-2' ? 10 : 5);
-  const report = buildSampleSpeakingReport(prompt, sessionId, createdAt, transcript, durationSeconds, overallBand);
+  const audioArtifact = buildAudioArtifact(index);
+  const report = buildSampleSpeakingReport(prompt, sessionId, createdAt, transcript, durationSeconds, overallBand, audioArtifact);
 
   return {
     sessionId,
@@ -162,6 +194,8 @@ function buildSession(prompt: SpeakingPrompt, index: number, overallBand: number
     durationSeconds,
     transcript,
     transcriptWordCount: countWords(transcript),
+    transcriptSource: 'seed',
+    audioArtifact,
     report,
   };
 }
@@ -182,6 +216,8 @@ export const sampleSpeakingRecentSessions: SpeakingRecentSessionSummary[] = samp
   summary: session.report.summary,
   durationSeconds: session.durationSeconds,
   transcriptWordCount: session.transcriptWordCount,
+  audioStatus: session.audioArtifact.status,
+  evidenceMode: session.report.evidenceMode,
   createdAt: session.createdAt,
 }));
 
@@ -193,7 +229,9 @@ export const sampleSpeakingAssessmentReportsByPromptId = Object.fromEntries(
     const transcript = existing?.transcript ?? getSampleSpeakingTranscript(prompt.id);
     const durationSeconds = existing?.durationSeconds ?? prompt.recommendedSeconds;
     const overallBand = existing?.report.overallBand ?? 6.0;
-    return [prompt.id, buildSampleSpeakingReport(prompt, sessionId, createdAt, transcript, durationSeconds, overallBand)];
+    const audioArtifact = existing?.audioArtifact ?? createMissingAudioArtifact();
+
+    return [prompt.id, buildSampleSpeakingReport(prompt, sessionId, createdAt, transcript, durationSeconds, overallBand, audioArtifact)];
   }),
 ) as Record<string, SpeakingAssessmentReport>;
 

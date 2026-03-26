@@ -4,14 +4,19 @@ import {
   sampleSpeakingAssessmentReport,
   sampleSpeakingAssessmentReportsByPromptId,
   sampleSpeakingPrompt,
-  sampleSpeakingSavedSessions,
   speakingPromptBank,
 } from '@/lib/fixtures/speaking';
+import {
+  createSpeakingAssessmentRepository,
+  type SpeakingAssessmentRepository,
+} from '@/lib/server/speaking-assessment-repository';
 
 import type {
   SpeakingAssessmentReport,
+  SpeakingAudioArtifact,
   SpeakingDashboardPageData,
   SpeakingDashboardSummary,
+  SpeakingEvidenceMode,
   SpeakingPracticePageData,
   SpeakingPrompt,
   SpeakingRecentSessionSummary,
@@ -25,8 +30,8 @@ type SearchParamValue = string | string[] | undefined;
 
 interface SpeakingApplicationServiceOptions {
   promptBank?: SpeakingPrompt[];
-  initialSavedSessions?: SpeakingSessionSnapshot[];
   fallbackReports?: Record<string, SpeakingAssessmentReport>;
+  repository?: SpeakingAssessmentRepository;
   now?: () => string;
 }
 
@@ -42,6 +47,54 @@ function countWords(transcript: string) {
   return transcript.trim().split(/\s+/).filter(Boolean).length;
 }
 
+function roundBand(value: number) {
+  return Math.round(value * 2) / 2;
+}
+
+function clampBand(value: number) {
+  return Math.min(8, Math.max(4.5, roundBand(value)));
+}
+
+function createMissingAudioArtifact(): SpeakingAudioArtifact {
+  return {
+    status: 'missing',
+    source: 'none',
+    fileName: null,
+    mimeType: null,
+    sizeBytes: null,
+    durationSeconds: null,
+  };
+}
+
+function normalizeAudioArtifact(value: unknown): SpeakingAudioArtifact {
+  if (!value || typeof value !== 'object') {
+    return createMissingAudioArtifact();
+  }
+
+  const candidate = value as Record<string, unknown>;
+  const fileName = typeof candidate.fileName === 'string' ? candidate.fileName.trim() : '';
+  const mimeType = typeof candidate.mimeType === 'string' ? candidate.mimeType.trim() : '';
+  const sizeBytes = typeof candidate.sizeBytes === 'number' && Number.isFinite(candidate.sizeBytes)
+    ? Math.max(0, Math.round(candidate.sizeBytes))
+    : 0;
+  const durationSeconds = typeof candidate.durationSeconds === 'number' && Number.isFinite(candidate.durationSeconds)
+    ? Math.max(0, Math.round(candidate.durationSeconds))
+    : null;
+
+  if (!fileName || !mimeType || sizeBytes <= 0) {
+    return createMissingAudioArtifact();
+  }
+
+  return {
+    status: 'attached',
+    source: 'upload',
+    fileName,
+    mimeType,
+    sizeBytes,
+    durationSeconds,
+  };
+}
+
 function buildRecentSessionSummary(session: SpeakingSessionSnapshot): SpeakingRecentSessionSummary {
   return {
     sessionId: session.sessionId,
@@ -53,16 +106,10 @@ function buildRecentSessionSummary(session: SpeakingSessionSnapshot): SpeakingRe
     summary: session.report.summary,
     durationSeconds: session.durationSeconds,
     transcriptWordCount: session.transcriptWordCount,
+    audioStatus: session.audioArtifact.status,
+    evidenceMode: session.report.evidenceMode,
     createdAt: session.createdAt,
   };
-}
-
-function roundBand(value: number) {
-  return Math.round(value * 2) / 2;
-}
-
-function clampBand(value: number) {
-  return Math.min(8, Math.max(4.5, roundBand(value)));
 }
 
 function calculateConfidence(wordCount: number, durationSeconds: number, prompt: SpeakingPrompt): ConfidenceLevel {
@@ -75,22 +122,32 @@ function calculateConfidence(wordCount: number, durationSeconds: number, prompt:
   return 'high';
 }
 
+function buildEvidenceMode(audioArtifact: SpeakingAudioArtifact): SpeakingEvidenceMode {
+  return audioArtifact.status === 'attached' ? 'transcript-plus-audio-metadata' : 'transcript-only';
+}
+
 function buildMockSpeakingReport(
   prompt: SpeakingPrompt,
   transcript: string,
   durationSeconds: number,
   sessionId: string,
   generatedAt: string,
+  audioArtifact: SpeakingAudioArtifact,
 ): SpeakingAssessmentReport {
   const wordCount = countWords(transcript);
   const uniqueWords = new Set(transcript.toLowerCase().match(/[a-z']+/g) ?? []).size;
   const keywordHits = (prompt.keywordTargets ?? []).filter((keyword) => transcript.toLowerCase().includes(keyword)).length;
   const durationRatio = durationSeconds / Math.max(prompt.recommendedSeconds, 1);
   const confidence = calculateConfidence(wordCount, durationSeconds, prompt);
+  const evidenceMode = buildEvidenceMode(audioArtifact);
+
   const confidenceReasons = [
     confidence === 'low'
       ? 'The response is shorter than a stable speaking estimate usually needs.'
       : 'The response length is sufficient for a lightweight alpha estimate.',
+    evidenceMode === 'transcript-plus-audio-metadata'
+      ? 'Audio metadata is attached, so this session is ready for a future STT and audio-analysis pass.'
+      : 'No audio metadata is attached yet, so this remains a transcript-first estimate.',
     'Pronunciation is inferred conservatively because audio analysis is not enabled in this local scaffold.',
   ];
 
@@ -123,6 +180,7 @@ function buildMockSpeakingReport(
       : `${partLabel} response is relevant and fairly sustained, with the clearest gains available in precision and extension.`,
     transcriptWordCount: wordCount,
     estimatedDurationSeconds: durationSeconds,
+    evidenceMode,
     criterionScores: [
       {
         criterion: 'Fluency & Coherence',
@@ -162,16 +220,20 @@ function buildMockSpeakingReport(
       wordCount >= 70 ? 'The answer sustains enough detail to sound test-like.' : 'The answer remains relevant to the prompt.',
       keywordHits > 0 ? 'Topic-specific words support lexical relevance.' : 'The main idea is easy to follow.',
       durationRatio >= 0.85 ? 'Timing is close to the target speaking window.' : 'A timed second attempt could sound stronger quickly.',
+      ...(audioArtifact.status === 'attached' ? ['Audio metadata is attached for future STT and audio-feature extraction.'] : []),
     ],
     risks: [
       shortResponse ? 'Short answers cap confidence and fluency evidence.' : 'Some points could be developed with a clearer example or contrast.',
-      'Pronunciation is still a low-confidence estimate without audio.',
+      'Pronunciation is still a low-confidence estimate without audio analysis.',
     ],
     nextSteps: [
       'Repeat this prompt once and add one more concrete example before you finish.',
       prompt.part === 'part-2'
         ? 'Use the cue-card bullet points as a sequence so the long turn feels more structured.'
         : 'Give one direct answer, one reason, and one short example in each response.',
+      audioArtifact.status === 'attached'
+        ? 'Keep the same transcript and audio metadata together so a future STT pass can compare what you said with what you typed.'
+        : 'Attach an audio file next time so this session is ready for future STT work.',
     ],
     warnings: [
       'Speaking alpha reports are local practice estimates, not official IELTS scores.',
@@ -179,6 +241,9 @@ function buildMockSpeakingReport(
       ...(confidence !== 'high'
         ? ['Confidence is reduced because the current response is shorter or less sustained than the target timing.']
         : []),
+      ...(audioArtifact.status === 'attached'
+        ? ['Only audio metadata is stored in this slice; raw audio bytes are not persisted yet.']
+        : ['No audio metadata is attached to this session yet.']),
     ],
     providerLabel: 'Local mock scorer',
     scorerModel: 'gemini-3-flash-style-heuristic',
@@ -197,6 +262,7 @@ function buildDashboardSummary(savedSessions: SpeakingSessionSnapshot[]): Speaki
       averageDurationSeconds: 0,
       latestAttemptAt: null,
       lowConfidenceCount: 0,
+      sessionsWithAudio: 0,
       partBreakdown: { 'part-1': 0, 'part-2': 0, 'part-3': 0 },
     };
   }
@@ -206,6 +272,7 @@ function buildDashboardSummary(savedSessions: SpeakingSessionSnapshot[]): Speaki
   const bestBand = Math.max(...savedSessions.map((session) => session.report.overallBand));
   const averageDurationSeconds = Math.round(savedSessions.reduce((sum, session) => sum + session.durationSeconds, 0) / totalSessions);
   const lowConfidenceCount = savedSessions.filter((session) => session.report.confidence === 'low').length;
+  const sessionsWithAudio = savedSessions.filter((session) => session.audioArtifact.status === 'attached').length;
   const partBreakdown = savedSessions.reduce<SpeakingDashboardSummary['partBreakdown']>(
     (accumulator, session) => {
       accumulator[session.part] += 1;
@@ -222,6 +289,7 @@ function buildDashboardSummary(savedSessions: SpeakingSessionSnapshot[]): Speaki
     averageDurationSeconds,
     latestAttemptAt: savedSessions[0]?.createdAt ?? null,
     lowConfidenceCount,
+    sessionsWithAudio,
     partBreakdown,
   };
 }
@@ -231,6 +299,7 @@ function buildStudyFocus(savedSessions: SpeakingSessionSnapshot[], prompts: Spea
     return [
       'Start with one Part 1 and one Part 2 response so the dashboard can compare short and long turns.',
       'Aim for one full timed response before worrying about detailed speaking criteria.',
+      'Attach one audio file once you are comfortable with the transcript-first flow.',
     ];
   }
 
@@ -242,18 +311,18 @@ function buildStudyFocus(savedSessions: SpeakingSessionSnapshot[], prompts: Spea
     latest.report.confidence === 'low'
       ? 'Stay closer to the recommended timing window to increase scoring confidence.'
       : 'Keep the same timing discipline and improve precision in one weaker criterion.',
-    'Treat pronunciation advice cautiously until audio-based scoring is added.',
+    latest.audioArtifact.status === 'attached'
+      ? 'Keep attaching audio metadata so future STT and audio-feature analysis can use your real evidence.'
+      : 'Attach an audio file on the next attempt so the session is ready for future STT work.',
   ];
 }
 
 export function createSpeakingApplicationService({
   promptBank = speakingPromptBank,
-  initialSavedSessions = sampleSpeakingSavedSessions,
   fallbackReports = sampleSpeakingAssessmentReportsByPromptId,
+  repository = createSpeakingAssessmentRepository(),
   now = () => new Date().toISOString(),
 }: SpeakingApplicationServiceOptions = {}) {
-  let savedSessions = clone(initialSavedSessions).sort((left, right) => right.createdAt.localeCompare(left.createdAt));
-
   function findPrompt(promptId?: string) {
     return promptBank.find((item) => item.id === promptId);
   }
@@ -262,8 +331,13 @@ export function createSpeakingApplicationService({
     return findPrompt(sampleSpeakingPrompt.id) ?? promptBank[0] ?? sampleSpeakingPrompt;
   }
 
-  function listRecentSessions(limit = 6) {
-    return savedSessions.slice(0, limit).map(buildRecentSessionSummary);
+  async function readDisplaySessions(limit = 12) {
+    return repository.listSavedSessions(limit);
+  }
+
+  async function listRecentSessions(limit = 6) {
+    const sessions = await readDisplaySessions(limit);
+    return sessions.slice(0, limit).map(buildRecentSessionSummary);
   }
 
   async function loadPracticePageData(
@@ -271,6 +345,7 @@ export function createSpeakingApplicationService({
   ): Promise<SpeakingPracticePageData> {
     const requestedPromptId = getSingleSearchParam(searchParams.promptId);
     const requestedSessionId = getSingleSearchParam(searchParams.sessionId);
+    const savedSessions = await readDisplaySessions(12);
     const selectedSession = savedSessions.find((session) => session.sessionId === requestedSessionId) ?? null;
     const selectedPrompt =
       findPrompt(requestedPromptId) ??
@@ -281,9 +356,9 @@ export function createSpeakingApplicationService({
       prompts: clone(promptBank),
       prompt: selectedPrompt,
       initialReport: selectedSession?.report ?? fallbackReports[selectedPrompt.id] ?? sampleSpeakingAssessmentReport,
-      initialTranscript: selectedSession?.transcript ?? getPromptTranscriptSeed(selectedPrompt.id),
+      initialTranscript: selectedSession?.transcript ?? getSampleSpeakingTranscript(selectedPrompt.id),
       initialDurationSeconds: selectedSession?.durationSeconds ?? selectedPrompt.recommendedSeconds,
-      initialRecentSessions: listRecentSessions(6),
+      initialRecentSessions: await listRecentSessions(6),
       initialSavedSessions: clone(savedSessions),
       initialPromptId: selectedPrompt.id,
       initialSessionId: selectedSession?.sessionId ?? null,
@@ -292,6 +367,7 @@ export function createSpeakingApplicationService({
   }
 
   async function loadDashboardPageData(): Promise<SpeakingDashboardPageData> {
+    const savedSessions = await readDisplaySessions(8);
     return {
       prompts: clone(promptBank),
       recentSessions: clone(savedSessions).slice(0, 8),
@@ -311,6 +387,7 @@ export function createSpeakingApplicationService({
     const promptId = getSingleSearchParam(input.promptId) ?? '';
     const transcript = (getSingleSearchParam(input.transcript) ?? '').trim();
     const prompt = findPrompt(promptId);
+    const audioArtifact = normalizeAudioArtifact(input.audioArtifact);
 
     if (!promptId || transcript.length < 30) {
       return {
@@ -333,8 +410,9 @@ export function createSpeakingApplicationService({
         ? Math.max(15, Math.round(input.durationSeconds))
         : prompt.recommendedSeconds;
     const createdAt = now();
-    const sessionId = `speaking-live-${savedSessions.length + 1}`;
-    const report = buildMockSpeakingReport(prompt, transcript, durationSeconds, sessionId, createdAt);
+    const storedSessions = await repository.listSavedSessions(999);
+    const sessionId = `speaking-live-${storedSessions.length + 1}`;
+    const report = buildMockSpeakingReport(prompt, transcript, durationSeconds, sessionId, createdAt, audioArtifact);
     const session: SpeakingSessionSnapshot = {
       sessionId,
       promptId: prompt.id,
@@ -343,18 +421,20 @@ export function createSpeakingApplicationService({
       durationSeconds,
       transcript,
       transcriptWordCount: countWords(transcript),
+      transcriptSource: 'manual',
+      audioArtifact,
       report,
     };
 
-    savedSessions = [session, ...savedSessions];
+    const updatedStoredSessions = await repository.saveSession(session, 12);
 
     return {
       ok: true,
       payload: {
         report,
         session,
-        recentSessions: listRecentSessions(6),
-        savedSessions: clone(savedSessions).slice(0, 12),
+        recentSessions: updatedStoredSessions.slice(0, 6).map(buildRecentSessionSummary),
+        savedSessions: clone(updatedStoredSessions).slice(0, 12),
       },
     };
   }
@@ -373,6 +453,7 @@ export function getPromptTranscriptSeed(promptId: string) {
 
 export type {
   SpeakingAssessmentReport,
+  SpeakingAudioArtifact,
   SpeakingDashboardPageData,
   SpeakingPracticePageData,
   SpeakingPrompt,
