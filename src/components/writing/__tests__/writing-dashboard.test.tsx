@@ -28,8 +28,48 @@ const summary: WritingDashboardSummary = {
   activeDays: 3,
   latestAttemptAt: '2026-03-26T17:00:00.000Z',
   providerBreakdown: [{ provider: 'Openrouter', count: 4, liveCount: 3, fallbackCount: 1 }],
-  strongestCriterion: { criterion: 'Lexical Resource', averageBand: 6.8 },
-  weakestCriterion: { criterion: 'Task Response', averageBand: 5.9 },
+  criterionSummaries: [
+    {
+      criterion: 'Lexical Resource',
+      averageBand: 6.8,
+      latestBand: 7,
+      previousBand: 6.5,
+      delta: 0.5,
+      trend: 'improving',
+      attemptsConsidered: 4,
+      taskTypes: ['task-1', 'task-2'],
+    },
+    {
+      criterion: 'Task Response',
+      averageBand: 5.9,
+      latestBand: 6,
+      previousBand: 5.5,
+      delta: 0.5,
+      trend: 'improving',
+      attemptsConsidered: 3,
+      taskTypes: ['task-2'],
+    },
+  ],
+  strongestCriterion: {
+    criterion: 'Lexical Resource',
+    averageBand: 6.8,
+    latestBand: 7,
+    previousBand: 6.5,
+    delta: 0.5,
+    trend: 'improving',
+    attemptsConsidered: 4,
+    taskTypes: ['task-1', 'task-2'],
+  },
+  weakestCriterion: {
+    criterion: 'Task Response',
+    averageBand: 5.9,
+    latestBand: 6,
+    previousBand: 5.5,
+    delta: 0.5,
+    trend: 'improving',
+    attemptsConsidered: 3,
+    taskTypes: ['task-2'],
+  },
 };
 
 const progress: ProgressSummary = {
@@ -126,8 +166,10 @@ describe('WritingDashboard', () => {
     expect(screen.getByRole('heading', { name: /track writing momentum across every saved assessment/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /aggregated writing metrics/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /inspect and resume from the dashboard/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /criterion trend summaries/i })).toBeInTheDocument();
     expect(screen.getByText(/improving/i)).toBeInTheDocument();
     expect(screen.getByText(/1 task 1 • 3 task 2/i)).toBeInTheDocument();
+    expect(screen.getByText(/\+0\.5 band vs previous/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /prioritise task response next/i })).toBeInTheDocument();
     expect(screen.getByText(/rewrite one body paragraph so the topic sentence matches the thesis exactly/i)).toBeInTheDocument();
     expect(screen.getByText(/use the latest saved report first/i)).toBeInTheDocument();
@@ -140,5 +182,11 @@ describe('WritingDashboard', () => {
       'href',
       `/?promptId=${sampleTask1Prompt.id}&attemptId=attempt-3`,
     );
+
+    fireEvent.click(screen.getByRole('button', { name: /compare to inspected/i }));
+
+    expect(screen.getByText(/compare against online education versus classroom learning/i)).toBeInTheDocument();
+    expect(screen.getByText(/\+0\.5 overall band/i)).toBeInTheDocument();
+    expect(screen.getByText(/task-specific criteria are omitted/i)).toBeInTheDocument();
   });
 });
