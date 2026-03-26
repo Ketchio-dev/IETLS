@@ -1,4 +1,4 @@
-export type WritingTaskType = 'task-2';
+export type WritingTaskType = 'task-1' | 'task-2';
 export type CriterionName =
   | 'Task Response'
   | 'Coherence & Cohesion'
