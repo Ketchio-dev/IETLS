@@ -122,12 +122,18 @@ describe('WritingPracticeShell', () => {
       prompts: writingPromptBank,
     }));
 
-    expect(screen.getByRole('link', { name: /open dashboard/i })).toHaveAttribute('href', '/dashboard');
+    const dashboardLinks = screen.getAllByRole('link', { name: /open dashboard/i });
+    expect(dashboardLinks.length).toBeGreaterThan(0);
+    dashboardLinks.forEach((link) => {
+      expect(link).toHaveAttribute('href', '/dashboard');
+    });
 
     fireEvent.click(screen.getAllByRole('tab', { name: /writing task 1/i })[0]!);
 
     expect(screen.getAllByText(sampleTask1Prompt.title).length).toBeGreaterThan(0);
-    expect(screen.getByRole('link', { name: /open dashboard/i })).toHaveAttribute('href', '/dashboard');
+    screen.getAllByRole('link', { name: /open dashboard/i }).forEach((link) => {
+      expect(link).toHaveAttribute('href', '/dashboard');
+    });
   });
 
   it('switches to Task 1 and renders the structured visual brief', () => {
