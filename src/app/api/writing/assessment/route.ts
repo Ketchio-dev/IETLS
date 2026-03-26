@@ -29,5 +29,6 @@ export async function POST(request: Request) {
     report: stored.report,
     submission: stored.submission,
     recentAttempts: stored.recentAttempts,
+    savedAssessments: stored.savedAssessments,
   });
 }
