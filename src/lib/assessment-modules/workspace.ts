@@ -43,6 +43,26 @@ export const speakingAssessmentWorkspace: AssessmentWorkspace = {
   assessmentApiPath: '/api/speaking/assessment',
 };
 
+export const readingAssessmentWorkspace: AssessmentWorkspace = {
+  moduleId: 'reading',
+  moduleLabel: 'IELTS Academic Reading Placeholder',
+  moduleSummary: 'Placeholder route coverage for future Reading content, scoring, and item-validation work.',
+  practicePath: '/reading',
+  dashboardPath: '/reading/dashboard',
+  taskApiPath: '/api/reading/task',
+  assessmentApiPath: '/api/reading/assessment',
+};
+
+export const listeningAssessmentWorkspace: AssessmentWorkspace = {
+  moduleId: 'listening',
+  moduleLabel: 'IELTS Academic Listening Placeholder',
+  moduleSummary: 'Placeholder route coverage for future Listening scripts, audio, and timing-validation work.',
+  practicePath: '/listening',
+  dashboardPath: '/listening/dashboard',
+  taskApiPath: '/api/listening/task',
+  assessmentApiPath: '/api/listening/assessment',
+};
+
 export function toAssessmentWorkspaceDefinition(workspace: AssessmentWorkspace): AssessmentWorkspaceDefinition {
   return {
     id: workspace.moduleId,
@@ -59,6 +79,8 @@ export function toAssessmentWorkspaceDefinition(workspace: AssessmentWorkspace):
 
 export const writingAssessmentWorkspaceDefinition = toAssessmentWorkspaceDefinition(writingAssessmentWorkspace);
 export const speakingAssessmentWorkspaceDefinition = toAssessmentWorkspaceDefinition(speakingAssessmentWorkspace);
+export const readingAssessmentWorkspaceDefinition = toAssessmentWorkspaceDefinition(readingAssessmentWorkspace);
+export const listeningAssessmentWorkspaceDefinition = toAssessmentWorkspaceDefinition(listeningAssessmentWorkspace);
 
 export function buildPracticeWorkspaceHref(
   workspace: AssessmentWorkspace,

@@ -1,12 +1,16 @@
 import {
-  getAssessmentModuleRegistry,
+  LISTENING_ASSESSMENT_MODULE_ID,
+  READING_ASSESSMENT_MODULE_ID,
   SPEAKING_ASSESSMENT_MODULE_ID,
   WRITING_ASSESSMENT_MODULE_ID,
+  getAssessmentModuleRegistry,
   type AssessmentModuleCatalog,
   type AssessmentModuleId,
   type AssessmentSearchParams,
 } from '@/lib/assessment-modules/registry';
 import {
+  listeningAssessmentWorkspaceDefinition,
+  readingAssessmentWorkspaceDefinition,
   speakingAssessmentWorkspaceDefinition,
   writingAssessmentWorkspaceDefinition,
   type AssessmentWorkspaceDefinition,
@@ -26,7 +30,12 @@ function getAssessmentModule(moduleId: AssessmentModuleId) {
 }
 
 export function listAssessmentWorkspaces(): AssessmentWorkspaceDefinition[] {
-  return [writingAssessmentWorkspaceDefinition, speakingAssessmentWorkspaceDefinition];
+  return [
+    writingAssessmentWorkspaceDefinition,
+    speakingAssessmentWorkspaceDefinition,
+    readingAssessmentWorkspaceDefinition,
+    listeningAssessmentWorkspaceDefinition,
+  ];
 }
 
 export function getAssessmentWorkspace(moduleId: AssessmentModuleId = defaultAssessmentModuleId) {
@@ -35,6 +44,10 @@ export function getAssessmentWorkspace(moduleId: AssessmentModuleId = defaultAss
       return writingAssessmentWorkspaceDefinition;
     case SPEAKING_ASSESSMENT_MODULE_ID:
       return speakingAssessmentWorkspaceDefinition;
+    case READING_ASSESSMENT_MODULE_ID:
+      return readingAssessmentWorkspaceDefinition;
+    case LISTENING_ASSESSMENT_MODULE_ID:
+      return listeningAssessmentWorkspaceDefinition;
     default:
       return writingAssessmentWorkspaceDefinition;
   }

@@ -12,12 +12,23 @@ import type {
   SubmitSpeakingAssessmentInput,
   SubmitSpeakingAssessmentResult,
 } from '@/lib/services/speaking/types';
+import type {
+  PlaceholderAssessmentDashboardPageData,
+  PlaceholderAssessmentPracticePageData,
+  PlaceholderAssessmentTaskData,
+  SubmitPlaceholderAssessmentInput,
+  SubmitPlaceholderAssessmentResult,
+} from '@/lib/services/assessment-placeholders/application-service';
 
+import { createListeningAssessmentModule } from './listening-module';
+import { createReadingAssessmentModule } from './reading-module';
 import { createSpeakingAssessmentModule } from './speaking-module';
 import { createWritingAssessmentModule } from './writing-module';
 
 export const WRITING_ASSESSMENT_MODULE_ID = 'writing' as const;
 export const SPEAKING_ASSESSMENT_MODULE_ID = 'speaking' as const;
+export const READING_ASSESSMENT_MODULE_ID = 'reading' as const;
+export const LISTENING_ASSESSMENT_MODULE_ID = 'listening' as const;
 
 export interface AssessmentModuleCatalog {
   [WRITING_ASSESSMENT_MODULE_ID]: {
@@ -33,6 +44,20 @@ export interface AssessmentModuleCatalog {
     submitInput: SubmitSpeakingAssessmentInput;
     submitResult: SubmitSpeakingAssessmentResult;
     taskData: SpeakingTaskData;
+  };
+  [READING_ASSESSMENT_MODULE_ID]: {
+    dashboardPageData: PlaceholderAssessmentDashboardPageData;
+    practicePageData: PlaceholderAssessmentPracticePageData;
+    submitInput: SubmitPlaceholderAssessmentInput;
+    submitResult: SubmitPlaceholderAssessmentResult;
+    taskData: PlaceholderAssessmentTaskData;
+  };
+  [LISTENING_ASSESSMENT_MODULE_ID]: {
+    dashboardPageData: PlaceholderAssessmentDashboardPageData;
+    practicePageData: PlaceholderAssessmentPracticePageData;
+    submitInput: SubmitPlaceholderAssessmentInput;
+    submitResult: SubmitPlaceholderAssessmentResult;
+    taskData: PlaceholderAssessmentTaskData;
   };
 }
 
@@ -77,6 +102,8 @@ export function createAssessmentModuleRegistry(
   modules: AssessmentModuleDefinition<AssessmentModuleId>[] = [
     createWritingAssessmentModule(),
     createSpeakingAssessmentModule(),
+    createReadingAssessmentModule(),
+    createListeningAssessmentModule(),
   ],
 ): AssessmentModuleRegistry {
   const moduleMap = createModuleMap(modules);

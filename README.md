@@ -1,6 +1,6 @@
-# IELTS Academic Writing MVP
+# IELTS Academic Platform MVP
 
-A Next.js MVP for IELTS Academic Writing practice with a task-aware writing shell and a persisted review dashboard:
+A Next.js MVP for IELTS Academic practice with a strong Writing experience, a Speaking alpha seam, and full-platform Reading/Listening placeholders:
 
 - Task-aware prompt bank for **Writing Task 1 Academic** and **Writing Task 2**
 - Structured Task 1 visual briefs plus the existing Task 2 essay prompts
@@ -10,6 +10,7 @@ A Next.js MVP for IELTS Academic Writing practice with a task-aware writing shel
 - Assessment architecture split into evidence extraction, scoring, and feedback generation
 - Local persistence for prompts, recent submissions, saved scorecards, dashboard summaries, and prompt-specific history
 - Gemini 3 Flash kept as the default live-scorer model when OpenRouter is enabled, with deterministic mock fallback
+- Reading and Listening registered as lightweight placeholder modules through the shared assessment seam
 
 ## Getting started
 
@@ -18,7 +19,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000` for the practice shell and `http://localhost:3000/dashboard` for the saved-attempt dashboard.
+Open `http://localhost:3000` for Writing, `http://localhost:3000/dashboard` for the Writing dashboard, `/speaking` for Speaking alpha, `/reading` for the Reading placeholder, and `/listening` for the Listening placeholder.
 
 ## Verification
 
@@ -33,6 +34,9 @@ npm run build
 
 - `/` → writing practice shell with task switching, timed drafting, saved-attempt inspection, and assessment submission
 - `/dashboard` → persisted summary of recent saved attempts, criterion trends, compare support, scorer usage, and study-plan guidance
+- `/speaking` + `/speaking/dashboard` → Speaking alpha transcript-first practice and dashboard
+- `/reading` + `/reading/dashboard` → Reading placeholder routes proving the module seam without fake scoring
+- `/listening` + `/listening/dashboard` → Listening placeholder routes proving the module seam without fake scoring
 - `GET /api/writing/task` → returns the current prompt plus the prompt bank
 - `POST /api/writing/assessment` → generates a practice estimate and stores the attempt locally
 

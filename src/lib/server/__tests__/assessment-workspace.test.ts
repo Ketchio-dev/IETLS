@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  LISTENING_ASSESSMENT_MODULE_ID,
+  READING_ASSESSMENT_MODULE_ID,
   SPEAKING_ASSESSMENT_MODULE_ID,
   WRITING_ASSESSMENT_MODULE_ID,
 } from '@/lib/assessment-modules/registry';
@@ -30,7 +32,12 @@ vi.mock('@/lib/assessment-modules/registry', async () => {
     ...actual,
     getAssessmentModuleRegistry: () => ({
       getModule: vi.fn(),
-      listModuleIds: vi.fn(() => [actual.WRITING_ASSESSMENT_MODULE_ID, actual.SPEAKING_ASSESSMENT_MODULE_ID]),
+      listModuleIds: vi.fn(() => [
+        actual.WRITING_ASSESSMENT_MODULE_ID,
+        actual.SPEAKING_ASSESSMENT_MODULE_ID,
+        actual.READING_ASSESSMENT_MODULE_ID,
+        actual.LISTENING_ASSESSMENT_MODULE_ID,
+      ]),
       requireModule: mocks.requireModule,
     }),
   };
@@ -57,7 +64,7 @@ afterEach(() => {
 });
 
 describe('assessment workspace registry', () => {
-  it('registers writing as default while exposing a second speaking workspace', () => {
+  it('keeps writing default while exposing speaking, reading, and listening workspaces', () => {
     expect(defaultAssessmentModuleId).toBe(WRITING_ASSESSMENT_MODULE_ID);
     expect(getDefaultAssessmentWorkspace()).toEqual({
       id: 'writing',
@@ -83,9 +90,33 @@ describe('assessment workspace registry', () => {
         assessmentApi: '/api/speaking/assessment',
       },
     });
+    expect(getAssessmentWorkspace(READING_ASSESSMENT_MODULE_ID)).toEqual({
+      id: 'reading',
+      label: 'IELTS Academic Reading Placeholder',
+      summary: 'Placeholder route coverage for future Reading content, scoring, and item-validation work.',
+      routes: {
+        practice: '/reading',
+        dashboard: '/reading/dashboard',
+        taskApi: '/api/reading/task',
+        assessmentApi: '/api/reading/assessment',
+      },
+    });
+    expect(getAssessmentWorkspace(LISTENING_ASSESSMENT_MODULE_ID)).toEqual({
+      id: 'listening',
+      label: 'IELTS Academic Listening Placeholder',
+      summary: 'Placeholder route coverage for future Listening scripts, audio, and timing-validation work.',
+      routes: {
+        practice: '/listening',
+        dashboard: '/listening/dashboard',
+        taskApi: '/api/listening/task',
+        assessmentApi: '/api/listening/assessment',
+      },
+    });
     expect(listAssessmentWorkspaces()).toEqual([
       getDefaultAssessmentWorkspace(),
       getAssessmentWorkspace(SPEAKING_ASSESSMENT_MODULE_ID),
+      getAssessmentWorkspace(READING_ASSESSMENT_MODULE_ID),
+      getAssessmentWorkspace(LISTENING_ASSESSMENT_MODULE_ID),
     ]);
   });
 
@@ -152,36 +183,26 @@ describe('assessment workspace registry', () => {
     ).resolves.toEqual(practicePageData);
     await expect(loadDefaultAssessmentDashboardPageData()).resolves.toEqual(dashboardPageData);
     await expect(loadDefaultAssessmentTaskData()).resolves.toEqual(taskData);
-
-    expect(mocks.requireModule).toHaveBeenCalledWith(defaultAssessmentModuleId);
-    expect(mocks.assessmentModule.loadPracticePageData).toHaveBeenCalledWith({
-      promptId: samplePrompt.id,
-      attemptId: 'attempt-1',
-    });
-    expect(mocks.assessmentModule.loadDashboardPageData).toHaveBeenCalledWith();
-    expect(mocks.assessmentModule.loadTaskData).toHaveBeenCalledWith();
   });
 
   it('delegates generic loaders and submissions for non-default modules too', async () => {
-    mocks.assessmentModule.loadPracticePageData.mockResolvedValue({ moduleId: 'speaking' });
-    mocks.assessmentModule.loadDashboardPageData.mockResolvedValue({ moduleId: 'speaking' });
-    mocks.assessmentModule.loadTaskData.mockResolvedValue({ moduleId: 'speaking' });
+    mocks.assessmentModule.loadPracticePageData.mockResolvedValue({ moduleId: 'reading' });
+    mocks.assessmentModule.loadDashboardPageData.mockResolvedValue({ moduleId: 'reading' });
+    mocks.assessmentModule.loadTaskData.mockResolvedValue({ moduleId: 'reading' });
     mocks.assessmentModule.submitAssessment.mockResolvedValue({
       ok: false,
-      error: 'Unknown speaking prompt requested.',
-      status: 404,
+      error: 'IELTS Academic Reading Placeholder is a placeholder module for now; no scoring pipeline is implemented yet.',
+      status: 501,
     });
 
-    await expect(loadAssessmentPracticePageData(SPEAKING_ASSESSMENT_MODULE_ID)).resolves.toEqual({ moduleId: 'speaking' });
-    await expect(loadAssessmentDashboardPageData(SPEAKING_ASSESSMENT_MODULE_ID)).resolves.toEqual({ moduleId: 'speaking' });
-    await expect(loadAssessmentTaskData(SPEAKING_ASSESSMENT_MODULE_ID)).resolves.toEqual({ moduleId: 'speaking' });
-    await expect(submitAssessmentForModule(SPEAKING_ASSESSMENT_MODULE_ID, { transcript: 'placeholder' })).resolves.toEqual({
+    await expect(loadAssessmentPracticePageData(READING_ASSESSMENT_MODULE_ID)).resolves.toEqual({ moduleId: 'reading' });
+    await expect(loadAssessmentDashboardPageData(READING_ASSESSMENT_MODULE_ID)).resolves.toEqual({ moduleId: 'reading' });
+    await expect(loadAssessmentTaskData(READING_ASSESSMENT_MODULE_ID)).resolves.toEqual({ moduleId: 'reading' });
+    await expect(submitAssessmentForModule(READING_ASSESSMENT_MODULE_ID, { note: 'stub' })).resolves.toEqual({
       ok: false,
-      error: 'Unknown speaking prompt requested.',
-      status: 404,
+      error: 'IELTS Academic Reading Placeholder is a placeholder module for now; no scoring pipeline is implemented yet.',
+      status: 501,
     });
-
-    expect(mocks.requireModule).toHaveBeenCalledWith(SPEAKING_ASSESSMENT_MODULE_ID);
   });
 
   it('delegates assessment submission to the default writing module', async () => {

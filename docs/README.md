@@ -30,3 +30,5 @@ This repo started from a clean baseline on **March 26, 2026**. These docs now se
 - The next platform step is a second-module validation slice for Speaking alpha that proves the shared registry/server seam can hold another module while writing stays the default, fully working experience.
 - The live scorer path still defaults to **Gemini 3 Flash** when OpenRouter is enabled, while the mock scorer remains the deterministic fallback.
 - Older `next-slice` review notes are still worth keeping because they explain the design guardrails behind the current implementation.
+
+- `docs/review/full-ielts-module-registry-review.md` — review note for extending the shared assessment-module seam to all four IELTS Academic skills with lightweight Reading/Listening placeholders.
