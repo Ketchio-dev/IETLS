@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
-import { getAssessmentModule } from '@/lib/assessment-modules/registry';
+import { writingAssessmentWorkspace } from '@/lib/assessment-modules/workspace';
 import type {
   AssessmentReport,
   RecentAttemptSummary,
@@ -62,8 +62,6 @@ function getEditorPlaceholder(taskType: WritingTaskType) {
     ? 'Write your full Task 1 response here…'
     : 'Write your full Task 2 response here…';
 }
-
-const writingWorkspace = getAssessmentModule('writing').workspace;
 
 export function WritingPracticeShell({
   prompts,
@@ -145,7 +143,7 @@ export function WritingPracticeShell({
     setError(null);
 
     try {
-      const nextReportResponse = await fetch(writingWorkspace.assessmentApiPath, {
+      const nextReportResponse = await fetch(writingAssessmentWorkspace.assessmentApiPath, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -210,7 +208,7 @@ export function WritingPracticeShell({
             history of your latest mock attempts.
           </p>
           <div className="hero-actions">
-            <Link className="secondary-link-button" href={writingWorkspace.dashboardPath}>
+            <Link className="secondary-link-button" href={writingAssessmentWorkspace.dashboardPath}>
               Open dashboard
             </Link>
             <p className="hero-action-copy">

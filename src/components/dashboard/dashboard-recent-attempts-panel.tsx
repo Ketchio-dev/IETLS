@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
-import { buildPracticeWorkspaceHref, getAssessmentModule } from '@/lib/assessment-modules/registry';
+import { buildPracticeWorkspaceHref, writingAssessmentWorkspace } from '@/lib/assessment-modules/workspace';
 import type { SavedAssessmentSnapshot, WritingPrompt } from '@/lib/domain';
 import { buildAttemptComparison } from '@/lib/services/writing/dashboard';
 
@@ -29,7 +29,7 @@ function formatTaskLabel(taskType: SavedAssessmentSnapshot['taskType']) {
 }
 
 function buildResumeHref(attempt: SavedAssessmentSnapshot) {
-  return buildPracticeWorkspaceHref(getAssessmentModule('writing').workspace, {
+  return buildPracticeWorkspaceHref(writingAssessmentWorkspace, {
     promptId: attempt.promptId,
     attemptId: attempt.submissionId,
   });

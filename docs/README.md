@@ -25,6 +25,6 @@ This repo started from a clean baseline on **March 26, 2026**. These docs now se
 - The dashboard summarizes recent saved attempts, scorer usage, task coverage, criterion trends, and a lightweight-but-actionable study plan without adding dependencies.
 - The dashboard now supports saved-attempt comparison and stronger study-plan presentation while preserving the same persistence-first resume flow.
 - Route/page orchestration is being documented around a narrow writing application-service boundary so Next.js entrypoints can stay thin as the MVP grows.
-- The next foundation slice is now documented around a shared assessment-module registry/workspace boundary so future modules can plug in without rewriting the current writing flow.
+- A shared assessment-module registry/workspace boundary now centralizes practice-shell, dashboard, and assessment route paths so the app is not structurally limited to writing-only wiring.
 - The live scorer path still defaults to **Gemini 3 Flash** when OpenRouter is enabled, while the mock scorer remains the deterministic fallback.
 - Older `next-slice` review notes are still worth keeping because they explain the design guardrails behind the current implementation.
