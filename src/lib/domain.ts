@@ -118,6 +118,15 @@ export interface WritingSubmissionRecord extends EssaySubmission {
   createdAt: string;
 }
 
+export interface SavedAssessmentSnapshot {
+  submissionId: string;
+  promptId: string;
+  createdAt: string;
+  timeSpentMinutes: number;
+  wordCount: number;
+  report: AssessmentReport;
+}
+
 export interface RecentAttemptSummary {
   submissionId: string;
   promptId: string;

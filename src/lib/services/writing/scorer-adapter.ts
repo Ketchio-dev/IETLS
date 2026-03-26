@@ -14,7 +14,7 @@ export const WRITING_RUBRIC_SCHEMA_VERSION = 'writing-rubric-scorecard/v1';
 const RUBRIC_VERSION = 'ielts-academic-writing-task-2/v1';
 const CALIBRATION_VERSION = 'seed-v1';
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
-const DEFAULT_OPENROUTER_MODEL = 'google/gemini-2.5-flash';
+const DEFAULT_OPENROUTER_MODEL = 'google/gemini-3-flash';
 const OPENROUTER_TIMEOUT_MS = 15_000;
 const WRITING_CRITERIA: CriterionName[] = [
   'Task Response',
