@@ -127,5 +127,31 @@ describe('WritingPracticeShell', () => {
     expect(screen.getAllByText(sampleTask1Prompt.title).length).toBeGreaterThan(0);
     expect(screen.getByText(/structured visual brief/i)).toBeInTheDocument();
     expect(screen.getByText(/passengers at a london underground station/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', { name: /line chart for passengers at a london underground station/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('table', { name: /passengers at a london underground station data table/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('renders the Task 1 table prompt with a real table renderer', () => {
+    render(createElement(WritingPracticeShell, {
+      fallbackReports: sampleAssessmentReportsByPromptId,
+      initialHistory: [],
+      initialReport: sampleAssessmentReport,
+      initialSavedAssessments: [],
+      prompt: samplePrompt,
+      prompts: writingPromptBank,
+    }));
+
+    fireEvent.click(screen.getAllByRole('tab', { name: /writing task 1/i })[0]!);
+    fireEvent.click(screen.getAllByRole('button', { name: /water use in australia/i })[0]!);
+
+    expect(
+      screen.getByRole('table', { name: /water consumption in australia data table/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/agriculture \(2004\)/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/billions of litres/i).length).toBeGreaterThan(0);
   });
 });

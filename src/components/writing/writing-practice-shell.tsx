@@ -13,6 +13,7 @@ import { getSampleResponse } from '@/lib/fixtures/writing';
 import { buildProgressSummary } from '@/lib/services/writing/progress-summary';
 
 import { AssessmentReportPanel } from './assessment-report';
+import { Task1VisualRenderer } from './task1-visual-renderer';
 
 interface Props {
   prompts: WritingPrompt[];
@@ -278,31 +279,7 @@ export function WritingPracticeShell({
                   {activePrompt.visual.yAxisLabel ? <span>Y-axis: {activePrompt.visual.yAxisLabel}</span> : null}
                   {activePrompt.visual.units ? <span>Units: {activePrompt.visual.units}</span> : null}
                 </div>
-                <div className="visual-grid">
-                  <article className="history-card">
-                    <div className="history-card-header">
-                      <strong>Key features</strong>
-                    </div>
-                    <ul className="plain-list compact-list">
-                      {activePrompt.visual.keyFeatures.map((feature) => (
-                        <li key={feature}>{feature}</li>
-                      ))}
-                    </ul>
-                  </article>
-                  <article className="history-card">
-                    <div className="history-card-header">
-                      <strong>Data checkpoints</strong>
-                    </div>
-                    <ul className="plain-list compact-list">
-                      {activePrompt.visual.dataPoints.map((point) => (
-                        <li key={`${point.label}-${point.value}`}>
-                          <strong>{point.label}:</strong> {point.value}
-                          {point.note ? ` (${point.note})` : ''}
-                        </li>
-                      ))}
-                    </ul>
-                  </article>
-                </div>
+                <Task1VisualRenderer visual={activePrompt.visual} />
               </div>
             ) : null}
             <div className="tip-grid">

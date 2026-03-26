@@ -94,6 +94,39 @@ describe('scoreWritingWithAdapter', () => {
     expect(result.evaluationTrace.notes.join(' ')).toContain('OpenRouter');
   });
 
+  it('keeps Gemini 3 Flash as the default OpenRouter scorer model', async () => {
+    vi.stubEnv('IELTS_SCORER_PROVIDER', 'openrouter');
+    vi.stubEnv('OPENROUTER_API_KEY', 'test-key');
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: 'gen-456',
+        model: 'google/gemini-3-flash',
+        usage: { total_tokens: 222 },
+        choices: [
+          {
+            message: {
+              content: JSON.stringify(buildOpenRouterPayload()),
+            },
+          },
+        ],
+      }),
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    await scoreWritingWithAdapter(samplePrompt, buildEvidence(), sampleSubmission.response);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        body: expect.stringContaining('"model":"google/gemini-3-flash"'),
+      }),
+    );
+  });
+
   it('falls back to the mock scorer when OpenRouter config is missing', async () => {
     vi.stubEnv('IELTS_SCORER_PROVIDER', 'openrouter');
 

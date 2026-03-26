@@ -296,12 +296,121 @@ li,
   align-items: flex-start;
 }
 
+.visual-renderer-shell {
+  margin-bottom: 1rem;
+}
+
+.visual-figure {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+}
+
+.visual-svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(2, 6, 23, 0.92)),
+    rgba(15, 23, 42, 0.62);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.visual-caption {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
 .visual-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
   margin: 0.75rem 0 1rem;
   color: var(--muted);
+}
+
+.visual-data-table-shell {
+  overflow-x: auto;
+}
+
+.visual-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 280px;
+}
+
+.visual-data-table th,
+.visual-data-table td {
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  text-align: left;
+}
+
+.visual-data-table thead th,
+.visual-data-table tbody th {
+  color: var(--text);
+}
+
+.visual-data-table td {
+  color: var(--muted);
+}
+
+.chart-grid-line,
+.chart-axis-line {
+  stroke: rgba(148, 163, 184, 0.26);
+  stroke-width: 1;
+}
+
+.chart-line {
+  stroke: var(--accent);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-point {
+  fill: white;
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.chart-bar {
+  fill: rgba(56, 189, 248, 0.72);
+}
+
+.chart-pie-slice {
+  stroke: rgba(2, 6, 23, 0.8);
+  stroke-width: 2;
+}
+
+.chart-axis-label,
+.chart-value-label {
+  fill: var(--muted);
+  font-size: 12px;
+}
+
+.chart-value-label {
+  fill: var(--text);
+  font-weight: 600;
+}
+
+.visual-legend {
+  margin: 0;
+  padding: 0;
+}
+
+.visual-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.visual-legend-swatch {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 999px;
+  flex: 0 0 auto;
 }
 
 .prompt-card p {
