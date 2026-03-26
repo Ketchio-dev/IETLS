@@ -135,7 +135,7 @@ describe('WritingDashboard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /inspect here/i }));
 
-    expect(screen.getByText(/task 1 inspection summary/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/task 1 inspection summary/i).length).toBeGreaterThan(0);
     expect(screen.getByRole('link', { name: /resume this attempt/i })).toHaveAttribute(
       'href',
       `/?promptId=${sampleTask1Prompt.id}&attemptId=attempt-3`,

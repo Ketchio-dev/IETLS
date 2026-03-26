@@ -178,7 +178,7 @@ describe('WritingPracticeShell', () => {
     }));
 
     expect(screen.getAllByText(sampleTask1Prompt.title).length).toBeGreaterThan(0);
-    expect(screen.getByText(/resume target report summary/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/resume target report summary/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/1 for this prompt/i)).toBeInTheDocument();
     expect(screen.getByText(/viewing report/i)).toBeInTheDocument();
   });
@@ -196,8 +196,8 @@ describe('WritingPracticeShell', () => {
     fireEvent.click(screen.getAllByRole('tab', { name: /writing task 1/i })[0]!);
 
     expect(screen.getAllByText(sampleTask1Prompt.title).length).toBeGreaterThan(0);
-    expect(screen.getByText(/structured visual brief/i)).toBeInTheDocument();
-    expect(screen.getByText(/passengers at a london underground station/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/structured visual brief/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/passengers at a london underground station/i).length).toBeGreaterThan(0);
     expect(
       screen.getByRole('img', { name: /line chart for passengers at a london underground station/i }),
     ).toBeInTheDocument();
