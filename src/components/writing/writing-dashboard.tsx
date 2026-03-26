@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { buildPracticeWorkspaceHref, getAssessmentModule } from '@/lib/assessment-modules/registry';
 import type {
   ProgressSummary,
   SavedAssessmentSnapshot,
@@ -30,16 +31,10 @@ function buildStudyPlanHref(step: StudyPlanSnapshot['steps'][number]) {
   if (!step.promptId) {
     return undefined;
   }
-
-  const params = new URLSearchParams({
+  return buildPracticeWorkspaceHref(getAssessmentModule('writing').workspace, {
     promptId: step.promptId,
+    attemptId: step.submissionId,
   });
-
-  if (step.submissionId) {
-    params.set('attemptId', step.submissionId);
-  }
-
-  return `/?${params.toString()}`;
 }
 
 function buildDashboardMetrics(summary: WritingDashboardSummary, progress: ProgressSummary) {
@@ -142,6 +137,7 @@ function TrendMiniBars({ entry }: { entry: WritingDashboardSummary['criterionSum
 }
 
 export function WritingDashboard({ prompts, recentSavedAttempts, summary, progress, studyPlan }: Props) {
+  const writingWorkspace = getAssessmentModule('writing').workspace;
   const dashboardMetrics = buildDashboardMetrics(summary, progress);
   const presentationPlan = toDashboardStudyPlan(studyPlan);
 
@@ -156,7 +152,7 @@ export function WritingDashboard({ prompts, recentSavedAttempts, summary, progre
             assessment history.
           </p>
           <div className="dashboard-actions">
-            <Link className="primary-button dashboard-link-button" href="/">
+            <Link className="primary-button dashboard-link-button" href={writingWorkspace.practicePath}>
               Return to practice shell
             </Link>
           </div>

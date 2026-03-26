@@ -1,5 +1,5 @@
 import { WritingPracticeShell } from '@/components/writing/writing-practice-shell';
-import { loadWritingPracticePageData } from '@/lib/services/writing/application-service';
+import { getAssessmentModule } from '@/lib/assessment-modules/registry';
 
 interface PageProps {
   searchParams?: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined>;
@@ -11,7 +11,8 @@ function getSingleSearchParam(value: string | string[] | undefined) {
 
 export default async function HomePage({ searchParams }: PageProps) {
   const resolvedSearchParams = (await Promise.resolve(searchParams)) ?? {};
-  const pageData = await loadWritingPracticePageData({
+  const writingModule = getAssessmentModule('writing');
+  const pageData = await writingModule.loadPracticePageData({
     promptId: getSingleSearchParam(resolvedSearchParams.promptId),
     attemptId: getSingleSearchParam(resolvedSearchParams.attemptId),
   });

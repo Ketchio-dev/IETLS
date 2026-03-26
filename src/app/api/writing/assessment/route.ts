@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 
-import { submitWritingAssessment } from '@/lib/services/writing/application-service';
+import { getAssessmentModule } from '@/lib/assessment-modules/registry';
 
 export async function POST(request: Request) {
-  const result = await submitWritingAssessment(await request.json());
+  const result = await getAssessmentModule('writing').submitAssessment(await request.json());
 
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
