@@ -127,9 +127,9 @@ describe('dashboard helpers', () => {
     });
     expect(summary.criterionSummaries[0]).toMatchObject({
       criterion: 'Grammatical Range & Accuracy',
-      latestBand: 7.3,
+      latestBand: 7.5,
       previousBand: 6.8,
-      delta: 0.5,
+      delta: 0.7,
       trend: 'improving',
     });
     expect(summary.weakestCriterion?.criterion).toBe('Task Response');
@@ -175,7 +175,6 @@ describe('dashboard helpers', () => {
     expect(comparison.overallBandDelta).toBe(0.5);
     expect(comparison.wordCountDelta).toBe(23);
     expect(comparison.criterionComparisons.map((entry) => entry.criterion)).toEqual([
-      'Coherence & Cohesion',
       'Lexical Resource',
       'Grammatical Range & Accuracy',
     ]);

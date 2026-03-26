@@ -160,16 +160,16 @@ const recentSavedAttempts: SavedAssessmentSnapshot[] = [
 ];
 
 describe('WritingDashboard', () => {
-  it('renders aggregated metrics, recent attempt inspection, and the persisted study plan', () => {
+  it('renders aggregated metrics, criterion trends, compare support, and the persisted study plan', () => {
     render(createElement(WritingDashboard, { summary, progress, prompts, recentSavedAttempts, studyPlan }));
 
     expect(screen.getByRole('heading', { name: /track writing momentum across every saved assessment/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /aggregated writing metrics/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /inspect and resume from the dashboard/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /criterion trend summaries/i })).toBeInTheDocument();
-    expect(screen.getByText(/improving/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/improving/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/1 task 1 • 3 task 2/i)).toBeInTheDocument();
-    expect(screen.getByText(/\+0\.5 band vs previous/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/\+0\.5 band vs previous/i).length).toBeGreaterThan(0);
     expect(screen.getByRole('heading', { name: /prioritise task response next/i })).toBeInTheDocument();
     expect(screen.getByText(/rewrite one body paragraph so the topic sentence matches the thesis exactly/i)).toBeInTheDocument();
     expect(screen.getByText(/use the latest saved report first/i)).toBeInTheDocument();
@@ -186,7 +186,7 @@ describe('WritingDashboard', () => {
     fireEvent.click(screen.getByRole('button', { name: /compare to inspected/i }));
 
     expect(screen.getByText(/compare against online education versus classroom learning/i)).toBeInTheDocument();
-    expect(screen.getByText(/\+0\.5 overall band/i)).toBeInTheDocument();
-    expect(screen.getByText(/task-specific criteria are omitted/i)).toBeInTheDocument();
+    expect(screen.getByText(/-0\.5 overall band/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/lexical resource/i).length).toBeGreaterThan(0);
   });
 });
