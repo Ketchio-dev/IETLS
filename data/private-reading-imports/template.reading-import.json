@@ -1,0 +1,24 @@
+{
+  "title": "Template Reading Set",
+  "sourceLabel": "Replace with your own local/private source label",
+  "notes": "Delete this template once you add your own material.",
+  "passage": "Paste the reading passage text here.",
+  "questions": [
+    {
+      "type": "multiple_choice",
+      "prompt": "Which statement best matches the writer's main point?",
+      "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
+      "answer": "B",
+      "acceptedVariants": ["B."],
+      "explanation": "Optional explanation for your own review.",
+      "evidenceHint": "Paragraph 2"
+    },
+    {
+      "type": "true_false_not_given",
+      "prompt": "The passage states that ...",
+      "answer": "NOT GIVEN",
+      "acceptedVariants": ["NG"],
+      "evidenceHint": "Paragraph 4"
+    }
+  ]
+}

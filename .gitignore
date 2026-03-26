@@ -10,3 +10,6 @@ tsconfig.tsbuildinfo
 data/runtime/
 
 .omc/
+
+data/private-reading-imports/*.json
+!data/private-reading-imports/template.reading-import.json

@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "reading:import-private": "node scripts/import-reading-private.mjs"
   },
   "dependencies": {
     "next": "latest",

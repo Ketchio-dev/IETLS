@@ -2,6 +2,68 @@ import Link from 'next/link';
 
 import type { PlaceholderAssessmentPracticePageData } from '@/lib/services/assessment-placeholders/application-service';
 
+function PrivateImportPanel({
+  summary,
+}: {
+  summary: NonNullable<PlaceholderAssessmentPracticePageData['privateImportSummary']>;
+}) {
+  return (
+    <article className="panel">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Private import pipeline</p>
+          <h2>Local reading bank status</h2>
+        </div>
+      </div>
+
+      <div className="metric-grid compact-metric-grid">
+        <div className="metric-card">
+          <span>Imported sets</span>
+          <strong>{summary.importedSetCount}</strong>
+        </div>
+        <div className="metric-card">
+          <span>Detected source files</span>
+          <strong>{summary.detectedSourceFiles.length}</strong>
+        </div>
+        <div className="metric-card">
+          <span>Command</span>
+          <strong>{summary.importCommand}</strong>
+        </div>
+      </div>
+
+      <div className="stack-sm">
+        <p className="summary-copy">
+          Source folder: <code>{summary.sourceDir}</code>
+        </p>
+        <p className="summary-copy">
+          Compiled output: <code>{summary.compiledOutputLabel}</code>
+        </p>
+      </div>
+
+      {summary.warnings.length > 0 ? (
+        <ul className="plain-list compact-list import-warning-list">
+          {summary.warnings.map((warning) => (
+            <li key={warning}>{warning}</li>
+          ))}
+        </ul>
+      ) : null}
+
+      {summary.sets.length > 0 ? (
+        <div className="stack-sm">
+          <h3 className="subsection-title">Imported set preview</h3>
+          <ul className="plain-list compact-list">
+            {summary.sets.map((set) => (
+              <li key={set.id}>
+                <strong>{set.title}</strong> — {set.questionCount} questions, {set.passageWordCount} words, {set.types.join(', ')}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
 export function AssessmentPlaceholderShell({
   moduleLabel,
   statusLabel,
@@ -11,6 +73,7 @@ export function AssessmentPlaceholderShell({
   routeBase,
   plannedMilestones,
   currentGuardrails,
+  privateImportSummary,
 }: PlaceholderAssessmentPracticePageData) {
   return (
     <main className="app-shell">
@@ -58,6 +121,8 @@ export function AssessmentPlaceholderShell({
               ))}
             </ul>
           </article>
+
+          {privateImportSummary ? <PrivateImportPanel summary={privateImportSummary} /> : null}
         </div>
         <div className="workspace-column right-column">
           <article className="panel history-panel">

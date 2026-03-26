@@ -57,6 +57,22 @@ OPENROUTER_TIMEOUT_MS=15000
 
 Recommended model: `google/gemini-3-flash`. The scorer still validates the returned JSON against the structured rubric contract and automatically falls back to the mock scorer when config is missing, the request fails, or the provider output is invalid. The report `evaluationTrace` shows whether OpenRouter or the mock fallback produced the final scorecard.
 
+
+## Private Reading import pipeline
+
+Reading is still a placeholder module, but you can now compile your own local/private Reading materials into a structured bank without the app fetching third-party content for you.
+
+1. Put your personally sourced `.json` files in `data/private-reading-imports/`
+2. Run:
+
+```bash
+npm run reading:import-private
+```
+
+This compiles a local bank to `data/runtime/reading-private-imports.json` and surfaces the import status on `/reading` and `/reading/dashboard`.
+
+A starter template lives at `data/private-reading-imports/template.reading-import.json` and is ignored by the importer until you copy/rename it.
+
 ## Local persistence
 
 Runtime data is written to `data/runtime/` by default.

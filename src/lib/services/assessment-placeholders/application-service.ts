@@ -1,3 +1,4 @@
+import { loadReadingPrivateImportSummary } from '@/lib/server/reading-private-import-repository';
 import type {
   PlaceholderAssessmentDashboardPageData,
   PlaceholderAssessmentModuleId,
@@ -84,7 +85,7 @@ export function createPlaceholderAssessmentApplicationService(definition: Placeh
   };
 }
 
-const readingPlaceholderService = createPlaceholderAssessmentApplicationService({
+const readingPlaceholderDefinition: PlaceholderAssessmentDefinition = {
   moduleId: 'reading',
   moduleLabel: 'IELTS Academic Reading Placeholder',
   statusLabel: 'Placeholder',
@@ -112,7 +113,7 @@ const readingPlaceholderService = createPlaceholderAssessmentApplicationService(
     'Design passage licensing and ownership rules first.',
     'Add answer-span-backed item contracts before any scored drills.',
   ],
-});
+};
 
 const listeningPlaceholderService = createPlaceholderAssessmentApplicationService({
   moduleId: 'listening',
@@ -144,10 +145,53 @@ const listeningPlaceholderService = createPlaceholderAssessmentApplicationServic
   ],
 });
 
-export const loadReadingPracticePageData = readingPlaceholderService.loadPracticePageData;
-export const loadReadingDashboardPageData = readingPlaceholderService.loadDashboardPageData;
-export const loadReadingTaskData = readingPlaceholderService.loadTaskData;
-export const submitReadingAssessment = readingPlaceholderService.submitAssessment;
+export async function loadReadingPracticePageData(): Promise<PlaceholderAssessmentPracticePageData> {
+  return {
+    moduleId: readingPlaceholderDefinition.moduleId,
+    moduleLabel: readingPlaceholderDefinition.moduleLabel,
+    statusLabel: readingPlaceholderDefinition.statusLabel,
+    summary: readingPlaceholderDefinition.summary,
+    practiceTitle: readingPlaceholderDefinition.practiceTitle,
+    practiceDescription: readingPlaceholderDefinition.practiceDescription,
+    routeBase: readingPlaceholderDefinition.routeBase,
+    plannedMilestones: clone(readingPlaceholderDefinition.plannedMilestones),
+    currentGuardrails: clone(readingPlaceholderDefinition.currentGuardrails),
+    privateImportSummary: await loadReadingPrivateImportSummary(),
+  };
+}
+
+export async function loadReadingDashboardPageData(): Promise<PlaceholderAssessmentDashboardPageData> {
+  return {
+    moduleId: readingPlaceholderDefinition.moduleId,
+    moduleLabel: readingPlaceholderDefinition.moduleLabel,
+    statusLabel: readingPlaceholderDefinition.statusLabel,
+    summary: readingPlaceholderDefinition.summary,
+    dashboardTitle: readingPlaceholderDefinition.dashboardTitle,
+    dashboardDescription: readingPlaceholderDefinition.dashboardDescription,
+    routeBase: readingPlaceholderDefinition.routeBase,
+    statusCards: clone(readingPlaceholderDefinition.statusCards),
+    nextSteps: clone(readingPlaceholderDefinition.nextSteps),
+    privateImportSummary: await loadReadingPrivateImportSummary(),
+  };
+}
+
+export async function loadReadingTaskData(): Promise<PlaceholderAssessmentTaskData> {
+  return {
+    moduleId: readingPlaceholderDefinition.moduleId,
+    title: readingPlaceholderDefinition.practiceTitle,
+    description: readingPlaceholderDefinition.practiceDescription,
+    plannedMilestones: clone(readingPlaceholderDefinition.plannedMilestones),
+    privateImportSummary: await loadReadingPrivateImportSummary(),
+  };
+}
+
+export async function submitReadingAssessment(): Promise<SubmitPlaceholderAssessmentResult> {
+  return {
+    ok: false,
+    error: `${readingPlaceholderDefinition.moduleLabel} is a placeholder module for now; no scoring pipeline is implemented yet. Use the private import pipeline first, then implement the real reading drill flow.`,
+    status: 501,
+  };
+}
 
 export const loadListeningPracticePageData = listeningPlaceholderService.loadPracticePageData;
 export const loadListeningDashboardPageData = listeningPlaceholderService.loadDashboardPageData;

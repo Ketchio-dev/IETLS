@@ -1,3 +1,5 @@
+import type { PrivateReadingImportSummary } from '@/lib/services/reading-imports/types';
+
 export type PlaceholderAssessmentModuleId = 'reading' | 'listening';
 
 export interface PlaceholderAssessmentPracticePageData {
@@ -10,6 +12,7 @@ export interface PlaceholderAssessmentPracticePageData {
   routeBase: string;
   plannedMilestones: string[];
   currentGuardrails: string[];
+  privateImportSummary?: PrivateReadingImportSummary;
 }
 
 export interface PlaceholderAssessmentDashboardPageData {
@@ -26,6 +29,7 @@ export interface PlaceholderAssessmentDashboardPageData {
     detail: string;
   }>;
   nextSteps: string[];
+  privateImportSummary?: PrivateReadingImportSummary;
 }
 
 export interface PlaceholderAssessmentTaskData {
@@ -33,6 +37,7 @@ export interface PlaceholderAssessmentTaskData {
   title: string;
   description: string;
   plannedMilestones: string[];
+  privateImportSummary?: PrivateReadingImportSummary;
 }
 
 export interface SubmitPlaceholderAssessmentInput {
