@@ -66,6 +66,8 @@ Persisted data now powers both the practice shell and the dashboard, so saved at
 
 The default runtime persistence adapter remains file-backed (`src/lib/server/storage.ts`), but the repository now reads and writes through a small storage port so the persistence boundary can be swapped in tests or future adapters without changing route/page callers.
 
+A follow-on refactor keeps that route/page wiring thin by moving practice-shell and dashboard data loading behind a narrow server-side writing application-service boundary. That seam should own prompt seeding, resume-target hydration, and dashboard payload assembly while leaving repository persistence details and dashboard/progress aggregation in their existing modules.
+
 ## Review and implementation notes
 
 Current review notes for the implemented slices live under `docs/review/`, including:
@@ -74,6 +76,7 @@ Current review notes for the implemented slices live under `docs/review/`, inclu
 - `docs/review/writing-task-1-academic-next-slice-review.md`
 - `docs/review/writing-dashboard-recent-attempts-review.md`
 - `docs/review/writing-dashboard-criterion-trends-review.md`
+- `docs/review/writing-application-service-boundary-review.md`
 - `docs/review/verification-lane.md`
 
-These notes capture the task-aware prompt/scoring/history contracts, the persisted dashboard/resume flow, the implemented criterion-trend/compare dashboard slice, the stronger study-plan presentation guardrails, verification expectations, and the guardrails for keeping Gemini 3 Flash as the default live scorer without adding dependencies.
+These notes capture the task-aware prompt/scoring/history contracts, the persisted dashboard/resume flow, the route/page application-service boundary, the implemented criterion-trend/compare dashboard slice, the stronger study-plan presentation guardrails, verification expectations, and the guardrails for keeping Gemini 3 Flash as the default live scorer without adding dependencies.
