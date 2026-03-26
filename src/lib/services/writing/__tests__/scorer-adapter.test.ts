@@ -62,13 +62,13 @@ describe('scoreWritingWithAdapter', () => {
   it('uses OpenRouter when configured and returns provider metadata', async () => {
     vi.stubEnv('IELTS_SCORER_PROVIDER', 'openrouter');
     vi.stubEnv('OPENROUTER_API_KEY', 'test-key');
-    vi.stubEnv('IELTS_SCORER_MODEL', 'google/gemini-2.5-flash');
+    vi.stubEnv('IELTS_SCORER_MODEL', 'google/gemini-3-flash');
 
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         id: 'gen-123',
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-3-flash',
         usage: { total_tokens: 321 },
         choices: [
           {
@@ -86,7 +86,7 @@ describe('scoreWritingWithAdapter', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(result.evaluationTrace.scorerProvider).toBe('openrouter');
-    expect(result.evaluationTrace.scorerModel).toBe('google/gemini-2.5-flash');
+    expect(result.evaluationTrace.scorerModel).toBe('google/gemini-3-flash');
     expect(result.evaluationTrace.usedMockFallback).toBe(false);
     expect(result.evaluationTrace.configuredProvider).toBe('openrouter');
     expect(result.overallBand).toBe(7);
@@ -115,7 +115,7 @@ describe('scoreWritingWithAdapter', () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-3-flash',
         choices: [
           {
             message: {
