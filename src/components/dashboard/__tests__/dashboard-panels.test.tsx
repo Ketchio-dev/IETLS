@@ -73,6 +73,8 @@ describe('dashboard presentation components', () => {
             taskTypes: ['task-1'],
             targetRange: { lower: 6, upper: 6.5 },
             sessionLabel: 'Session 1',
+            actionHref: '/?promptId=task-1-uk-underground&attemptId=attempt-1',
+            actionLabel: 'Resume latest report',
           },
           {
             id: 'support',
@@ -95,6 +97,10 @@ describe('dashboard presentation components', () => {
     expect(screen.getByText(/sharpen the task 1 overview/i)).toBeInTheDocument();
     expect(screen.getByText(/task 1 \+ task 2/i)).toBeInTheDocument();
     expect(screen.getByText(/keep introductions to one concise purpose sentence/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /resume latest report/i })).toHaveAttribute(
+      'href',
+      '/?promptId=task-1-uk-underground&attemptId=attempt-1',
+    );
   });
 
   it('renders the empty study-plan state without focus cards', () => {
