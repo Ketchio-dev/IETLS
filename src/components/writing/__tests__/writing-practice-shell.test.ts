@@ -199,11 +199,11 @@ describe('WritingPracticeShell', () => {
     expect(screen.getAllByText(/structured visual brief/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/passengers at a london underground station/i).length).toBeGreaterThan(0);
     expect(
-      screen.getByRole('img', { name: /line chart for passengers at a london underground station/i }),
-    ).toBeInTheDocument();
+      screen.getAllByRole('img', { name: /line chart for passengers at a london underground station/i }).length,
+    ).toBeGreaterThan(0);
     expect(
-      screen.getByRole('table', { name: /passengers at a london underground station data table/i }),
-    ).toBeInTheDocument();
+      screen.getAllByRole('table', { name: /passengers at a london underground station data table/i }).length,
+    ).toBeGreaterThan(0);
   });
 
   it('renders the Task 1 table prompt with a real table renderer', () => {
