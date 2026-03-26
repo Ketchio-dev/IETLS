@@ -7,6 +7,11 @@ import { extractWritingEvidence } from './evidence-extractor';
 import { countWords } from './metrics';
 import { scoreWritingWithAdapter, scoreWritingWithMockAdapter } from './scorer-adapter';
 
+const PIPELINE_VERSION_BY_TASK_TYPE = {
+  'task-1': 'writing-task-1/v1-openrouter-adapter',
+  'task-2': 'writing-task-2/v4-openrouter-adapter',
+} as const;
+
 export function createSubmissionRecord(submission: EssaySubmission): WritingSubmissionRecord {
   return {
     ...submission,
@@ -38,7 +43,7 @@ function buildAssessmentReportFromScorecard(
     nextSteps: generateFeedbackActions(scorecard.criterionScores, evidence),
     warnings: buildWarnings(submission.wordCount, scorecard.confidence),
     evaluationTrace: scorecard.evaluationTrace,
-    pipelineVersion: 'writing-task-2/v4-openrouter-adapter',
+    pipelineVersion: PIPELINE_VERSION_BY_TASK_TYPE[prompt.taskType],
     generatedAt: new Date().toISOString(),
   };
 }

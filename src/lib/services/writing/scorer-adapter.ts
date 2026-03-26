@@ -11,7 +11,6 @@ import { clampBand } from './metrics';
 import { deriveOverallBandRange, deriveOverallConfidence, getCriterionEvidence, predictCriterionScores } from './scoring-model';
 
 export const WRITING_RUBRIC_SCHEMA_VERSION = 'writing-rubric-scorecard/v1';
-const RUBRIC_VERSION = 'ielts-academic-writing-task-2/v1';
 const CALIBRATION_VERSION = 'seed-v1';
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 const DEFAULT_OPENROUTER_MODEL = 'google/gemini-3-flash';
@@ -22,6 +21,10 @@ const WRITING_CRITERIA: CriterionName[] = [
   'Lexical Resource',
   'Grammatical Range & Accuracy',
 ];
+const RUBRIC_VERSION_BY_TASK_TYPE = {
+  'task-1': 'ielts-academic-writing-task-1/v1',
+  'task-2': 'ielts-academic-writing-task-2/v1',
+} as const;
 
 const criterionScoreSchema = {
   type: 'object',
@@ -132,6 +135,10 @@ function buildEvidenceFingerprint(evidence: EvidenceSignal[]) {
   return evidence.map((item) => `${item.id}:${item.strength}:${item.source}`).join('|');
 }
 
+function getRubricVersion(prompt: WritingPrompt) {
+  return RUBRIC_VERSION_BY_TASK_TYPE[prompt.taskType];
+}
+
 function buildCriterionTrace(criterion: CriterionName, evidence: EvidenceSignal[]) {
   const relevantSignals = getCriterionEvidence(criterion, evidence);
 
@@ -162,14 +169,14 @@ function createMockScorecard(prompt: WritingPrompt, evidence: EvidenceSignal[], 
     overallBandRange,
     confidence,
     confidenceReasons: reasons,
-    evaluationTrace: {
-      schemaVersion: WRITING_RUBRIC_SCHEMA_VERSION,
-      scorerProvider: 'mock-rule-based',
-      scorerModel: 'heuristic-v1',
-      configuredProvider: options.configuredProvider,
-      usedMockFallback,
-      rubricVersion: RUBRIC_VERSION,
-      calibrationVersion: CALIBRATION_VERSION,
+      evaluationTrace: {
+        schemaVersion: WRITING_RUBRIC_SCHEMA_VERSION,
+        scorerProvider: 'mock-rule-based',
+        scorerModel: 'heuristic-v1',
+        configuredProvider: options.configuredProvider,
+        usedMockFallback,
+        rubricVersion: getRubricVersion(prompt),
+        calibrationVersion: CALIBRATION_VERSION,
       evidenceSignalCount: evidence.length,
       evidenceFingerprint: buildEvidenceFingerprint(evidence),
       scoredAt: new Date().toISOString(),
@@ -452,7 +459,7 @@ async function requestOpenRouterScore(input: WritingScorerAdapterInput, config: 
         scorerModel: responseModel,
         configuredProvider: 'openrouter',
         usedMockFallback: false,
-        rubricVersion: RUBRIC_VERSION,
+        rubricVersion: getRubricVersion(input.prompt),
         calibrationVersion: CALIBRATION_VERSION,
         evidenceSignalCount: input.evidence.length,
         evidenceFingerprint: buildEvidenceFingerprint(input.evidence),

@@ -7,6 +7,7 @@ import type {
   RecentAttemptSummary,
   SavedAssessmentSnapshot,
   WritingPrompt,
+  WritingTaskType,
 } from '@/lib/domain';
 import { getSampleResponse } from '@/lib/fixtures/writing';
 import { buildProgressSummary } from '@/lib/services/writing/progress-summary';
@@ -41,6 +42,20 @@ function buildAttemptStatus(attempt: SavedAssessmentSnapshot) {
     model: trace.scorerModel,
     fallback: trace.usedMockFallback ? 'Mock fallback' : 'Live scorer',
   };
+}
+
+function getTaskLabel(taskType: WritingTaskType) {
+  return taskType === 'task-1' ? 'Writing Task 1' : 'Writing Task 2';
+}
+
+function getTaskPromptHeading(taskType: WritingTaskType) {
+  return `Choose a ${getTaskLabel(taskType)} brief`;
+}
+
+function getEditorPlaceholder(taskType: WritingTaskType) {
+  return taskType === 'task-1'
+    ? 'Write your full Task 1 response here…'
+    : 'Write your full Task 2 response here…';
 }
 
 export function WritingPracticeShell({
@@ -100,6 +115,7 @@ export function WritingPracticeShell({
     () => promptSavedAssessments.find((attempt) => attempt.submissionId === activeAttemptId) ?? null,
     [activeAttemptId, promptSavedAssessments],
   );
+  const activeTaskLabel = getTaskLabel(activePrompt.taskType);
 
   async function handleSubmit() {
     setIsSubmitting(true);
@@ -158,7 +174,7 @@ export function WritingPracticeShell({
     <main className="app-shell">
       <section className="hero panel">
         <div>
-          <p className="eyebrow">IELTS Academic • Writing Task 2</p>
+          <p className="eyebrow">IELTS Academic • {activeTaskLabel}</p>
           <h1>Writing-first coach with a persistent assessment trail</h1>
           <p className="hero-copy">
             Practice under time pressure, review a structured score estimate, and keep a reusable
@@ -187,7 +203,7 @@ export function WritingPracticeShell({
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Prompt bank</p>
-                <h2>Choose a Writing Task 2 brief</h2>
+                <h2>{getTaskPromptHeading(activePrompt.taskType)}</h2>
               </div>
               <span className="band-chip">{prompts.length} prompts</span>
             </div>
@@ -256,7 +272,7 @@ export function WritingPracticeShell({
             <textarea
               aria-label="Essay response"
               className="essay-textarea"
-              placeholder="Write your full Task 2 response here…"
+              placeholder={getEditorPlaceholder(activePrompt.taskType)}
               onChange={(event) => setResponse(event.target.value)}
               value={response}
             />
