@@ -15,6 +15,17 @@ The merged branch should preserve the existing prompt → draft → report → h
 
 The goal is better product readiness without introducing new infrastructure or external dependencies.
 
+## Current baseline findings
+
+The current baseline already has a useful service split (`evidence-extractor` → `scoring-model` → `feedback-generator`) and persistent recent-attempt storage. The main review gaps for this slice are:
+
+- scoring still terminates inside an app-owned heuristic model rather than a provider boundary,
+- the report surfaces one overall band plus confidence labels rather than explicit score ranges,
+- calibration-friendly trace metadata is not yet documented as a first-class contract,
+- the UI shows recent attempts but not a compact trend summary.
+
+These are good extension points because they can be addressed without replacing the current writing flow or adding external dependencies.
+
 ## Architecture contract
 
 Keep the scoring pipeline layered so the UI still consumes one stable report object.
