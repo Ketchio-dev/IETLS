@@ -96,13 +96,14 @@ function createMockScorecard(prompt: WritingPrompt, evidence: EvidenceSignal[], 
       evidenceSignalCount: evidence.length,
       evidenceFingerprint: buildEvidenceFingerprint(evidence),
       scoredAt: new Date().toISOString(),
-      notes: configuredProvider === 'mock'
-        ? ['Using the built-in mock scorer adapter.']
-        : [
-            configuredProvider
-              ? `Configured scorer "${configuredProvider}" is not wired yet, so the mock scorer was used.`
-              : 'No external scorer is configured yet, so the mock scorer provided the structured rubric output.',
-          ],
+      notes:
+        configuredProvider === 'mock'
+          ? ['Using the built-in mock scorer adapter.']
+          : [
+              configuredProvider
+                ? `Configured scorer "${configuredProvider}" is not wired yet, so the mock scorer was used.`
+                : 'No external scorer is configured yet, so the mock scorer provided the structured rubric output.',
+            ],
       criterionTrace: criterionScores.map((score) => buildCriterionTrace(score.criterion, evidence)),
     },
   } satisfies StructuredRubricScorecard;
