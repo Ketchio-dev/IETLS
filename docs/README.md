@@ -17,6 +17,7 @@ This repo started from a clean baseline on **March 26, 2026**. These docs now se
 - `docs/review/writing-dashboard-criterion-trends-review.md` — review/documentation note for the implemented dashboard slice: criterion-trend summaries, saved-attempt compare support, and stronger persisted study-plan presentation on `/dashboard`.
 - `docs/review/writing-application-service-boundary-review.md` — review/documentation note for the route/page refactor that moves writing-shell and dashboard orchestration behind a narrow server-side application-service boundary.
 - `docs/review/assessment-module-registry-review.md` — review/documentation note for the next foundation slice: register writing through a shared assessment-module registry and workspace boundary without changing the current writing UX.
+- `docs/review/speaking-alpha-module-review.md` — review/documentation note for the next second-module validation slice: a Speaking alpha scaffold that exercises the shared registry/server seam without disturbing the writing flow.
 
 ## Current review snapshot
 
@@ -26,5 +27,6 @@ This repo started from a clean baseline on **March 26, 2026**. These docs now se
 - The dashboard now supports saved-attempt comparison and stronger study-plan presentation while preserving the same persistence-first resume flow.
 - Route/page orchestration is being documented around a narrow writing application-service boundary so Next.js entrypoints can stay thin as the MVP grows.
 - A shared assessment-module registry/workspace boundary now centralizes practice-shell, dashboard, and assessment route paths so the app is not structurally limited to writing-only wiring.
+- The next platform step is a second-module validation slice for Speaking alpha that proves the shared registry/server seam can hold another module while writing stays the default, fully working experience.
 - The live scorer path still defaults to **Gemini 3 Flash** when OpenRouter is enabled, while the mock scorer remains the deterministic fallback.
 - Older `next-slice` review notes are still worth keeping because they explain the design guardrails behind the current implementation.

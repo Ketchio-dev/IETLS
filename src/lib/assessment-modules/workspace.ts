@@ -32,6 +32,17 @@ export const writingAssessmentWorkspace: AssessmentWorkspace = {
   assessmentApiPath: '/api/writing/assessment',
 };
 
+export const speakingAssessmentWorkspace: AssessmentWorkspace = {
+  moduleId: 'speaking',
+  moduleLabel: 'IELTS Academic Speaking Alpha',
+  moduleSummary:
+    'Transcript-first speaking practice that validates the second module seam before audio capture lands.',
+  practicePath: '/speaking',
+  dashboardPath: '/speaking/dashboard',
+  taskApiPath: '/api/speaking/task',
+  assessmentApiPath: '/api/speaking/assessment',
+};
+
 export function toAssessmentWorkspaceDefinition(workspace: AssessmentWorkspace): AssessmentWorkspaceDefinition {
   return {
     id: workspace.moduleId,
@@ -47,6 +58,7 @@ export function toAssessmentWorkspaceDefinition(workspace: AssessmentWorkspace):
 }
 
 export const writingAssessmentWorkspaceDefinition = toAssessmentWorkspaceDefinition(writingAssessmentWorkspace);
+export const speakingAssessmentWorkspaceDefinition = toAssessmentWorkspaceDefinition(speakingAssessmentWorkspace);
 
 export function buildPracticeWorkspaceHref(
   workspace: AssessmentWorkspace,

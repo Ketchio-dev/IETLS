@@ -5,10 +5,19 @@ import type {
   WritingPracticePageData,
   WritingTaskData,
 } from '@/lib/services/writing/application-service';
+import type {
+  SpeakingDashboardPageData,
+  SpeakingPracticePageData,
+  SpeakingTaskData,
+  SubmitSpeakingAssessmentInput,
+  SubmitSpeakingAssessmentResult,
+} from '@/lib/services/speaking/types';
 
+import { createSpeakingAssessmentModule } from './speaking-module';
 import { createWritingAssessmentModule } from './writing-module';
 
 export const WRITING_ASSESSMENT_MODULE_ID = 'writing' as const;
+export const SPEAKING_ASSESSMENT_MODULE_ID = 'speaking' as const;
 
 export interface AssessmentModuleCatalog {
   [WRITING_ASSESSMENT_MODULE_ID]: {
@@ -17,6 +26,13 @@ export interface AssessmentModuleCatalog {
     submitInput: SubmitWritingAssessmentInput;
     submitResult: SubmitWritingAssessmentResult;
     taskData: WritingTaskData;
+  };
+  [SPEAKING_ASSESSMENT_MODULE_ID]: {
+    dashboardPageData: SpeakingDashboardPageData;
+    practicePageData: SpeakingPracticePageData;
+    submitInput: SubmitSpeakingAssessmentInput;
+    submitResult: SubmitSpeakingAssessmentResult;
+    taskData: SpeakingTaskData;
   };
 }
 
@@ -58,7 +74,10 @@ function createModuleMap(modules: AssessmentModuleDefinition<AssessmentModuleId>
 }
 
 export function createAssessmentModuleRegistry(
-  modules: AssessmentModuleDefinition<AssessmentModuleId>[] = [createWritingAssessmentModule()],
+  modules: AssessmentModuleDefinition<AssessmentModuleId>[] = [
+    createWritingAssessmentModule(),
+    createSpeakingAssessmentModule(),
+  ],
 ): AssessmentModuleRegistry {
   const moduleMap = createModuleMap(modules);
 

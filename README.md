@@ -68,7 +68,7 @@ The default runtime persistence adapter remains file-backed (`src/lib/server/sto
 
 A follow-on refactor keeps route/page wiring thin by moving practice-shell and dashboard data loading behind a narrow server-side writing application-service boundary, then registering that slice behind a shared assessment-workspace registry. Writing remains the only registered workspace today, but the app entrypoints now resolve through a shared registry/workspace seam instead of importing writing-only orchestration directly.
 
-The current foundation also routes practice-shell, dashboard, and assessment URLs through a shared assessment-module registry/workspace boundary (`src/lib/assessment-modules/`) so new modules can plug into the app without re-hardcoding workspace paths across pages, routes, and components.
+The current foundation also routes practice-shell, dashboard, and assessment URLs through a shared assessment-module registry/workspace boundary (`src/lib/assessment-modules/`) so new modules can plug into the app without re-hardcoding workspace paths across pages, routes, and components. That seam is now the intended landing zone for the next **second-module validation slice**: a Speaking alpha scaffold that proves the registry/server boundary can carry a second module without disturbing the current Writing UX.
 
 ## Review and implementation notes
 
@@ -80,6 +80,7 @@ Current review notes for the implemented slices live under `docs/review/`, inclu
 - `docs/review/writing-dashboard-criterion-trends-review.md`
 - `docs/review/writing-application-service-boundary-review.md`
 - `docs/review/assessment-module-registry-review.md`
+- `docs/review/speaking-alpha-module-review.md`
 - `docs/review/verification-lane.md`
 
-These notes capture the task-aware prompt/scoring/history contracts, the persisted dashboard/resume flow, the route/page application-service boundary, the next shared assessment-module registry/workspace boundary, the implemented criterion-trend/compare dashboard slice, the stronger study-plan presentation guardrails, verification expectations, and the guardrails for keeping Gemini 3 Flash as the default live scorer without adding dependencies.
+These notes capture the task-aware prompt/scoring/history contracts, the persisted dashboard/resume flow, the route/page application-service boundary, the shared assessment-module registry/workspace boundary, the implemented criterion-trend/compare dashboard slice, the stronger study-plan presentation guardrails, the new Speaking alpha second-module validation slice, verification expectations, and the guardrails for keeping Gemini 3 Flash as the default live scorer without adding dependencies.
