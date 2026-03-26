@@ -8,3 +8,5 @@ build/
 coverage/
 tsconfig.tsbuildinfo
 data/runtime/
+
+.omc/
