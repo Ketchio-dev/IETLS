@@ -1,7 +1,15 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-const defaultDataDir = path.join(/* turbopackIgnore: true */ process.cwd(), 'data', 'runtime');
+const STORAGE_FILES = {
+  prompts: 'writing-prompts.json',
+  assessments: 'writing-assessments.json',
+  studyPlan: 'writing-study-plan.json',
+} as const;
+
+const defaultDataDir = path.join('data', 'runtime');
+
+export type StorageFile = keyof typeof STORAGE_FILES;
 
 export function getDataDir() {
   return process.env.IELTS_DATA_DIR ?? defaultDataDir;
@@ -12,9 +20,13 @@ export async function ensureDataDir() {
   return getDataDir();
 }
 
-export async function readJsonFile<T>(filename: string, fallback: T): Promise<T> {
+function resolveStorageFilePath(dir: string, file: StorageFile) {
+  return path.join(dir, STORAGE_FILES[file]);
+}
+
+export async function readJsonFile<T>(file: StorageFile, fallback: T): Promise<T> {
   const dir = await ensureDataDir();
-  const filePath = path.join(dir, filename);
+  const filePath = resolveStorageFilePath(dir, file);
 
   try {
     const raw = await readFile(filePath, 'utf8');
@@ -24,9 +36,9 @@ export async function readJsonFile<T>(filename: string, fallback: T): Promise<T>
   }
 }
 
-export async function writeJsonFile<T>(filename: string, value: T) {
+export async function writeJsonFile<T>(file: StorageFile, value: T) {
   const dir = await ensureDataDir();
-  const filePath = path.join(dir, filename);
+  const filePath = resolveStorageFilePath(dir, file);
   await writeFile(filePath, JSON.stringify(value, null, 2));
   return filePath;
 }
