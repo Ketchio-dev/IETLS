@@ -17,7 +17,7 @@ function StudyPlanStepCard({ step }: { step: DashboardStudyPlanStep }) {
           <h3>{step.title}</h3>
           <p className="summary-copy">{step.detail}</p>
         </div>
-        <div style={{ display: 'grid', gap: '0.5rem', justifyItems: 'end' }}>
+        <div className="dashboard-chip-stack">
           {step.sessionLabel ? <span className="band-chip">{step.sessionLabel}</span> : null}
           {step.criterion ? <span className="band-chip">{step.criterion}</span> : null}
         </div>
@@ -60,7 +60,7 @@ export function StudyPlanPanel({
           <h2>{title}</h2>
           <p className="summary-copy">{plan?.summary ?? emptyMessage}</p>
         </div>
-        <div style={{ display: 'grid', gap: '0.5rem', justifyItems: 'end' }}>
+        <div className="dashboard-chip-stack">
           {plan ? <span className="band-chip">{plan.horizonLabel}</span> : null}
           {plan?.recommendedSessionLabel ? (
             <span className="band-chip">{plan.recommendedSessionLabel}</span>
@@ -77,7 +77,7 @@ export function StudyPlanPanel({
           </div>
 
           {plan.carryForward && plan.carryForward.length > 0 ? (
-            <div style={{ marginTop: '1rem' }}>
+            <div className="dashboard-carry-forward">
               <div className="section-heading">
                 <h3>Keep carrying forward</h3>
                 <span className="band-chip">{formatCountLabel(plan.carryForward.length, 'habit')}</span>

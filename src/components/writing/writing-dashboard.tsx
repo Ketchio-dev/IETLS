@@ -9,6 +9,13 @@ import type {
   WritingPrompt,
 } from '@/lib/domain';
 import { DashboardMetricGrid, StudyPlanPanel } from '@/components/dashboard';
+import {
+  formatCriterionTaskCoverage,
+  formatDateTime,
+  formatSignedBandDelta,
+  formatTaskCoverage,
+  formatTrendLabel,
+} from '@/components/dashboard/dashboard-formatting';
 import { DashboardRecentAttemptsPanel } from '@/components/dashboard/dashboard-recent-attempts-panel';
 
 interface Props {
@@ -17,38 +24,6 @@ interface Props {
   summary: WritingDashboardSummary;
   progress: ProgressSummary;
   studyPlan: StudyPlanSnapshot;
-}
-
-function formatDateTime(value: string | null) {
-  if (!value) {
-    return 'No saved attempt yet';
-  }
-
-  return new Date(value).toLocaleString();
-}
-
-function formatTaskCoverage(taskCounts: WritingDashboardSummary['taskCounts']) {
-  return `${taskCounts['task-1']} Task 1 • ${taskCounts['task-2']} Task 2`;
-}
-
-function formatCriterionTaskCoverage(taskTypes: WritingDashboardSummary['criterionSummaries'][number]['taskTypes']) {
-  if (taskTypes.length === 2) {
-    return 'Task 1 + Task 2';
-  }
-
-  return taskTypes[0] === 'task-1' ? 'Task 1 only' : 'Task 2 only';
-}
-
-function formatSignedBandDelta(value: number | null) {
-  if (value === null) {
-    return 'Need one more saved attempt';
-  }
-
-  if (value === 0) {
-    return 'No change';
-  }
-
-  return `${value > 0 ? '+' : ''}${value.toFixed(1)} band vs previous`;
 }
 
 function buildStudyPlanHref(step: StudyPlanSnapshot['steps'][number]) {
@@ -65,19 +40,6 @@ function buildStudyPlanHref(step: StudyPlanSnapshot['steps'][number]) {
   }
 
   return `/?${params.toString()}`;
-}
-
-function describeTrend(trend: WritingDashboardSummary['criterionSummaries'][number]['trend']) {
-  switch (trend) {
-    case 'improving':
-      return 'Improving';
-    case 'slipping':
-      return 'Slipping';
-    case 'steady':
-      return 'Steady';
-    default:
-      return 'First scored checkpoint';
-  }
 }
 
 function buildDashboardMetrics(summary: WritingDashboardSummary, progress: ProgressSummary) {
@@ -282,7 +244,7 @@ export function WritingDashboard({ prompts, recentSavedAttempts, summary, progre
                     </div>
                     <TrendMiniBars entry={entry} />
                     <div className="history-meta">
-                      <span>{describeTrend(entry.trend)}</span>
+                      <span>{formatTrendLabel(entry.trend)}</span>
                       <span>{formatSignedBandDelta(entry.delta)}</span>
                     </div>
                     <div className="history-meta">
