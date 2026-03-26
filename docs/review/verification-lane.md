@@ -18,15 +18,23 @@ If a different package manager is chosen, keep the **script names** stable.
 
 ## Minimum smoke path
 
-A reviewer should be able to verify the first slice by:
+A reviewer should be able to verify the current slice by:
 
 1. launching the app,
-2. opening the Writing Task 2 practice route,
-3. seeing a prompt fixture,
+2. opening the writing practice route,
+3. selecting **Writing Task 2** and confirming an existing Task 2 prompt fixture still loads,
 4. typing into the editor while the timer counts down,
 5. submitting the response,
 6. opening a mock assessment report,
-7. confirming overall band, criterion bands, evidence, and feedback render.
+7. confirming overall band, criterion bands, evidence, feedback, and history render.
+
+For the Task 1 Academic extension branch, add this smoke path before merge:
+
+1. switch from **Writing Task 2** to **Writing Task 1**,
+2. confirm the prompt bank changes to Task 1 fixtures only,
+3. submit a Task 1 response,
+4. confirm the report uses Task 1-appropriate rubric wording,
+5. confirm saved history remains scoped to the active task family.
 
 ## Suggested merge checklist
 
