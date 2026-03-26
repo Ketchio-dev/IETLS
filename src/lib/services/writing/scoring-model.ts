@@ -1,12 +1,27 @@
-import type { BandRange, ConfidenceLevel, CriterionName, CriterionScore, EvidenceSignal, WritingPrompt } from '@/lib/domain';
+import type { BandRange, ConfidenceLevel, CriterionName, CriterionScore, EvidenceSignal, WritingPrompt, WritingTaskType } from '@/lib/domain';
 
 import { clampBand } from './metrics';
 
-const criterionMap: Record<CriterionName, string[]> = {
-  'Task Response': ['coverage-word-count', 'coverage-relevance', 'response-position', 'grammar-support'],
-  'Coherence & Cohesion': ['cohesion-paragraphing', 'cohesion-balance'],
-  'Lexical Resource': ['lexical-topic-range', 'lexical-generality'],
-  'Grammatical Range & Accuracy': ['grammar-variety'],
+const criterionMapByTaskType: Record<WritingTaskType, Record<CriterionName, string[]>> = {
+  'task-1': {
+    'Task Achievement': ['task1-word-count', 'task1-overview', 'task1-key-features'],
+    'Task Response': [],
+    'Coherence & Cohesion': ['cohesion-paragraphing', 'task1-comparisons'],
+    'Lexical Resource': ['task1-trend-language', 'lexical-generality'],
+    'Grammatical Range & Accuracy': ['grammar-variety', 'task1-time-reference'],
+  },
+  'task-2': {
+    'Task Achievement': [],
+    'Task Response': ['coverage-word-count', 'coverage-relevance', 'response-position', 'grammar-support'],
+    'Coherence & Cohesion': ['cohesion-paragraphing', 'cohesion-balance'],
+    'Lexical Resource': ['lexical-topic-range', 'lexical-generality'],
+    'Grammatical Range & Accuracy': ['grammar-variety'],
+  },
+};
+
+const criteriaByTaskType: Record<WritingTaskType, CriterionName[]> = {
+  'task-1': ['Task Achievement', 'Coherence & Cohesion', 'Lexical Resource', 'Grammatical Range & Accuracy'],
+  'task-2': ['Task Response', 'Coherence & Cohesion', 'Lexical Resource', 'Grammatical Range & Accuracy'],
 };
 
 const strengthToWeight = {
@@ -21,8 +36,12 @@ const rangePaddingByConfidence: Record<ConfidenceLevel, number> = {
   low: 1.5,
 };
 
-export function getCriterionEvidence(criterion: CriterionName, evidence: EvidenceSignal[]) {
-  return evidence.filter((item) => criterionMap[criterion].includes(item.id));
+export function getCriteriaForTaskType(taskType: WritingTaskType): CriterionName[] {
+  return criteriaByTaskType[taskType];
+}
+
+export function getCriterionEvidence(criterion: CriterionName, evidence: EvidenceSignal[], taskType: WritingTaskType) {
+  return evidence.filter((item) => criterionMapByTaskType[taskType][criterion].includes(item.id));
 }
 
 function deriveBandRange(band: number, confidence: ConfidenceLevel): BandRange {
@@ -34,32 +53,39 @@ function deriveBandRange(band: number, confidence: ConfidenceLevel): BandRange {
 }
 
 function scoreCriterion(criterion: CriterionName, evidence: EvidenceSignal[], prompt: WritingPrompt): CriterionScore {
-  const relevant = getCriterionEvidence(criterion, evidence);
+  const relevant = getCriterionEvidence(criterion, evidence, prompt.taskType);
   const weight = relevant.reduce((sum, item) => sum + strengthToWeight[item.strength], 0);
   const normalized = relevant.length ? weight / relevant.length : 0.5;
-
-  const baseline = criterion === 'Task Response' ? 5.5 : criterion === 'Coherence & Cohesion' ? 5.5 : 5;
+  const baseline = criterion === 'Task Achievement' || criterion === 'Task Response'
+    ? 5.5
+    : criterion === 'Coherence & Cohesion'
+      ? 5.5
+      : 5;
   const promptAdjustment = prompt.taskType === 'task-2' ? 0.25 : 0;
   const band = clampBand(baseline + normalized * 2 + promptAdjustment);
   const weakSignals = relevant.filter((item) => item.strength === 'weak').length;
   const confidence: ConfidenceLevel = weakSignals >= 2 ? 'low' : weakSignals === 1 ? 'medium' : 'high';
 
   const rationale =
-    criterion === 'Task Response'
+    criterion === 'Task Achievement'
       ? normalized >= 0.8
-        ? 'The draft covers both the prompt and a clear position with enough support for a credible practice estimate.'
-        : 'The draft addresses the prompt, but support or explicit position control still limits the score ceiling.'
-      : criterion === 'Coherence & Cohesion'
+        ? 'The report highlights the main visual features clearly and supports them with relevant data comparisons.'
+        : 'The response describes the data, but the overview or feature selection is still too thin for a stronger Task 1 estimate.'
+      : criterion === 'Task Response'
         ? normalized >= 0.8
-          ? 'Paragraphing and discussion cues support a mostly controlled line of argument.'
-          : 'The essay has a workable structure, but progression and paragraph control still feel uneven.'
-        : criterion === 'Lexical Resource'
+          ? 'The draft covers both the prompt and a clear position with enough support for a credible practice estimate.'
+          : 'The draft addresses the prompt, but support or explicit position control still limits the score ceiling.'
+        : criterion === 'Coherence & Cohesion'
           ? normalized >= 0.8
-            ? 'Topic vocabulary is specific enough to sound task-aware rather than generic.'
-            : 'Vocabulary is serviceable, but more precision is needed to sound less repetitive or broad.'
-          : normalized >= 0.8
-            ? 'The draft attempts a reasonable mix of clause patterns without obvious simplification.'
-            : 'Sentence control is promising, but the current signals are not strong enough for a higher-confidence grammar estimate.';
+            ? 'Paragraphing and comparison cues support a mostly controlled line of argument or report structure.'
+            : 'The response has a workable structure, but grouping and progression still feel uneven.'
+          : criterion === 'Lexical Resource'
+            ? normalized >= 0.8
+              ? 'Vocabulary is specific enough to describe the task without sounding repetitive or generic.'
+              : 'Vocabulary is serviceable, but more precision is needed to raise the lexical ceiling.'
+            : normalized >= 0.8
+              ? 'The draft attempts a reasonable mix of clause patterns without obvious simplification.'
+              : 'Sentence control is promising, but the current signals are not strong enough for a higher-confidence grammar estimate.';
 
   return {
     criterion,
@@ -71,7 +97,7 @@ function scoreCriterion(criterion: CriterionName, evidence: EvidenceSignal[], pr
 }
 
 export function predictCriterionScores(prompt: WritingPrompt, evidence: EvidenceSignal[]): CriterionScore[] {
-  return (Object.keys(criterionMap) as CriterionName[]).map((criterion) => scoreCriterion(criterion, evidence, prompt));
+  return getCriteriaForTaskType(prompt.taskType).map((criterion) => scoreCriterion(criterion, evidence, prompt));
 }
 
 export function deriveOverallBandRange(scores: CriterionScore[]): BandRange {
@@ -91,8 +117,8 @@ export function deriveOverallConfidence(
 
   const reasons = [
     'This is a practice estimate, not an official IELTS score.',
-    `The current scoring range is Band ${overallBandRange.lower.toFixed(1)}-${overallBandRange.upper.toFixed(1)} based on the signals in this draft.`,
-    ...(weakSignals > 0 ? [`${weakSignals} evidence signal(s) remain weak, so the score range could move after revision.`] : []),
+    'The current scoring range is Band ' + overallBandRange.lower.toFixed(1) + '-' + overallBandRange.upper.toFixed(1) + ' based on the signals in this draft.',
+    ...(weakSignals > 0 ? [weakSignals + ' evidence signal(s) remain weak, so the score range could move after revision.'] : []),
     ...(lowConfidenceScores > 0 ? ['At least one criterion relies on incomplete evidence, so the reported range is intentionally wider.'] : []),
   ];
 
