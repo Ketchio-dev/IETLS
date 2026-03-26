@@ -1,14 +1,15 @@
 # IELTS Academic Writing MVP
 
-A Next.js MVP for IELTS Academic Writing practice with a writing-first vertical slice:
+A Next.js MVP for IELTS Academic Writing practice with a task-aware writing shell and a persisted review dashboard:
 
-- Task 2 prompt bank with multiple IELTS-style briefs
-- Review/docs contract for the next Task 1 Academic slice with task-aware prompts, scoring, and history
-- Timed essay editor with live word count
+- Task-aware prompt bank for **Writing Task 1 Academic** and **Writing Task 2**
+- Structured Task 1 visual briefs plus the existing Task 2 essay prompts
+- Timed drafting shell with live word count, saved-attempt inspection, and quick links into the dashboard
+- Dashboard view for recent saved attempts, progress direction, scorer usage, and a lightweight study plan
 - Practice estimate report with criterion bands, scorer status, confidence reasons, warnings, and revision actions
 - Assessment architecture split into evidence extraction, scoring, and feedback generation
-- Local persistence for recent submissions, saved scorecards, and prompt-specific history
-- API scaffolding for prompt delivery, assessment submission, and attempt history
+- Local persistence for prompts, recent submissions, saved scorecards, dashboard summaries, and prompt-specific history
+- Gemini 3 Flash kept as the default live-scorer model when OpenRouter is enabled, with deterministic mock fallback
 
 ## Getting started
 
@@ -17,7 +18,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3000` for the practice shell and `http://localhost:3000/dashboard` for the saved-attempt dashboard.
 
 ## Verification
 
@@ -28,8 +29,10 @@ npm run test
 npm run build
 ```
 
-## API routes
+## Routes
 
+- `/` → writing practice shell with task switching, timed drafting, saved-attempt inspection, and assessment submission
+- `/dashboard` → persisted summary of recent saved attempts, scorer usage, and study-plan guidance
 - `GET /api/writing/task` → returns the current prompt plus the prompt bank
 - `POST /api/writing/assessment` → generates a practice estimate and stores the attempt locally
 
@@ -59,13 +62,15 @@ You can override this location with:
 IELTS_DATA_DIR=/custom/path npm run dev
 ```
 
-## Next documented slice
+Persisted data now powers both the practice shell and the dashboard, so saved attempts can be re-opened in the shell while the dashboard reuses the same local-first storage for trend summaries and study-plan guidance.
 
-The current runnable app is still centered on **Writing Task 2**.
+## Review and implementation notes
 
-For the planned Task 1 Academic extension, see:
+Current review notes for the implemented slices live under `docs/review/`, including:
 
+- `docs/review/writing-task-2-next-slice-review.md`
 - `docs/review/writing-task-1-academic-next-slice-review.md`
-- `docs/review/writing-task-1-academic-next-slice-contracts.md`
+- `docs/review/writing-dashboard-recent-attempts-review.md`
+- `docs/review/verification-lane.md`
 
-These notes capture the code-review findings and implementation guardrails for adding task switching, structured chart-driven prompts, task-aware persistence/history, and a separate Task 1 evidence/scoring path while keeping Gemini 3 Flash as the default live scorer.
+These notes capture the task-aware prompt/scoring/history contracts, the persisted dashboard/resume flow, verification expectations, and the guardrails for keeping Gemini 3 Flash as the default live scorer without adding dependencies.
