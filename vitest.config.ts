@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
+    exclude: ['.omx/**', 'node_modules/**'],
     coverage: {
       reporter: ['text', 'html'],
     },

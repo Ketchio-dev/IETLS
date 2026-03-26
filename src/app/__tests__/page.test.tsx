@@ -1,23 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/react';
 
-import { WRITING_ASSESSMENT_MODULE_ID } from '@/lib/assessment-modules/registry';
 import { sampleAssessmentReport, samplePrompt, sampleTask1Prompt, writingPromptBank } from '@/lib/fixtures/writing';
 import type { WritingPracticePageData } from '@/lib/services/writing/application-service';
 
 const mocks = vi.hoisted(() => ({
-  loadWritingPracticePageData: vi.fn(),
-  loadWritingDashboardPageData: vi.fn(),
-  loadWritingTaskData: vi.fn(),
-  submitWritingAssessment: vi.fn(),
+  loadDefaultAssessmentPracticePageData: vi.fn(),
   shellSpy: vi.fn(),
 }));
 
-vi.mock('@/lib/services/writing/application-service', () => ({
-  loadWritingPracticePageData: mocks.loadWritingPracticePageData,
-  loadWritingDashboardPageData: mocks.loadWritingDashboardPageData,
-  loadWritingTaskData: mocks.loadWritingTaskData,
-  submitWritingAssessment: mocks.submitWritingAssessment,
+vi.mock('@/lib/server/assessment-workspace', () => ({
+  loadDefaultAssessmentPracticePageData: mocks.loadDefaultAssessmentPracticePageData,
 }));
 
 vi.mock('@/components/writing/writing-practice-shell', () => ({
@@ -75,16 +68,18 @@ describe('HomePage', () => {
       fallbackReports: {},
     };
 
-    mocks.loadPracticePageData.mockResolvedValue(pageData);
+    mocks.loadDefaultAssessmentPracticePageData.mockResolvedValue(pageData);
 
-    render(await HomePage({
-      searchParams: Promise.resolve({
-        promptId: 'missing-prompt-id',
-        attemptId: 'attempt-task-1',
+    render(
+      await HomePage({
+        searchParams: Promise.resolve({
+          promptId: 'missing-prompt-id',
+          attemptId: 'attempt-task-1',
+        }),
       }),
-    }));
+    );
 
-    expect(mocks.loadPracticePageData).toHaveBeenCalledWith(WRITING_ASSESSMENT_MODULE_ID, {
+    expect(mocks.loadDefaultAssessmentPracticePageData).toHaveBeenCalledWith({
       promptId: 'missing-prompt-id',
       attemptId: 'attempt-task-1',
     });
@@ -103,15 +98,17 @@ describe('HomePage', () => {
       initialReport: sampleAssessmentReport,
       fallbackReports: {},
     };
-    mocks.loadPracticePageData.mockResolvedValue(pageData);
+    mocks.loadDefaultAssessmentPracticePageData.mockResolvedValue(pageData);
 
-    render(await HomePage({
-      searchParams: {
-        promptId: sampleTask1Prompt.id,
-      },
-    }));
+    render(
+      await HomePage({
+        searchParams: {
+          promptId: sampleTask1Prompt.id,
+        },
+      }),
+    );
 
-    expect(mocks.loadPracticePageData).toHaveBeenCalledWith(WRITING_ASSESSMENT_MODULE_ID, {
+    expect(mocks.loadDefaultAssessmentPracticePageData).toHaveBeenCalledWith({
       promptId: sampleTask1Prompt.id,
       attemptId: undefined,
     });

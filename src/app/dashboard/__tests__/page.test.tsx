@@ -1,24 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/react';
 
-import { WRITING_ASSESSMENT_MODULE_ID } from '@/lib/assessment-modules/registry';
 import type { ProgressSummary, StudyPlanSnapshot, WritingDashboardSummary } from '@/lib/domain';
 import { sampleAssessmentReport, writingPromptBank } from '@/lib/fixtures/writing';
 import type { WritingDashboardPageData } from '@/lib/services/writing/application-service';
 
 const mocks = vi.hoisted(() => ({
-  loadWritingPracticePageData: vi.fn(),
-  loadWritingDashboardPageData: vi.fn(),
-  loadWritingTaskData: vi.fn(),
-  submitWritingAssessment: vi.fn(),
+  loadDefaultAssessmentDashboardPageData: vi.fn(),
   dashboardSpy: vi.fn(),
 }));
 
-vi.mock('@/lib/services/writing/application-service', () => ({
-  loadWritingPracticePageData: mocks.loadWritingPracticePageData,
-  loadWritingDashboardPageData: mocks.loadWritingDashboardPageData,
-  loadWritingTaskData: mocks.loadWritingTaskData,
-  submitWritingAssessment: mocks.submitWritingAssessment,
+vi.mock('@/lib/server/assessment-workspace', () => ({
+  loadDefaultAssessmentDashboardPageData: mocks.loadDefaultAssessmentDashboardPageData,
 }));
 
 vi.mock('@/components/writing/writing-dashboard', () => ({
@@ -95,11 +88,11 @@ describe('DashboardPage', () => {
       studyPlan,
     };
 
-    mocks.loadDashboardPageData.mockResolvedValue(pageData);
+    mocks.loadDefaultAssessmentDashboardPageData.mockResolvedValue(pageData);
 
     render(await DashboardPage());
 
-    expect(mocks.loadDashboardPageData).toHaveBeenCalledWith(WRITING_ASSESSMENT_MODULE_ID);
+    expect(mocks.loadDefaultAssessmentDashboardPageData).toHaveBeenCalledWith();
     expect(mocks.dashboardSpy).toHaveBeenCalledWith(pageData);
   });
 });

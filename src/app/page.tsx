@@ -1,5 +1,3 @@
-import { WRITING_ASSESSMENT_MODULE_ID } from '@/lib/assessment-modules/registry';
-import { getAssessmentWorkspace } from '@/lib/assessment-workspace';
 import { WritingPracticeShell } from '@/components/writing/writing-practice-shell';
 import { loadDefaultAssessmentPracticePageData } from '@/lib/server/assessment-workspace';
 

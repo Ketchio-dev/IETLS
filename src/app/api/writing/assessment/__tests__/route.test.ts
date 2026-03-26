@@ -1,21 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { WRITING_ASSESSMENT_MODULE_ID } from '@/lib/assessment-modules/registry';
 import { sampleAssessmentReport, samplePrompt, sampleTask1Prompt } from '@/lib/fixtures/writing';
 import type { SubmitWritingAssessmentResult } from '@/lib/services/writing/application-service';
 
 const mocks = vi.hoisted(() => ({
-  loadWritingPracticePageData: vi.fn(),
-  loadWritingDashboardPageData: vi.fn(),
-  loadWritingTaskData: vi.fn(),
-  submitWritingAssessment: vi.fn(),
+  submitDefaultAssessment: vi.fn(),
 }));
 
-vi.mock('@/lib/services/writing/application-service', () => ({
-  loadWritingPracticePageData: mocks.loadWritingPracticePageData,
-  loadWritingDashboardPageData: mocks.loadWritingDashboardPageData,
-  loadWritingTaskData: mocks.loadWritingTaskData,
-  submitWritingAssessment: mocks.submitWritingAssessment,
+vi.mock('@/lib/server/assessment-workspace', () => ({
+  submitDefaultAssessment: mocks.submitDefaultAssessment,
 }));
 
 import { POST } from '../route';
@@ -31,7 +24,7 @@ describe('POST /api/writing/assessment', () => {
       error: 'Provide a promptId and at least 50 characters of writing.',
       status: 400,
     };
-    mocks.submitAssessment.mockResolvedValue(invalid);
+    mocks.submitDefaultAssessment.mockResolvedValue(invalid);
 
     const response = await POST(new Request('http://localhost/api/writing/assessment', {
       method: 'POST',
@@ -46,7 +39,7 @@ describe('POST /api/writing/assessment', () => {
     await expect(response.json()).resolves.toEqual({
       error: 'Provide a promptId and at least 50 characters of writing.',
     });
-    expect(mocks.submitAssessment).toHaveBeenCalledWith(WRITING_ASSESSMENT_MODULE_ID, {
+    expect(mocks.submitDefaultAssessment).toHaveBeenCalledWith({
       promptId: samplePrompt.id,
       response: 'Too short',
       timeSpentMinutes: 5,
@@ -59,7 +52,7 @@ describe('POST /api/writing/assessment', () => {
       error: 'Unknown writing prompt requested.',
       status: 404,
     };
-    mocks.submitAssessment.mockResolvedValue(missing);
+    mocks.submitDefaultAssessment.mockResolvedValue(missing);
 
     const response = await POST(new Request('http://localhost/api/writing/assessment', {
       method: 'POST',
@@ -72,7 +65,7 @@ describe('POST /api/writing/assessment', () => {
 
     expect(response.status).toBe(404);
     await expect(response.json()).resolves.toEqual({ error: 'Unknown writing prompt requested.' });
-    expect(mocks.submitAssessment).toHaveBeenCalledWith(WRITING_ASSESSMENT_MODULE_ID, {
+    expect(mocks.submitDefaultAssessment).toHaveBeenCalledWith({
       promptId: 'missing-prompt',
       response: 'This response is long enough to pass the minimum length gate, but it targets no real prompt in the bank.',
       timeSpentMinutes: 12,
@@ -131,7 +124,7 @@ describe('POST /api/writing/assessment', () => {
       ],
     } satisfies Extract<SubmitWritingAssessmentResult, { ok: true }>['payload'];
 
-    mocks.submitAssessment.mockResolvedValue({
+    mocks.submitDefaultAssessment.mockResolvedValue({
       ok: true,
       payload,
     } satisfies SubmitWritingAssessmentResult);
@@ -146,7 +139,7 @@ describe('POST /api/writing/assessment', () => {
     }));
 
     expect(response.status).toBe(200);
-    expect(mocks.submitAssessment).toHaveBeenCalledWith(WRITING_ASSESSMENT_MODULE_ID, {
+    expect(mocks.submitDefaultAssessment).toHaveBeenCalledWith({
       promptId: prompt.id,
       response: responseText,
       timeSpentMinutes: payload.submission.timeSpentMinutes,
