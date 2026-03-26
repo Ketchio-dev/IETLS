@@ -523,6 +523,7 @@ li,
 .dashboard-grid,
 .dashboard-stat-grid,
 .dashboard-insight-grid,
+.dashboard-criterion-list,
 .study-plan-list {
   display: grid;
   gap: 1rem;
@@ -531,6 +532,33 @@ li,
 .dashboard-metric-card p,
 .study-plan-card p {
   margin-bottom: 0;
+}
+
+.dashboard-compare-card {
+  margin-top: 1rem;
+}
+
+.dashboard-compare-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.dashboard-compare-list li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 16px;
+  background: rgba(2, 6, 23, 0.32);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.dashboard-inline-note {
+  margin-top: 1rem;
 }
 
 @media (min-width: 800px) {

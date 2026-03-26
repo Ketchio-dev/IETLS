@@ -30,6 +30,39 @@ function formatTaskCoverage(taskCounts: WritingDashboardSummary['taskCounts']) {
   return `${taskCounts['task-1']} Task 1 • ${taskCounts['task-2']} Task 2`;
 }
 
+function formatCriterionTaskCoverage(taskTypes: WritingDashboardSummary['criterionSummaries'][number]['taskTypes']) {
+  if (taskTypes.length === 2) {
+    return 'Task 1 + Task 2';
+  }
+
+  return taskTypes[0] === 'task-1' ? 'Task 1 only' : 'Task 2 only';
+}
+
+function formatSignedBandDelta(value: number | null) {
+  if (value === null) {
+    return 'Need one more saved attempt';
+  }
+
+  if (value === 0) {
+    return 'No change';
+  }
+
+  return `${value > 0 ? '+' : ''}${value.toFixed(1)} band vs previous`;
+}
+
+function describeTrend(trend: WritingDashboardSummary['criterionSummaries'][number]['trend']) {
+  switch (trend) {
+    case 'improving':
+      return 'Improving';
+    case 'slipping':
+      return 'Slipping';
+    case 'steady':
+      return 'Steady';
+    default:
+      return 'First scored checkpoint';
+  }
+}
+
 function buildDashboardMetrics(summary: WritingDashboardSummary, progress: ProgressSummary) {
   return [
     {
@@ -148,7 +181,7 @@ export function WritingDashboard({ prompts, recentSavedAttempts, summary, progre
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Criteria</p>
-                <h2>What is strongest vs. weakest</h2>
+                <h2>Criterion trend summaries</h2>
               </div>
             </div>
             <div className="dashboard-insight-grid">
@@ -183,6 +216,28 @@ export function WritingDashboard({ prompts, recentSavedAttempts, summary, progre
                 </p>
               </div>
             </div>
+
+            {summary.criterionSummaries.length > 0 ? (
+              <div className="dashboard-criterion-list">
+                {summary.criterionSummaries.map((entry) => (
+                  <article className="history-card" key={entry.criterion}>
+                    <div className="history-card-header">
+                      <strong>{entry.criterion}</strong>
+                      <span>{entry.averageBand.toFixed(1)} average</span>
+                    </div>
+                    <div className="history-meta">
+                      <span>{describeTrend(entry.trend)}</span>
+                      <span>{formatSignedBandDelta(entry.delta)}</span>
+                    </div>
+                    <div className="history-meta">
+                      <span>Latest: {entry.latestBand.toFixed(1)}</span>
+                      <span>{formatCriterionTaskCoverage(entry.taskTypes)}</span>
+                      <span>{entry.attemptsConsidered} scored attempts</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : null}
           </article>
         </div>
 
