@@ -1,3 +1,4 @@
+import { createElement } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -25,7 +26,10 @@ describe('WritingPracticeShell', () => {
 
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<WritingPracticeShell initialReport={sampleAssessmentReport} prompt={samplePrompt} />);
+    render(createElement(WritingPracticeShell, {
+      initialReport: sampleAssessmentReport,
+      prompt: samplePrompt,
+    }));
 
     expect(screen.getByText(samplePrompt.title)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /generate mock report/i }));
