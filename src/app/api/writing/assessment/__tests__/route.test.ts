@@ -13,9 +13,14 @@ vi.mock('@/lib/server/writing-assessment-repository', () => ({
   saveAssessmentResult: mocks.saveAssessmentResult,
 }));
 
-vi.mock('@/lib/services/assessment', () => ({
-  runAssessmentPipeline: mocks.runAssessmentPipeline,
-}));
+vi.mock('@/lib/services/assessment', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/services/assessment')>();
+
+  return {
+    ...actual,
+    runAssessmentPipeline: mocks.runAssessmentPipeline,
+  };
+});
 
 import { POST } from '../route';
 
