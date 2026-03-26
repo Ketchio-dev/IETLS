@@ -1,4 +1,5 @@
-import type { AssessmentReport, WritingPrompt } from '@/lib/domain';
+import type { EssaySubmission, WritingPrompt } from '@/lib/domain';
+import { buildAssessmentReport, createSubmissionRecord } from '@/lib/services/assessment';
 
 export const samplePrompt: WritingPrompt = {
   id: 'task-2-public-transport',
@@ -29,65 +30,21 @@ On the other hand, investment in rail, bus, and metro systems can move more comm
 
 Overall, I believe transport budgets should focus mainly on public systems while reserving targeted road spending for safety bottlenecks.`;
 
-export const sampleAssessmentReport: AssessmentReport = {
-  essayId: 'sample-essay-001',
+export const sampleSubmission: EssaySubmission = {
   promptId: samplePrompt.id,
-  overallBand: 6.5,
-  confidence: 'medium',
-  summary:
-    'This response addresses both viewpoints and presents a clear opinion, but some examples are underdeveloped and topic sentences could be more precise.',
-  estimatedWordCount: 284,
-  criterionScores: [
-    {
-      criterion: 'Task Response',
-      band: 6.5,
-      rationale: 'Addresses both sides and states an opinion, though support is uneven in the second body paragraph.',
-    },
-    {
-      criterion: 'Coherence & Cohesion',
-      band: 6,
-      rationale: 'Paragraphing is logical, but linking occasionally sounds mechanical and a few transitions repeat.',
-    },
-    {
-      criterion: 'Lexical Resource',
-      band: 7,
-      rationale: 'Shows a good range of topic vocabulary, especially around congestion, emissions, and commuter behaviour.',
-    },
-    {
-      criterion: 'Grammatical Range & Accuracy',
-      band: 6.5,
-      rationale: 'Uses a mix of sentence patterns with minor article and agreement slips that do not block meaning.',
-    },
-  ],
-  evidence: [
-    { name: 'Positioning', strength: 'strong', detail: 'Opinion is clear in the introduction and conclusion.' },
-    { name: 'Examples', strength: 'developing', detail: 'Only one concrete example is fully explained.' },
-    { name: 'Sentence control', strength: 'developing', detail: 'Complex sentences are attempted but punctuation is inconsistent.' },
-  ],
-  strengths: [
-    'Balances benefits of transport investment against road expansion without drifting off topic.',
-    'Uses relevant academic vocabulary naturally in most places.',
-  ],
-  risks: [
-    'Second viewpoint paragraph lacks a fully extended example.',
-    'Several connectors repeat, which weakens cohesion.',
-  ],
-  nextSteps: [
-    {
-      title: 'Upgrade examples',
-      description: 'Add one fully developed example with consequence + stakeholder impact in each body paragraph.',
-      impact: 'high',
-    },
-    {
-      title: 'Tighten topic sentences',
-      description: 'Open each paragraph with a direct claim rather than a general statement.',
-      impact: 'medium',
-    },
-    {
-      title: 'Edit for grammar clusters',
-      description: 'Review article usage and comma placement after drafting to protect accuracy.',
-      impact: 'medium',
-    },
-  ],
+  response: sampleResponse,
+  timeSpentMinutes: 32,
+};
+
+const seedSubmissionRecord = {
+  ...createSubmissionRecord(sampleSubmission),
+  submissionId: 'sample-submission-001',
+  createdAt: '2026-03-26T15:00:00.000Z',
+};
+
+export const sampleAssessmentReport = {
+  ...buildAssessmentReport(samplePrompt, seedSubmissionRecord),
+  reportId: 'sample-report-001',
+  essayId: seedSubmissionRecord.submissionId,
   generatedAt: '2026-03-26T15:00:00.000Z',
 };

@@ -12,7 +12,7 @@ describe('WritingPracticeShell', () => {
     vi.unstubAllGlobals();
   });
 
-  it('renders the prompt and submits for a refreshed report', async () => {
+  it('renders the prompt and updates the saved history after a submission', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -21,18 +21,30 @@ describe('WritingPracticeShell', () => {
           overallBand: 7,
           summary: 'Updated report summary',
         },
+        recentAttempts: [
+          {
+            submissionId: 'attempt-1',
+            promptId: samplePrompt.id,
+            overallBand: 7,
+            confidence: 'medium',
+            estimatedWordCount: 270,
+            summary: 'Updated report summary',
+            createdAt: '2026-03-26T16:00:00.000Z',
+          },
+        ],
       }),
     });
 
     vi.stubGlobal('fetch', fetchMock);
 
     render(createElement(WritingPracticeShell, {
+      initialHistory: [],
       initialReport: sampleAssessmentReport,
       prompt: samplePrompt,
     }));
 
     expect(screen.getByText(samplePrompt.title)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /generate mock report/i }));
+    fireEvent.click(screen.getByRole('button', { name: /generate practice estimate/i }));
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
@@ -41,6 +53,8 @@ describe('WritingPracticeShell', () => {
       );
     });
 
-    expect(await screen.findByText('Updated report summary')).toBeInTheDocument();
+    const summaryMatches = await screen.findAllByText('Updated report summary');
+    expect(summaryMatches.length).toBeGreaterThan(0);
+    expect(await screen.findByText(/1 saved/i)).toBeInTheDocument();
   });
 });

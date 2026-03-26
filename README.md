@@ -1,12 +1,13 @@
 # IELTS Academic Writing MVP
 
-A greenfield Next.js MVP for IELTS Academic Writing practice with a writing-first vertical slice:
+A Next.js MVP for IELTS Academic Writing practice with a writing-first vertical slice:
 
 - Task 2 prompt briefing and rubric focus
 - Timed essay editor with live word count
-- Mock assessment report UI with predicted band, evidence, and next steps
-- API scaffolding for prompt delivery and rule-based assessment generation
-- Verification commands to keep the repo runnable
+- Practice estimate report with criterion bands, confidence reasons, warnings, and revision actions
+- Assessment architecture split into evidence extraction, scoring, and feedback generation
+- Local persistence for recent submissions and score history
+- API scaffolding for prompt delivery, assessment submission, and attempt history
 
 ## Getting started
 
@@ -29,4 +30,13 @@ npm run build
 ## API routes
 
 - `GET /api/writing/task` → returns the sample Writing Task 2 prompt fixture
-- `POST /api/writing/assessment` → returns a mock assessment report for submitted writing
+- `POST /api/writing/assessment` → generates a practice estimate and stores the attempt locally
+
+## Local persistence
+
+Runtime data is written to `data/runtime/` by default.
+You can override this location with:
+
+```bash
+IELTS_DATA_DIR=/custom/path npm run dev
+```

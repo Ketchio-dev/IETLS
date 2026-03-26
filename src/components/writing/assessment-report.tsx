@@ -11,7 +11,7 @@ export function AssessmentReportPanel({ report }: { report: AssessmentReport }) 
     <section className="panel report-panel" aria-labelledby="report-title">
       <div className="report-header">
         <div>
-          <p className="eyebrow">Mock assessment report</p>
+          <p className="eyebrow">Practice estimate</p>
           <h2 id="report-title">Band {report.overallBand.toFixed(1)} predicted</h2>
         </div>
         <div className="band-chip">Confidence: {report.confidence}</div>
@@ -27,6 +27,7 @@ export function AssessmentReportPanel({ report }: { report: AssessmentReport }) 
               <span>Band {item.band.toFixed(1)}</span>
             </div>
             <p>{item.rationale}</p>
+            <small className="confidence-caption">Criterion confidence: {item.confidence}</small>
           </article>
         ))}
       </div>
@@ -36,8 +37,8 @@ export function AssessmentReportPanel({ report }: { report: AssessmentReport }) 
           <h3>Evidence</h3>
           <ul className="plain-list">
             {report.evidence.map((item) => (
-              <li key={item.name}>
-                <strong>{item.name}:</strong> {item.detail}
+              <li key={item.id}>
+                <strong>{item.label}:</strong> {item.detail}
               </li>
             ))}
           </ul>
@@ -56,6 +57,30 @@ export function AssessmentReportPanel({ report }: { report: AssessmentReport }) 
             ))}
           </ul>
         </div>
+      </div>
+
+      <div className="report-columns secondary-columns">
+        <div>
+          <h3>Confidence reasons</h3>
+          <ul className="plain-list compact-list">
+            {report.confidenceReasons.map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h3>Warnings</h3>
+          <ul className="plain-list compact-list">
+            {report.warnings.map((warning) => (
+              <li key={warning.code}>{warning.message}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <div className="report-footer">
+        <span>Pipeline: {report.pipelineVersion}</span>
+        <span>Generated: {new Date(report.generatedAt).toLocaleString()}</span>
       </div>
     </section>
   );

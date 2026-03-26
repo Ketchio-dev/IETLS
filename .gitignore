@@ -7,3 +7,4 @@ build/
 .env*
 coverage/
 tsconfig.tsbuildinfo
+data/runtime/

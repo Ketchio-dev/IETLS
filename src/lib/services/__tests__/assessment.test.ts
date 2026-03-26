@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildMockAssessmentReport } from '@/lib/services/assessment';
+import { samplePrompt } from '@/lib/fixtures/writing';
+import { runAssessmentPipeline } from '@/lib/services/assessment';
 
 const essay = `In my opinion, public transport deserves more funding because it moves large numbers of people efficiently.
 
@@ -10,19 +11,20 @@ On the other hand, better bus lanes and rail systems reduce congestion and pollu
 
 Overall, governments should prioritise public transport while fixing only the most dangerous road bottlenecks.`;
 
-describe('buildMockAssessmentReport', () => {
-  it('returns a shaped report with derived evidence and actions', () => {
-    const report = buildMockAssessmentReport({
-      promptId: 'task-2-public-transport',
+describe('runAssessmentPipeline', () => {
+  it('returns a report backed by separated evidence, scoring, and feedback layers', () => {
+    const result = runAssessmentPipeline(samplePrompt, {
+      promptId: samplePrompt.id,
       response: essay,
       timeSpentMinutes: 32,
     });
 
-    expect(report.promptId).toBe('task-2-public-transport');
-    expect(report.criterionScores).toHaveLength(4);
-    expect(report.evidence.length).toBeGreaterThan(0);
-    expect(report.nextSteps.length).toBeGreaterThan(0);
-    expect(report.overallBand).toBeGreaterThanOrEqual(4);
-    expect(report.estimatedWordCount).toBeGreaterThan(80);
+    expect(result.report.promptId).toBe(samplePrompt.id);
+    expect(result.report.criterionScores).toHaveLength(4);
+    expect(result.report.evidence.length).toBeGreaterThan(3);
+    expect(result.report.nextSteps.length).toBeGreaterThan(0);
+    expect(result.report.pipelineVersion).toContain('architecture-split');
+    expect(result.report.confidenceReasons[0]).toContain('practice estimate');
+    expect(result.submission.wordCount).toBeGreaterThan(80);
   });
 });
