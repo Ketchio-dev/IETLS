@@ -6,6 +6,10 @@ const SOURCE_DIR = process.env.IELTS_PRIVATE_READING_IMPORTS_DIR ?? path.join('d
 const OUTPUT_DIR = process.env.IELTS_DATA_DIR ?? path.join('data', 'runtime');
 const OUTPUT_PATH = path.join(OUTPUT_DIR, 'reading-private-imports.json');
 
+function isImportSourceFile(entryName) {
+  return entryName.endsWith('.json') && !entryName.startsWith('template.');
+}
+
 function slugify(value) {
   return value
     .toLowerCase()
@@ -87,7 +91,7 @@ async function readSourceFiles(sourceDir) {
   await mkdir(sourceDir, { recursive: true });
   const entries = await readdir(sourceDir, { withFileTypes: true });
   return entries
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.json') && !entry.name.startsWith('template.'))
+    .filter((entry) => entry.isFile() && isImportSourceFile(entry.name))
     .map((entry) => entry.name)
     .sort();
 }
@@ -101,11 +105,15 @@ async function loadSetCandidates(sourceDir, fileName) {
     return parsed;
   }
 
-  if (Array.isArray(parsed.sets)) {
+  if (parsed && typeof parsed === 'object' && Array.isArray(parsed.sets)) {
     return parsed.sets;
   }
 
-  return [parsed];
+  if (parsed && typeof parsed === 'object') {
+    return [parsed];
+  }
+
+  throw new Error(`${fileName}: expected a JSON object, an array of set objects, or { sets: [...] }.`);
 }
 
 async function importReadingBank() {

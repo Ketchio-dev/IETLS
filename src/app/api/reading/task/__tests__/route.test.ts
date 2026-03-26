@@ -17,8 +17,16 @@ afterEach(() => {
 });
 
 describe('GET /api/reading/task', () => {
-  it('returns placeholder task data through the shared assessment workspace', async () => {
-    const payload = { moduleId: 'reading', title: 'Reading module placeholder' };
+  it('returns real reading task data through the shared assessment workspace', async () => {
+    const payload = {
+      moduleId: 'reading',
+      title: 'Reading drill import required',
+      description: 'Import a local Reading set to expose the first real Reading task payload.',
+      activeSet: null,
+      importedSets: [],
+      availableSets: [],
+      importSummary: null,
+    };
     mocks.loadAssessmentTaskData.mockResolvedValue(payload);
 
     const response = await GET();

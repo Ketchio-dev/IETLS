@@ -92,8 +92,8 @@ describe('assessment workspace registry', () => {
     });
     expect(getAssessmentWorkspace(READING_ASSESSMENT_MODULE_ID)).toEqual({
       id: 'reading',
-      label: 'IELTS Academic Reading Placeholder',
-      summary: 'Placeholder route coverage for future Reading content, scoring, and item-validation work.',
+      label: 'IELTS Academic Reading',
+      summary: 'Passage-centred drill practice with deterministic scoring, evidence-backed review, and imported local bank support.',
       routes: {
         practice: '/reading',
         dashboard: '/reading/dashboard',
@@ -189,19 +189,16 @@ describe('assessment workspace registry', () => {
     mocks.assessmentModule.loadPracticePageData.mockResolvedValue({ moduleId: 'reading' });
     mocks.assessmentModule.loadDashboardPageData.mockResolvedValue({ moduleId: 'reading' });
     mocks.assessmentModule.loadTaskData.mockResolvedValue({ moduleId: 'reading' });
-    mocks.assessmentModule.submitAssessment.mockResolvedValue({
-      ok: false,
-      error: 'IELTS Academic Reading Placeholder is a placeholder module for now; no scoring pipeline is implemented yet.',
-      status: 501,
-    });
+    mocks.assessmentModule.submitAssessment.mockResolvedValue({ ok: true, payload: { moduleId: 'reading', scored: true } });
 
     await expect(loadAssessmentPracticePageData(READING_ASSESSMENT_MODULE_ID)).resolves.toEqual({ moduleId: 'reading' });
     await expect(loadAssessmentDashboardPageData(READING_ASSESSMENT_MODULE_ID)).resolves.toEqual({ moduleId: 'reading' });
     await expect(loadAssessmentTaskData(READING_ASSESSMENT_MODULE_ID)).resolves.toEqual({ moduleId: 'reading' });
-    await expect(submitAssessmentForModule(READING_ASSESSMENT_MODULE_ID, { note: 'stub' })).resolves.toEqual({
-      ok: false,
-      error: 'IELTS Academic Reading Placeholder is a placeholder module for now; no scoring pipeline is implemented yet.',
-      status: 501,
+    await expect(
+      submitAssessmentForModule(READING_ASSESSMENT_MODULE_ID, { setId: 'urban-bee-corridors', answers: {}, timeSpentSeconds: 300 }),
+    ).resolves.toEqual({
+      ok: true,
+      payload: { moduleId: 'reading', scored: true },
     });
   });
 

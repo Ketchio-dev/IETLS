@@ -16,6 +16,10 @@ import type {
 const READING_PRIVATE_IMPORTS_FILE: StorageFile = 'readingPrivateImports';
 const defaultSourceDir = path.join('data', 'private-reading-imports');
 
+function isImportSourceFile(entryName: string) {
+  return entryName.endsWith('.json') && !entryName.startsWith('template.');
+}
+
 const emptyPayload: PrivateReadingImportBankPayload = {
   version: 1,
   importedAt: null,
@@ -36,6 +40,14 @@ function getCompiledOutputLabel() {
   return path.join(getDataDir(), 'reading-private-imports.json');
 }
 
+function sourceFilesMatch(compiledSourceFiles: string[], detectedSourceFiles: string[]) {
+  if (compiledSourceFiles.length !== detectedSourceFiles.length) {
+    return false;
+  }
+
+  return compiledSourceFiles.every((fileName, index) => fileName === detectedSourceFiles[index]);
+}
+
 function toSetSummary(set: PrivateReadingImportBankPayload['sets'][number]): ImportedReadingSetSummary {
   return {
     id: set.id,
@@ -53,7 +65,7 @@ async function listDetectedSourceFiles(sourceDir: string) {
   await mkdir(sourceDir, { recursive: true });
   const entries = await readdir(sourceDir, { withFileTypes: true });
   return entries
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.json') && !entry.name.startsWith('template.'))
+    .filter((entry) => entry.isFile() && isImportSourceFile(entry.name))
     .map((entry) => entry.name)
     .sort();
 }
@@ -90,7 +102,7 @@ export function createReadingPrivateImportRepository(
     if (detectedSourceFiles.length > 0 && compiledBank.sets.length === 0) {
       warnings.push('Source files exist, but no compiled reading bank is loaded yet. Run npm run reading:import-private.');
     }
-    if (compiledBank.sourceFiles.length !== detectedSourceFiles.length) {
+    if (!sourceFilesMatch(compiledBank.sourceFiles, detectedSourceFiles)) {
       warnings.push('Detected source files and compiled source files differ. Re-run the import command after editing your local bank files.');
     }
 

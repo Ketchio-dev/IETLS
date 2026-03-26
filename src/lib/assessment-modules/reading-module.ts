@@ -3,7 +3,7 @@ import {
   loadReadingPracticePageData,
   loadReadingTaskData,
   submitReadingAssessment,
-} from '@/lib/services/assessment-placeholders/application-service';
+} from '@/lib/services/reading/application-service';
 
 import { READING_ASSESSMENT_MODULE_ID, type AssessmentModuleDefinition } from './registry';
 

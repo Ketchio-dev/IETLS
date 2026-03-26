@@ -7,6 +7,7 @@ const STORAGE_FILES = {
   studyPlan: 'writing-study-plan.json',
   speakingSessions: 'speaking-sessions.json',
   readingPrivateImports: 'reading-private-imports.json',
+  readingAttempts: 'reading-attempts.json',
 } as const;
 
 const defaultDataDir = path.join('data', 'runtime');

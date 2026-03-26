@@ -23,6 +23,7 @@ function PrivateImportDashboardPanel({
         <li>Imported sets: {summary.importedSetCount}</li>
         <li>Detected source files: {summary.detectedSourceFiles.length}</li>
         <li>Compiled source files: {summary.compiledSourceFiles.length}</li>
+        <li>Latest import: {summary.latestImportedAt ?? 'Not compiled yet'}</li>
       </ul>
       {summary.sets.length > 0 ? (
         <ul className="plain-list compact-list">

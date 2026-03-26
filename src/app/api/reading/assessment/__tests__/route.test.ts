@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { READING_ASSESSMENT_MODULE_ID } from '@/lib/assessment-modules/registry';
-import type { SubmitPlaceholderAssessmentResult } from '@/lib/services/assessment-placeholders/application-service';
 
 const mocks = vi.hoisted(() => ({
   submitAssessmentForModule: vi.fn(),
@@ -18,22 +17,30 @@ afterEach(() => {
 });
 
 describe('POST /api/reading/assessment', () => {
-  it('returns the placeholder 501 payload', async () => {
-    const result: SubmitPlaceholderAssessmentResult = {
-      ok: false,
-      error: 'IELTS Academic Reading Placeholder is a placeholder module for now; no scoring pipeline is implemented yet.',
-      status: 501,
-    };
-    mocks.submitAssessmentForModule.mockResolvedValue(result);
+  it('returns a deterministic reading report payload', async () => {
+    const payload = { report: { rawScore: 5 }, savedAttempts: [], recentAttempts: [], attempt: { attemptId: 'attempt-1' } };
+    mocks.submitAssessmentForModule.mockResolvedValue({ ok: true, payload });
 
-    const body = { note: 'stub' };
+    const body = { setId: 'urban-bee-corridors', answers: {}, timeSpentSeconds: 300 };
     const response = await POST(new Request('http://localhost/api/reading/assessment', {
       method: 'POST',
       body: JSON.stringify(body),
     }));
 
-    expect(response.status).toBe(501);
+    expect(response.status).toBe(200);
     expect(mocks.submitAssessmentForModule).toHaveBeenCalledWith(READING_ASSESSMENT_MODULE_ID, body);
-    await expect(response.json()).resolves.toEqual({ error: result.error });
+    await expect(response.json()).resolves.toEqual(payload);
+  });
+
+  it('returns route errors for malformed submissions', async () => {
+    mocks.submitAssessmentForModule.mockResolvedValue({ ok: false, error: 'Bad request', status: 400 });
+
+    const response = await POST(new Request('http://localhost/api/reading/assessment', {
+      method: 'POST',
+      body: JSON.stringify({ setId: 'urban-bee-corridors' }),
+    }));
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: 'Bad request' });
   });
 });

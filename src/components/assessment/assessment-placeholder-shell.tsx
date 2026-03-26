@@ -38,6 +38,9 @@ function PrivateImportPanel({
         <p className="summary-copy">
           Compiled output: <code>{summary.compiledOutputLabel}</code>
         </p>
+        <p className="summary-copy">
+          Latest import: <code>{summary.latestImportedAt ?? 'Not compiled yet'}</code>
+        </p>
       </div>
 
       {summary.warnings.length > 0 ? (

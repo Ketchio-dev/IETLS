@@ -45,8 +45,8 @@ export const speakingAssessmentWorkspace: AssessmentWorkspace = {
 
 export const readingAssessmentWorkspace: AssessmentWorkspace = {
   moduleId: 'reading',
-  moduleLabel: 'IELTS Academic Reading Placeholder',
-  moduleSummary: 'Placeholder route coverage for future Reading content, scoring, and item-validation work.',
+  moduleLabel: 'IELTS Academic Reading',
+  moduleSummary: 'Passage-centred drill practice with deterministic scoring, evidence-backed review, and imported local bank support.',
   practicePath: '/reading',
   dashboardPath: '/reading/dashboard',
   taskApiPath: '/api/reading/task',

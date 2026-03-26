@@ -13,6 +13,13 @@ import type {
   SubmitSpeakingAssessmentResult,
 } from '@/lib/services/speaking/types';
 import type {
+  ReadingDashboardPageData,
+  ReadingPracticePageData,
+  ReadingTaskData,
+  SubmitReadingAssessmentInput,
+  SubmitReadingAssessmentResult,
+} from '@/lib/services/reading/types';
+import type {
   PlaceholderAssessmentDashboardPageData,
   PlaceholderAssessmentPracticePageData,
   PlaceholderAssessmentTaskData,
@@ -46,11 +53,11 @@ export interface AssessmentModuleCatalog {
     taskData: SpeakingTaskData;
   };
   [READING_ASSESSMENT_MODULE_ID]: {
-    dashboardPageData: PlaceholderAssessmentDashboardPageData;
-    practicePageData: PlaceholderAssessmentPracticePageData;
-    submitInput: SubmitPlaceholderAssessmentInput;
-    submitResult: SubmitPlaceholderAssessmentResult;
-    taskData: PlaceholderAssessmentTaskData;
+    dashboardPageData: ReadingDashboardPageData;
+    practicePageData: ReadingPracticePageData;
+    submitInput: SubmitReadingAssessmentInput;
+    submitResult: SubmitReadingAssessmentResult;
+    taskData: ReadingTaskData;
   };
   [LISTENING_ASSESSMENT_MODULE_ID]: {
     dashboardPageData: PlaceholderAssessmentDashboardPageData;
