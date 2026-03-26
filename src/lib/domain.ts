@@ -200,6 +200,7 @@ export interface DashboardCriterionSummary {
   delta: number | null;
   trend: 'improving' | 'steady' | 'slipping' | 'insufficient-data';
   attemptsConsidered: number;
+  recentBands: number[];
   taskTypes: WritingTaskType[];
 }
 
@@ -248,14 +249,25 @@ export interface StudyPlanStep {
   id: string;
   title: string;
   detail: string;
+  actions: string[];
+  criterion?: CriterionName | 'Overall';
   taskType: WritingTaskType | 'either';
+  targetRange?: BandRange | null;
+  promptId?: string | null;
+  submissionId?: string | null;
+  actionLabel?: string;
+  sessionLabel?: string;
 }
 
 export interface StudyPlanSnapshot {
+  version: number;
   generatedAt: string;
   basedOnSubmissionId: string | null;
   attemptsConsidered: number;
   headline: string;
   focus: string;
   steps: StudyPlanStep[];
+  carryForward: string[];
+  horizonLabel?: string;
+  recommendedSessionLabel?: string;
 }

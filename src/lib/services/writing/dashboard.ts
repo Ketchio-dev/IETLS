@@ -18,6 +18,7 @@ const EMPTY_TASK_COUNTS: Record<WritingTaskType, number> = {
   'task-1': 0,
   'task-2': 0,
 };
+const STUDY_PLAN_VERSION = 2;
 
 function sortAssessmentsDescending(savedAssessments: SavedAssessmentSnapshot[]) {
   return [...savedAssessments].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -86,6 +87,10 @@ function summarizeCriterionBands(savedAssessments: SavedAssessmentSnapshot[]) {
         delta,
         trend: buildCriterionTrend(delta),
         attemptsConsidered: value.count,
+        recentBands: value.attempts
+          .slice(0, 4)
+          .map((attempt) => attempt.band)
+          .reverse(),
         taskTypes: Array.from(new Set(value.attempts.map((attempt) => attempt.taskType))).sort(),
       };
     })
@@ -224,11 +229,14 @@ function buildEmptyStudyPlan(prompts: WritingPrompt[]): StudyPlanSnapshot {
   const task2Prompt = prompts.find((prompt) => prompt.taskType === 'task-2');
 
   return {
+    version: STUDY_PLAN_VERSION,
     generatedAt: new Date().toISOString(),
     basedOnSubmissionId: null,
     attemptsConsidered: 0,
     headline: 'Build one scored benchmark for each task before chasing trends.',
     focus: 'Start with one Task 1 response and one Task 2 response so the dashboard can compare your habits.',
+    horizonLabel: 'First 2 sessions',
+    recommendedSessionLabel: '1 x Task 1 + 1 x Task 2',
     steps: [
       {
         id: 'seed-task-1',
@@ -236,7 +244,17 @@ function buildEmptyStudyPlan(prompts: WritingPrompt[]): StudyPlanSnapshot {
         detail: task1Prompt
           ? `Start with “${task1Prompt.title}” and aim for ${task1Prompt.suggestedWordCount}+ words in ${task1Prompt.recommendedMinutes} minutes.`
           : 'Submit a full Task 1 response under timed conditions.',
+        actions: [
+          'Draft a one-sentence overview before the body paragraphs.',
+          'Highlight the biggest comparison before you start writing.',
+        ],
+        criterion: 'Overall',
         taskType: 'task-1',
+        targetRange: null,
+        promptId: task1Prompt?.id ?? null,
+        submissionId: null,
+        actionLabel: task1Prompt ? 'Open Task 1 prompt' : undefined,
+        sessionLabel: 'Session 1',
       },
       {
         id: 'seed-task-2',
@@ -244,15 +262,36 @@ function buildEmptyStudyPlan(prompts: WritingPrompt[]): StudyPlanSnapshot {
         detail: task2Prompt
           ? `Then write “${task2Prompt.title}” to compare Task 1 and Task 2 scoring patterns.`
           : 'Follow your Task 1 benchmark with one Task 2 response.',
+        actions: [
+          'State your position clearly in the introduction.',
+          'Keep one body paragraph focused on each main reason.',
+        ],
+        criterion: 'Overall',
         taskType: 'task-2',
+        targetRange: null,
+        promptId: task2Prompt?.id ?? null,
+        submissionId: null,
+        actionLabel: task2Prompt ? 'Open Task 2 prompt' : undefined,
+        sessionLabel: 'Session 2',
       },
       {
         id: 'review-first-report',
         title: 'Review feedback before rewriting',
         detail: 'Use the saved report strengths, risks, and next steps to plan your first redraft instead of starting from scratch.',
+        actions: [
+          'Pick one high-impact next step and apply it before drafting again.',
+          'Keep one strength from the report stable while you revise.',
+        ],
+        criterion: 'Overall',
         taskType: 'either',
+        targetRange: null,
+        promptId: null,
+        submissionId: null,
+        actionLabel: undefined,
+        sessionLabel: 'Review',
       },
     ],
+    carryForward: ['Treat saved reports as coaching notes, not one-off scores.'],
   };
 }
 
@@ -269,7 +308,19 @@ function buildTaskCoverageStep(taskType: WritingTaskType, prompts: WritingPrompt
     detail: suggestedPrompt
       ? `Use “${suggestedPrompt.title}” next so your saved history covers both tasks more evenly.`
       : `Schedule one timed ${formatTaskLabel(taskType)} attempt to balance your saved history.`,
+    actions: suggestedPrompt
+      ? [
+          `Aim for ${suggestedPrompt.suggestedWordCount}+ words in ${suggestedPrompt.recommendedMinutes} minutes.`,
+          suggestedPrompt.planningHints[0] ?? 'Keep the next response timed and complete.',
+        ]
+      : ['Complete one full timed response before comparing task trends again.'],
+    criterion: 'Overall',
     taskType,
+    targetRange: null,
+    promptId: suggestedPrompt?.id ?? null,
+    submissionId: null,
+    actionLabel: suggestedPrompt ? `Open ${formatTaskLabel(taskType)} prompt` : undefined,
+    sessionLabel: 'Session 2',
   };
 }
 
@@ -292,7 +343,19 @@ function buildPacingStep(
     detail: prompt
       ? `For ${formatTaskLabel(prompt.taskType)}, aim for ${prompt.suggestedWordCount}+ words in ${prompt.recommendedMinutes} minutes. Your recent average is ${averageWords} words across ${averageMinutes} minutes.`
       : `Repeat one timed attempt and compare your word count and pacing against the latest saved report.`,
+    actions: prompt
+      ? [
+          `Set a ${prompt.recommendedMinutes}-minute timer before you start.`,
+          `Do not finish below ${prompt.suggestedWordCount} words unless accuracy collapses.`,
+        ]
+      : ['Repeat one timed response and log the final word count beside the saved report.'],
+    criterion: 'Overall',
     taskType: 'either',
+    targetRange: latestAssessment.report.overallBandRange,
+    promptId: latestAssessment.promptId,
+    submissionId: latestAssessment.submissionId,
+    actionLabel: 'Reopen timed attempt',
+    sessionLabel: 'Session 3',
   };
 }
 
@@ -300,9 +363,16 @@ function buildWeaknessRepairStep(
   latestAssessment: SavedAssessmentSnapshot,
   weakestCriterion: DashboardCriterionSummary | null,
 ): StudyPlanStep {
+  const matchingCriterionScore = weakestCriterion
+    ? latestAssessment.report.criterionScores.find((score) => score.criterion === weakestCriterion.criterion)
+    : null;
   const relatedAction = weakestCriterion
     ? latestAssessment.report.nextSteps.find((step) => step.criterion === weakestCriterion.criterion)
     : latestAssessment.report.nextSteps[0];
+  const supportingActions = latestAssessment.report.nextSteps
+    .filter((step) => !weakestCriterion || step.criterion === weakestCriterion.criterion)
+    .slice(0, 2)
+    .map((step) => `${step.title}: ${step.description}`);
 
   return {
     id: 'repair-weakest-criterion',
@@ -312,7 +382,17 @@ function buildWeaknessRepairStep(
     detail: relatedAction
       ? `${relatedAction.title}: ${relatedAction.description}`
       : 'Rewrite your latest response using the saved next-step feedback as a checklist.',
+    actions:
+      supportingActions.length > 0
+        ? supportingActions
+        : ['Rewrite the latest response with one clear improvement target before scoring again.'],
+    criterion: weakestCriterion?.criterion ?? relatedAction?.criterion ?? 'Overall',
     taskType: latestAssessment.taskType,
+    targetRange: matchingCriterionScore?.bandRange ?? latestAssessment.report.overallBandRange,
+    promptId: latestAssessment.promptId,
+    submissionId: latestAssessment.submissionId,
+    actionLabel: 'Resume latest report',
+    sessionLabel: 'Session 1',
   };
 }
 
@@ -347,16 +427,23 @@ export function buildStudyPlan(
     : 'Focus this week: convert feedback into one cleaner timed attempt.';
 
   return {
+    version: STUDY_PLAN_VERSION,
     generatedAt: new Date().toISOString(),
     basedOnSubmissionId: latestAssessment.submissionId,
     attemptsConsidered: ordered.length,
     headline,
     focus: buildStudyPlanFocus(summary, progress),
+    horizonLabel: `Next ${Math.min(3, ordered.length + 1)} practice block${ordered.length === 0 ? '' : 's'}`,
+    recommendedSessionLabel: `${latestAssessment.timeSpentMinutes.toFixed(0)} min from latest attempt`,
     steps: [
       buildWeaknessRepairStep(latestAssessment, summary.weakestCriterion),
       buildTaskCoverageStep(underpracticedTask, prompts),
       buildPacingStep(latestAssessment, prompts, recentAssessments),
     ],
+    carryForward:
+      latestAssessment.report.strengths.length > 0
+        ? latestAssessment.report.strengths.slice(0, 2)
+        : ['Keep the clearest strength from the latest report stable while you revise.'],
   };
 }
 

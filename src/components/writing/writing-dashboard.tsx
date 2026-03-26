@@ -50,6 +50,22 @@ function formatSignedBandDelta(value: number | null) {
   return `${value > 0 ? '+' : ''}${value.toFixed(1)} band vs previous`;
 }
 
+function buildStudyPlanHref(step: StudyPlanSnapshot['steps'][number]) {
+  if (!step.promptId) {
+    return undefined;
+  }
+
+  const params = new URLSearchParams({
+    promptId: step.promptId,
+  });
+
+  if (step.submissionId) {
+    params.set('attemptId', step.submissionId);
+  }
+
+  return `/?${params.toString()}`;
+}
+
 function describeTrend(trend: WritingDashboardSummary['criterionSummaries'][number]['trend']) {
   switch (trend) {
     case 'improving':
@@ -96,32 +112,65 @@ function buildDashboardMetrics(summary: WritingDashboardSummary, progress: Progr
   ];
 }
 
-function toTaskTypes(taskType: StudyPlanSnapshot['steps'][number]['taskType']) {
-  if (taskType === 'either') {
-    return ['task-1', 'task-2'] as const;
-  }
-
-  return [taskType] as const;
-}
-
 function toDashboardStudyPlan(plan: StudyPlanSnapshot) {
   return {
     summary: plan.focus,
-    horizonLabel: `${plan.attemptsConsidered} saved attempt${plan.attemptsConsidered === 1 ? '' : 's'}`,
-    recommendedSessionLabel: plan.basedOnSubmissionId ? 'Use the latest saved report first' : undefined,
+    horizonLabel:
+      plan.horizonLabel ??
+      `${plan.attemptsConsidered} saved attempt${plan.attemptsConsidered === 1 ? '' : 's'}`,
+    recommendedSessionLabel:
+      plan.recommendedSessionLabel ??
+      (plan.basedOnSubmissionId ? 'Use the latest saved report first' : undefined),
     steps: plan.steps.map((step, index) => ({
       id: step.id,
       title: step.title,
       detail: step.detail,
-      actions: [],
-      taskTypes: [...toTaskTypes(step.taskType)],
-      sessionLabel: `Step ${index + 1}`,
-      targetRange: null,
+      actions: step.actions,
+      criterion: step.criterion,
+      taskTypes: [...(step.taskType === 'either' ? ['task-1', 'task-2'] : [step.taskType])],
+      sessionLabel: step.sessionLabel ?? `Step ${index + 1}`,
+      targetRange: step.targetRange ?? null,
+      actionHref: buildStudyPlanHref(step),
+      actionLabel: step.actionLabel,
     })),
-    carryForward: plan.basedOnSubmissionId
-      ? ['Re-open the latest saved report before drafting the next response.']
-      : undefined,
+    carryForward:
+      plan.carryForward.length > 0
+        ? plan.carryForward
+        : plan.basedOnSubmissionId
+          ? ['Re-open the latest saved report before drafting the next response.']
+          : undefined,
   };
+}
+
+function describeTrendVisual(entry: WritingDashboardSummary['criterionSummaries'][number]) {
+  return `Recent ${entry.criterion} bands: ${entry.recentBands.map((band) => band.toFixed(1)).join(', ')}`;
+}
+
+function TrendMiniBars({ entry }: { entry: WritingDashboardSummary['criterionSummaries'][number] }) {
+  return (
+    <div className="dashboard-trend-visual">
+      <span className="dashboard-trend-caption">Older</span>
+      <div
+        aria-label={describeTrendVisual(entry)}
+        className="dashboard-trend-bars"
+        role="img"
+      >
+        {entry.recentBands.map((band, index) => {
+          const height = `${Math.max(24, Math.round((band / 9) * 100))}%`;
+
+          return (
+            <span
+              aria-hidden="true"
+              className="dashboard-trend-bar"
+              key={`${entry.criterion}-${index}-${band}`}
+              style={{ height }}
+            />
+          );
+        })}
+      </div>
+      <span className="dashboard-trend-caption">Latest</span>
+    </div>
+  );
 }
 
 export function WritingDashboard({ prompts, recentSavedAttempts, summary, progress, studyPlan }: Props) {
@@ -225,6 +274,7 @@ export function WritingDashboard({ prompts, recentSavedAttempts, summary, progre
                       <strong>{entry.criterion}</strong>
                       <span>{entry.averageBand.toFixed(1)} average</span>
                     </div>
+                    <TrendMiniBars entry={entry} />
                     <div className="history-meta">
                       <span>{describeTrend(entry.trend)}</span>
                       <span>{formatSignedBandDelta(entry.delta)}</span>
