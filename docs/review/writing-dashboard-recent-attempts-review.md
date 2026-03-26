@@ -35,6 +35,8 @@ This slice is in good shape when it preserves three boundaries:
 
 A small cleanup pass has already reduced duplicated dashboard presentation logic after the feature landed; further cleanup should continue to prefer shared helpers over route-local duplication.
 
+Follow-on work for criterion-trend summaries and saved-attempt compare support is tracked separately in `docs/review/writing-dashboard-criterion-trends-review.md` so this note can stay focused on the recent-attempt inspection/resume slice.
+
 ## Guardrails for future edits
 
 - Do not change Task 1 / Task 2 scoring behavior as part of dashboard-only work.
