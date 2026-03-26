@@ -1,17 +1,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/react';
 
+import { WRITING_ASSESSMENT_MODULE_ID } from '@/lib/assessment-modules/registry';
 import type { ProgressSummary, StudyPlanSnapshot, WritingDashboardSummary } from '@/lib/domain';
 import { sampleAssessmentReport, writingPromptBank } from '@/lib/fixtures/writing';
 import type { WritingDashboardPageData } from '@/lib/services/writing/application-service';
 
 const mocks = vi.hoisted(() => ({
-  loadDefaultAssessmentDashboardPageData: vi.fn(),
+  loadDashboardPageData: vi.fn(),
   dashboardSpy: vi.fn(),
 }));
 
-vi.mock('@/lib/server/assessment-workspace', () => ({
-  loadDefaultAssessmentDashboardPageData: mocks.loadDefaultAssessmentDashboardPageData,
+vi.mock('@/lib/assessment-workspace', () => ({
+  getAssessmentWorkspace: () => ({
+    loadDashboardPageData: mocks.loadDashboardPageData,
+  }),
 }));
 
 vi.mock('@/components/writing/writing-dashboard', () => ({
@@ -28,7 +31,7 @@ afterEach(() => {
 });
 
 describe('DashboardPage', () => {
-  it('keeps the dashboard route thin by delegating to the application boundary', async () => {
+  it('keeps the dashboard route thin by delegating to the shared assessment workspace', async () => {
     const prompts = writingPromptBank;
     const savedAssessments = Array.from({ length: 8 }, (_, index) => ({
       submissionId: `saved-${index + 1}`,
@@ -88,11 +91,11 @@ describe('DashboardPage', () => {
       studyPlan,
     };
 
-    mocks.loadDefaultAssessmentDashboardPageData.mockResolvedValue(pageData);
+    mocks.loadDashboardPageData.mockResolvedValue(pageData);
 
     render(await DashboardPage());
 
-    expect(mocks.loadDefaultAssessmentDashboardPageData).toHaveBeenCalledWith();
+    expect(mocks.loadDashboardPageData).toHaveBeenCalledWith(WRITING_ASSESSMENT_MODULE_ID);
     expect(mocks.dashboardSpy).toHaveBeenCalledWith(pageData);
   });
 });

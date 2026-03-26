@@ -1,50 +1,89 @@
-import {
-  loadWritingDashboardPageData,
-  loadWritingPracticePageData,
-  loadWritingTaskData,
-  submitWritingAssessment,
-  type SubmitWritingAssessmentInput,
-  type SubmitWritingAssessmentResult,
-  type WritingDashboardPageData,
-  type WritingPracticePageData,
-  type WritingTaskData,
+import type {
+  SubmitWritingAssessmentInput,
+  SubmitWritingAssessmentResult,
+  WritingDashboardPageData,
+  WritingPracticePageData,
+  WritingTaskData,
 } from '@/lib/services/writing/application-service';
-import { type AssessmentWorkspace, writingAssessmentWorkspace } from '@/lib/assessment-modules/workspace';
 
-type SearchParamValue = string | string[] | undefined;
+import { createWritingAssessmentModule } from './writing-module';
 
-export interface AssessmentModuleDefinition {
-  id: string;
-  workspace: AssessmentWorkspace;
+export const WRITING_ASSESSMENT_MODULE_ID = 'writing' as const;
+
+export interface AssessmentModuleCatalog {
+  [WRITING_ASSESSMENT_MODULE_ID]: {
+    dashboardPageData: WritingDashboardPageData;
+    practicePageData: WritingPracticePageData;
+    submitInput: SubmitWritingAssessmentInput;
+    submitResult: SubmitWritingAssessmentResult;
+    taskData: WritingTaskData;
+  };
+}
+
+export type AssessmentModuleId = keyof AssessmentModuleCatalog;
+export type AssessmentSearchParams = Record<string, string | string[] | undefined>;
+
+export interface AssessmentModuleDefinition<TModuleId extends AssessmentModuleId> {
+  id: TModuleId;
+  loadDashboardPageData(): Promise<AssessmentModuleCatalog[TModuleId]['dashboardPageData']>;
   loadPracticePageData(
-    searchParams?: Record<string, SearchParamValue>,
-  ): Promise<WritingPracticePageData>;
-  loadDashboardPageData(): Promise<WritingDashboardPageData>;
-  loadTaskData(): Promise<WritingTaskData>;
-  submitAssessment(input: SubmitWritingAssessmentInput): Promise<SubmitWritingAssessmentResult>;
+    searchParams?: AssessmentSearchParams,
+  ): Promise<AssessmentModuleCatalog[TModuleId]['practicePageData']>;
+  loadTaskData(): Promise<AssessmentModuleCatalog[TModuleId]['taskData']>;
+  submitAssessment(
+    input: AssessmentModuleCatalog[TModuleId]['submitInput'],
+  ): Promise<AssessmentModuleCatalog[TModuleId]['submitResult']>;
 }
 
-const assessmentModules = {
-  writing: {
-    id: 'writing',
-    workspace: writingAssessmentWorkspace,
-    loadPracticePageData: loadWritingPracticePageData,
-    loadDashboardPageData: loadWritingDashboardPageData,
-    loadTaskData: loadWritingTaskData,
-    submitAssessment: submitWritingAssessment,
-  },
-} satisfies Record<string, AssessmentModuleDefinition>;
-
-export type AssessmentModuleId = keyof typeof assessmentModules;
-
-export function listAssessmentModules() {
-  return Object.values(assessmentModules);
+export interface AssessmentModuleRegistry {
+  getModule<TModuleId extends AssessmentModuleId>(
+    moduleId: TModuleId,
+  ): AssessmentModuleDefinition<TModuleId> | undefined;
+  listModuleIds(): AssessmentModuleId[];
+  requireModule<TModuleId extends AssessmentModuleId>(moduleId: TModuleId): AssessmentModuleDefinition<TModuleId>;
 }
 
-export function getAssessmentModule(moduleId: AssessmentModuleId): AssessmentModuleDefinition {
-  return assessmentModules[moduleId];
+function createModuleMap(modules: AssessmentModuleDefinition<AssessmentModuleId>[]) {
+  const map = new Map<AssessmentModuleId, AssessmentModuleDefinition<AssessmentModuleId>>();
+
+  for (const assessmentModule of modules) {
+    if (map.has(assessmentModule.id)) {
+      throw new Error(`Duplicate assessment module registered: ${assessmentModule.id}`);
+    }
+
+    map.set(assessmentModule.id, assessmentModule);
+  }
+
+  return map;
 }
 
-export function getDefaultAssessmentModule(): AssessmentModuleDefinition {
-  return listAssessmentModules()[0]!;
+export function createAssessmentModuleRegistry(
+  modules: AssessmentModuleDefinition<AssessmentModuleId>[] = [createWritingAssessmentModule()],
+): AssessmentModuleRegistry {
+  const moduleMap = createModuleMap(modules);
+
+  return {
+    getModule<TModuleId extends AssessmentModuleId>(moduleId: TModuleId) {
+      return moduleMap.get(moduleId) as AssessmentModuleDefinition<TModuleId> | undefined;
+    },
+    listModuleIds() {
+      return Array.from(moduleMap.keys());
+    },
+    requireModule<TModuleId extends AssessmentModuleId>(moduleId: TModuleId) {
+      const assessmentModule = moduleMap.get(moduleId) as AssessmentModuleDefinition<TModuleId> | undefined;
+
+      if (!assessmentModule) {
+        throw new Error(`Unknown assessment module requested: ${moduleId}`);
+      }
+
+      return assessmentModule;
+    },
+  };
+}
+
+let defaultAssessmentModuleRegistry: AssessmentModuleRegistry | undefined;
+
+export function getAssessmentModuleRegistry() {
+  defaultAssessmentModuleRegistry ??= createAssessmentModuleRegistry();
+  return defaultAssessmentModuleRegistry;
 }

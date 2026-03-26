@@ -1,16 +1,19 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/react';
 
+import { WRITING_ASSESSMENT_MODULE_ID } from '@/lib/assessment-modules/registry';
 import { sampleAssessmentReport, samplePrompt, sampleTask1Prompt, writingPromptBank } from '@/lib/fixtures/writing';
 import type { WritingPracticePageData } from '@/lib/services/writing/application-service';
 
 const mocks = vi.hoisted(() => ({
-  loadDefaultAssessmentPracticePageData: vi.fn(),
+  loadPracticePageData: vi.fn(),
   shellSpy: vi.fn(),
 }));
 
-vi.mock('@/lib/server/assessment-workspace', () => ({
-  loadDefaultAssessmentPracticePageData: mocks.loadDefaultAssessmentPracticePageData,
+vi.mock('@/lib/assessment-workspace', () => ({
+  getAssessmentWorkspace: () => ({
+    loadPracticePageData: mocks.loadPracticePageData,
+  }),
 }));
 
 vi.mock('@/components/writing/writing-practice-shell', () => ({
@@ -27,7 +30,7 @@ afterEach(() => {
 });
 
 describe('HomePage', () => {
-  it('hydrates the dashboard resume selection from the saved assessment query params', async () => {
+  it('hydrates the dashboard resume selection from the shared assessment workspace', async () => {
     const recentAttempts = [
       {
         submissionId: 'attempt-task-1',
@@ -68,7 +71,7 @@ describe('HomePage', () => {
       fallbackReports: {},
     };
 
-    mocks.loadDefaultAssessmentPracticePageData.mockResolvedValue(pageData);
+    mocks.loadPracticePageData.mockResolvedValue(pageData);
 
     render(await HomePage({
       searchParams: Promise.resolve({
@@ -77,7 +80,7 @@ describe('HomePage', () => {
       }),
     }));
 
-    expect(mocks.loadDefaultAssessmentPracticePageData).toHaveBeenCalledWith({
+    expect(mocks.loadPracticePageData).toHaveBeenCalledWith(WRITING_ASSESSMENT_MODULE_ID, {
       promptId: 'missing-prompt-id',
       attemptId: 'attempt-task-1',
     });
@@ -96,7 +99,7 @@ describe('HomePage', () => {
       initialReport: sampleAssessmentReport,
       fallbackReports: {},
     };
-    mocks.loadDefaultAssessmentPracticePageData.mockResolvedValue(pageData);
+    mocks.loadPracticePageData.mockResolvedValue(pageData);
 
     render(await HomePage({
       searchParams: {
@@ -104,7 +107,7 @@ describe('HomePage', () => {
       },
     }));
 
-    expect(mocks.loadDefaultAssessmentPracticePageData).toHaveBeenCalledWith({
+    expect(mocks.loadPracticePageData).toHaveBeenCalledWith(WRITING_ASSESSMENT_MODULE_ID, {
       promptId: sampleTask1Prompt.id,
       attemptId: undefined,
     });
