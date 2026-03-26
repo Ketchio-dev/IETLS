@@ -5,7 +5,14 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { samplePrompt, writingPromptBank } from '@/lib/fixtures/writing';
-import { listPrompts, saveAssessmentResult, listRecentAttempts, seedPrompt, seedPrompts } from '@/lib/server/writing-assessment-repository';
+import {
+  getDashboardStudyPlan,
+  listPrompts,
+  listRecentAttempts,
+  saveAssessmentResult,
+  seedPrompt,
+  seedPrompts,
+} from '@/lib/server/writing-assessment-repository';
 import { runAssessmentPipeline } from '@/lib/services/assessment';
 
 let tempDir = '';
@@ -48,5 +55,17 @@ describe('writing assessment repository', () => {
 
     expect(prompts).toHaveLength(writingPromptBank.length);
     expect(prompts.map((item) => item.id)).toEqual(writingPromptBank.map((item) => item.id));
+  });
+
+  it('persists and reuses the dashboard study plan snapshot', async () => {
+    await seedPrompts(writingPromptBank);
+    const prompts = await listPrompts();
+
+    const firstPlan = await getDashboardStudyPlan(prompts, []);
+    const secondPlan = await getDashboardStudyPlan(prompts, []);
+
+    expect(secondPlan).toEqual(firstPlan);
+    expect(firstPlan.attemptsConsidered).toBe(0);
+    expect(firstPlan.steps).toHaveLength(3);
   });
 });

@@ -184,3 +184,46 @@ export interface ProgressSummary {
   attemptsConsidered: number;
   averageWordCount: number;
 }
+
+export interface DashboardProviderSummary {
+  provider: string;
+  count: number;
+  liveCount: number;
+  fallbackCount: number;
+}
+
+export interface DashboardCriterionSummary {
+  criterion: CriterionName;
+  averageBand: number;
+}
+
+export interface WritingDashboardSummary {
+  totalAttempts: number;
+  taskCounts: Record<WritingTaskType, number>;
+  latestRange: BandRange | null;
+  bestBand: number | null;
+  averageBand: number | null;
+  averageWordCount: number;
+  totalPracticeMinutes: number;
+  activeDays: number;
+  latestAttemptAt: string | null;
+  providerBreakdown: DashboardProviderSummary[];
+  strongestCriterion: DashboardCriterionSummary | null;
+  weakestCriterion: DashboardCriterionSummary | null;
+}
+
+export interface StudyPlanStep {
+  id: string;
+  title: string;
+  detail: string;
+  taskType: WritingTaskType | 'either';
+}
+
+export interface StudyPlanSnapshot {
+  generatedAt: string;
+  basedOnSubmissionId: string | null;
+  attemptsConsidered: number;
+  headline: string;
+  focus: string;
+  steps: StudyPlanStep[];
+}
