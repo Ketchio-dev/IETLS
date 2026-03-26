@@ -4,11 +4,20 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { sampleReadingSets } from '@/lib/fixtures/reading';
 import type { ReadingPracticePageData } from '@/lib/services/reading/types';
 
+const mocks = vi.hoisted(() => ({
+  push: vi.fn(),
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mocks.push }),
+}));
+
 import { ReadingPracticeShell } from '../reading-practice-shell';
 
 describe('ReadingPracticeShell', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.clearAllMocks();
   });
 
   it('renders the passage, supported question types, and submitted report', async () => {

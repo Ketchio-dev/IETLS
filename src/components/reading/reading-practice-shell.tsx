@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 import type { ImportedReadingSet } from '@/lib/services/reading-imports/types';
@@ -99,6 +100,7 @@ export function ReadingPracticeShell({
   initialSetId,
   initialAttemptId,
 }: ReadingPracticePageData) {
+  const router = useRouter();
   const [selectedSetId, setSelectedSetId] = useState(initialSetId ?? activeSet?.id ?? '');
   const [savedAttempts, setSavedAttempts] = useState(initialSavedAttempts);
   const [activeAttemptId, setActiveAttemptId] = useState(initialAttemptId);
@@ -266,7 +268,7 @@ export function ReadingPracticeShell({
                   setAnswers({});
                   setReport(null);
                   if (nextSetId !== selectedSet.id) {
-                    window.location.href = `/reading?setId=${encodeURIComponent(nextSetId)}`;
+                    router.push(`/reading?setId=${encodeURIComponent(nextSetId)}`);
                   }
                 }}
               >
