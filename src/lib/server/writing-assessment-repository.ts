@@ -1,6 +1,14 @@
 import { randomUUID } from 'node:crypto';
 
-import type { AssessmentPipelineResult, BandRange, RecentAttemptSummary, StoredAssessmentRecord, WritingPrompt } from '@/lib/domain';
+import type {
+  AssessmentPipelineResult,
+  AssessmentReport,
+  BandRange,
+  RecentAttemptSummary,
+  SavedAssessmentSnapshot,
+  StoredAssessmentRecord,
+  WritingPrompt,
+} from '@/lib/domain';
 
 import { clampBand } from '@/lib/services/writing/metrics';
 
@@ -20,17 +28,41 @@ function ensureBandRange(range: BandRange | undefined, overallBand: number): Ban
   };
 }
 
+function normalizeReport(report: AssessmentReport): AssessmentReport {
+  return {
+    ...report,
+    overallBandRange: ensureBandRange(report.overallBandRange, report.overallBand),
+  };
+}
+
 function toSummary(record: StoredAssessmentRecord): RecentAttemptSummary {
+  const report = normalizeReport(record.report);
+
   return {
     submissionId: record.submission.submissionId,
     promptId: record.submission.promptId,
-    overallBand: record.report.overallBand,
-    overallBandRange: ensureBandRange(record.report.overallBandRange, record.report.overallBand),
-    confidence: record.report.confidence,
-    estimatedWordCount: record.report.estimatedWordCount,
-    summary: record.report.summary,
+    overallBand: report.overallBand,
+    overallBandRange: report.overallBandRange,
+    confidence: report.confidence,
+    estimatedWordCount: report.estimatedWordCount,
+    summary: report.summary,
     createdAt: record.submission.createdAt,
   };
+}
+
+function toSavedAssessment(record: StoredAssessmentRecord): SavedAssessmentSnapshot {
+  return {
+    submissionId: record.submission.submissionId,
+    promptId: record.submission.promptId,
+    createdAt: record.submission.createdAt,
+    timeSpentMinutes: record.submission.timeSpentMinutes,
+    wordCount: record.submission.wordCount,
+    report: normalizeReport(record.report),
+  };
+}
+
+async function readStoredAssessments() {
+  return readJsonFile<StoredAssessmentRecord[]>(ASSESSMENTS_FILE, []);
 }
 
 export async function seedPrompt(prompt: WritingPrompt) {
@@ -44,7 +76,7 @@ export async function seedPrompt(prompt: WritingPrompt) {
 }
 
 export async function listRecentAttempts(limit = 5): Promise<RecentAttemptSummary[]> {
-  const records = await readJsonFile<StoredAssessmentRecord[]>(ASSESSMENTS_FILE, []);
+  const records = await readStoredAssessments();
   return records
     .slice()
     .sort((a, b) => b.submission.createdAt.localeCompare(a.submission.createdAt))
@@ -52,8 +84,17 @@ export async function listRecentAttempts(limit = 5): Promise<RecentAttemptSummar
     .map(toSummary);
 }
 
+export async function listSavedAssessments(limit = 5): Promise<SavedAssessmentSnapshot[]> {
+  const records = await readStoredAssessments();
+  return records
+    .slice()
+    .sort((a, b) => b.submission.createdAt.localeCompare(a.submission.createdAt))
+    .slice(0, limit)
+    .map(toSavedAssessment);
+}
+
 export async function saveAssessmentResult(result: Omit<AssessmentPipelineResult, 'recentAttempts'>) {
-  const records = await readJsonFile<StoredAssessmentRecord[]>(ASSESSMENTS_FILE, []);
+  const records = await readStoredAssessments();
   const stored: StoredAssessmentRecord = {
     submission: result.submission,
     report: {
@@ -69,5 +110,6 @@ export async function saveAssessmentResult(result: Omit<AssessmentPipelineResult
   return {
     ...stored,
     recentAttempts: updated.slice(0, 5).map(toSummary),
+    savedAssessments: updated.slice(0, 5).map(toSavedAssessment),
   };
 }
