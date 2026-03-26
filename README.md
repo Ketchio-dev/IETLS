@@ -3,6 +3,7 @@
 A Next.js MVP for IELTS Academic Writing practice with a writing-first vertical slice:
 
 - Task 2 prompt bank with multiple IELTS-style briefs
+- Review/docs contract for the next Task 1 Academic slice with task-aware prompts, scoring, and history
 - Timed essay editor with live word count
 - Practice estimate report with criterion bands, scorer status, confidence reasons, warnings, and revision actions
 - Assessment architecture split into evidence extraction, scoring, and feedback generation
@@ -57,3 +58,14 @@ You can override this location with:
 ```bash
 IELTS_DATA_DIR=/custom/path npm run dev
 ```
+
+## Next documented slice
+
+The current runnable app is still centered on **Writing Task 2**.
+
+For the planned Task 1 Academic extension, see:
+
+- `docs/review/writing-task-1-academic-next-slice-review.md`
+- `docs/review/writing-task-1-academic-next-slice-contracts.md`
+
+These notes capture the code-review findings and implementation guardrails for adding task switching, structured chart-driven prompts, task-aware persistence/history, and a separate Task 1 evidence/scoring path while keeping Gemini 3 Flash as the default live scorer.
