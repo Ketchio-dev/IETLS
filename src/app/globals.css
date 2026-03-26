@@ -77,6 +77,7 @@ textarea {
 }
 
 .hero-copy,
+.hero-action-copy,
 .prompt-copy,
 .summary-copy,
 .service-list p,
@@ -170,6 +171,43 @@ li,
 .primary-button:disabled {
   cursor: not-allowed;
   opacity: 0.65;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.secondary-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(56, 189, 248, 0.36);
+  border-radius: 999px;
+  padding: 0.85rem 1.15rem;
+  background: rgba(15, 23, 42, 0.42);
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: none;
+  transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+.secondary-link-button:hover {
+  border-color: rgba(56, 189, 248, 0.62);
+  background: rgba(56, 189, 248, 0.14);
+  transform: translateY(-1px);
+}
+
+.secondary-link-button:focus-visible {
+  outline: 2px solid rgba(56, 189, 248, 0.8);
+  outline-offset: 2px;
+}
+
+.hero-action-copy {
+  margin: 0;
 }
 
 .essay-textarea {

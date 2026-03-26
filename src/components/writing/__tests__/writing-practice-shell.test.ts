@@ -112,6 +112,24 @@ describe('WritingPracticeShell', () => {
     expect(screen.getAllByText(/Agree \/ disagree/i).length).toBeGreaterThan(0);
   });
 
+  it('renders a dashboard entry link without affecting practice-shell task switching', () => {
+    render(createElement(WritingPracticeShell, {
+      fallbackReports: sampleAssessmentReportsByPromptId,
+      initialHistory: [],
+      initialReport: sampleAssessmentReport,
+      initialSavedAssessments: [],
+      prompt: samplePrompt,
+      prompts: writingPromptBank,
+    }));
+
+    expect(screen.getByRole('link', { name: /open dashboard/i })).toHaveAttribute('href', '/dashboard');
+
+    fireEvent.click(screen.getAllByRole('tab', { name: /writing task 1/i })[0]!);
+
+    expect(screen.getAllByText(sampleTask1Prompt.title).length).toBeGreaterThan(0);
+    expect(screen.getByRole('link', { name: /open dashboard/i })).toHaveAttribute('href', '/dashboard');
+  });
+
   it('switches to Task 1 and renders the structured visual brief', () => {
     render(createElement(WritingPracticeShell, {
       fallbackReports: sampleAssessmentReportsByPromptId,
