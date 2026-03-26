@@ -1,15 +1,34 @@
-export type WritingTaskType = 'task-2';
+export type WritingTaskType = 'task-1' | 'task-2';
 export type CriterionName =
+  | 'Task Achievement'
   | 'Task Response'
   | 'Coherence & Cohesion'
   | 'Lexical Resource'
   | 'Grammatical Range & Accuracy';
 export type ConfidenceLevel = 'high' | 'medium' | 'low';
 export type SignalStrength = 'strong' | 'developing' | 'weak';
+export type Task1VisualType = 'line-chart' | 'bar-chart' | 'table' | 'pie-chart' | 'mixed';
 
 export interface BandRange {
   lower: number;
   upper: number;
+}
+
+export interface Task1VisualDatum {
+  label: string;
+  value: string;
+  note?: string;
+}
+
+export interface Task1VisualPrompt {
+  type: Task1VisualType;
+  title: string;
+  summary: string;
+  xAxisLabel?: string;
+  yAxisLabel?: string;
+  units?: string;
+  keyFeatures: string[];
+  dataPoints: Task1VisualDatum[];
 }
 
 export interface WritingPrompt {
@@ -23,6 +42,7 @@ export interface WritingPrompt {
   prompt: string;
   planningHints: string[];
   rubricFocus: string[];
+  visual?: Task1VisualPrompt;
 }
 
 export interface EvidenceSignal {
@@ -91,6 +111,7 @@ export interface AssessmentReport {
   reportId: string;
   essayId: string;
   promptId: string;
+  taskType: WritingTaskType;
   overallBand: number;
   overallBandRange: BandRange;
   confidence: ConfidenceLevel;
@@ -110,6 +131,7 @@ export interface AssessmentReport {
 
 export interface EssaySubmission {
   promptId: string;
+  taskType: WritingTaskType;
   response: string;
   timeSpentMinutes: number;
 }
@@ -123,6 +145,7 @@ export interface WritingSubmissionRecord extends EssaySubmission {
 export interface SavedAssessmentSnapshot {
   submissionId: string;
   promptId: string;
+  taskType: WritingTaskType;
   createdAt: string;
   timeSpentMinutes: number;
   wordCount: number;
@@ -132,6 +155,7 @@ export interface SavedAssessmentSnapshot {
 export interface RecentAttemptSummary {
   submissionId: string;
   promptId: string;
+  taskType: WritingTaskType;
   overallBand: number;
   overallBandRange: BandRange;
   confidence: ConfidenceLevel;
