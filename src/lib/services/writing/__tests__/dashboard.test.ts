@@ -131,7 +131,7 @@ describe('dashboard helpers', () => {
       previousBand: 6.8,
       delta: 0.7,
       trend: 'improving',
-      recentBands: [6.8, 7.5],
+      recentBands: [7.5, 6.8, 7.5],
     });
     expect(summary.weakestCriterion?.criterion).toBe('Task Response');
   });

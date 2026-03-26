@@ -4,6 +4,7 @@ import type {
   ProgressSummary,
   SavedAssessmentSnapshot,
   StudyPlanSnapshot,
+  WritingTaskType,
   WritingDashboardSummary,
   WritingPrompt,
 } from '@/lib/domain';
@@ -121,18 +122,23 @@ function toDashboardStudyPlan(plan: StudyPlanSnapshot) {
     recommendedSessionLabel:
       plan.recommendedSessionLabel ??
       (plan.basedOnSubmissionId ? 'Use the latest saved report first' : undefined),
-    steps: plan.steps.map((step, index) => ({
-      id: step.id,
-      title: step.title,
-      detail: step.detail,
-      actions: step.actions,
-      criterion: step.criterion,
-      taskTypes: [...(step.taskType === 'either' ? ['task-1', 'task-2'] : [step.taskType])],
-      sessionLabel: step.sessionLabel ?? `Step ${index + 1}`,
-      targetRange: step.targetRange ?? null,
-      actionHref: buildStudyPlanHref(step),
-      actionLabel: step.actionLabel,
-    })),
+    steps: plan.steps.map((step, index) => {
+      const taskTypes: WritingTaskType[] =
+        step.taskType === 'either' ? ['task-1', 'task-2'] : [step.taskType];
+
+      return {
+        id: step.id,
+        title: step.title,
+        detail: step.detail,
+        actions: step.actions,
+        criterion: step.criterion,
+        taskTypes,
+        sessionLabel: step.sessionLabel ?? `Step ${index + 1}`,
+        targetRange: step.targetRange ?? null,
+        actionHref: buildStudyPlanHref(step),
+        actionLabel: step.actionLabel,
+      };
+    }),
     carryForward:
       plan.carryForward.length > 0
         ? plan.carryForward

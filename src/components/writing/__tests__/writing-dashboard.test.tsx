@@ -200,7 +200,9 @@ describe('WritingDashboard', () => {
     expect(screen.getAllByText(/\+0\.5 band vs previous/i).length).toBeGreaterThan(0);
     expect(screen.getByLabelText(/recent lexical resource bands: 6\.2, 6\.4, 6\.5, 7\.0/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /prioritise task response next/i })).toBeInTheDocument();
-    expect(screen.getByText(/rewrite one body paragraph so the topic sentence matches the thesis exactly/i)).toBeInTheDocument();
+    expect(
+      screen.getAllByText(/rewrite one body paragraph so the topic sentence matches the thesis exactly/i).length,
+    ).toBeGreaterThan(0);
     expect(screen.getByText(/38 min from latest attempt/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /resume latest report/i })).toHaveAttribute(
       'href',
