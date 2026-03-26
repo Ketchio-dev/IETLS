@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-const defaultDataDir = path.join(/* turbopackIgnore: true */ process.cwd(), 'data', 'runtime');
+const defaultDataDir = path.join('data', 'runtime');
 
 export function getDataDir() {
   return process.env.IELTS_DATA_DIR ?? defaultDataDir;
