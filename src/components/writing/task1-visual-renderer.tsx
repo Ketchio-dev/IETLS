@@ -265,7 +265,28 @@ function PieChart({ visual }: Props) {
   const centerY = 130;
   const radius = 92;
   const colors = ['#38bdf8', '#0ea5e9', '#7dd3fc', '#22c55e', '#f59e0b', '#f87171'];
-  let startAngle = 0;
+  const slices = numericData.reduce<{
+    currentAngle: number;
+    items: Array<{ label: string; fill: string; path: string }>;
+  }>(
+    (state, point, index) => {
+      const sliceAngle = total === 0 ? 0 : (point.numericValue / total) * 360;
+      const nextAngle = state.currentAngle + sliceAngle;
+
+      return {
+        currentAngle: nextAngle,
+        items: [
+          ...state.items,
+          {
+            label: point.label,
+            fill: colors[index % colors.length],
+            path: buildPieSlicePath(centerX, centerY, radius, state.currentAngle, nextAngle),
+          },
+        ],
+      };
+    },
+    { currentAngle: 0, items: [] },
+  ).items;
 
   return (
     <figure className="visual-figure visual-figure-split">
@@ -275,15 +296,8 @@ function PieChart({ visual }: Props) {
         role="img"
         viewBox="0 0 420 280"
       >
-        {numericData.map((point, index) => {
-          const sliceAngle = total === 0 ? 0 : (point.numericValue / total) * 360;
-          const endAngle = startAngle + sliceAngle;
-          const path = buildPieSlicePath(centerX, centerY, radius, startAngle, endAngle);
-          const fill = colors[index % colors.length];
-
-          startAngle = endAngle;
-
-          return <path className="chart-pie-slice" d={path} fill={fill} key={point.label} />;
+        {slices.map((slice) => {
+          return <path className="chart-pie-slice" d={slice.path} fill={slice.fill} key={slice.label} />;
         })}
       </svg>
       <figcaption className="visual-caption">
