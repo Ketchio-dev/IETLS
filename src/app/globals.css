@@ -454,22 +454,22 @@ li,
   letter-spacing: 0.04em;
 }
 
-.route-pill[data-module='reading'] strong,
-.focus-signal-card[data-module='reading'] strong {
+.route-pill[data-route='reading'] strong,
+.focus-signal-card[data-signal='reading'] strong {
   color: var(--reading-color);
 }
 
-.route-pill[data-module='writing'] strong,
-.focus-signal-card[data-module='writing'] strong {
+.route-pill[data-route='writing'] strong,
+.focus-signal-card[data-signal='writing'] strong {
   color: var(--writing-color);
 }
 
-.route-pill[data-module='speaking'] strong {
+.route-pill[data-route='speaking'] strong {
   color: var(--speaking-color);
 }
 
-.route-pill[data-module='listening'] strong,
-.focus-signal-card[data-module='listening'] strong {
+.route-pill[data-route='listening'] strong,
+.focus-signal-card[data-signal='listening'] strong {
   color: var(--listening-color);
 }
 

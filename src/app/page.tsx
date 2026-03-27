@@ -235,7 +235,7 @@ export default async function HomePage() {
           <p className="eyebrow">IELTS Academic Reading + Writing</p>
           <div className="route-pill-row" aria-label="Route status summary">
             {routePills.map((route) => (
-              <span className="route-pill" data-module={route.id} key={route.id}>
+              <span className="route-pill" data-route={route.id} key={route.id}>
                 <span>{route.label}</span>
                 <strong>{route.status}</strong>
               </span>
@@ -276,17 +276,17 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="focus-signal-grid" aria-label="Reading and writing focus signals">
-            <article className="focus-signal-card" data-module="reading">
+            <article className="focus-signal-card" data-signal="reading">
               <span className="focus-signal-label">Reading momentum</span>
               <strong>{formatAccuracy(readingDashboard.dashboardSummary.averagePercentage)}</strong>
               <p>Average accuracy across {readingDashboard.dashboardSummary.totalAttempts} recorded attempts.</p>
             </article>
-            <article className="focus-signal-card" data-module="writing">
+            <article className="focus-signal-card" data-signal="writing">
               <span className="focus-signal-label">Writing band</span>
               <strong>{formatBand(writingDashboard.summary.averageBand)}</strong>
               <p>{writingDashboard.studyPlan.headline}</p>
             </article>
-            <article className="focus-signal-card" data-module="listening">
+            <article className="focus-signal-card" data-signal="listening">
               <span className="focus-signal-label">Secondary routes</span>
               <strong>Kept live</strong>
               <p>Speaking stays alpha and Listening stays placeholder without crowding the main flow.</p>
