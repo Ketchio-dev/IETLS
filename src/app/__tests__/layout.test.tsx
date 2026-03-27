@@ -84,7 +84,11 @@ describe('RootLayout', () => {
 
     expect(html).toContain('site-nav-brand-kicker');
     expect(html).toContain('IELTS Academic');
-    // Kicker appears before the brand text in DOM
-    expect(html.indexOf('IELTS Academic')).toBeLessThan(html.indexOf('Reading + Writing'));
+    // Kicker element appears inside the brand, before "Reading + Writing"
+    const kickerIdx = html.indexOf('site-nav-brand-kicker');
+    const brandTextIdx = html.indexOf('Reading + Writing');
+    expect(kickerIdx).toBeGreaterThan(-1);
+    expect(brandTextIdx).toBeGreaterThan(-1);
+    expect(kickerIdx).toBeLessThan(brandTextIdx);
   });
 });
