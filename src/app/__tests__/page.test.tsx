@@ -187,7 +187,7 @@ describe('HomePage', () => {
   it('renders reading and writing module cards in the primary section before secondary modules', async () => {
     const writingSummary: WritingDashboardSummary = {
       totalAttempts: 3,
-      taskCounts: { 'task-1': 3 },
+      taskCounts: { 'task-1': 3, 'task-2': 0 },
       latestRange: { lower: 6, upper: 6.5 },
       bestBand: 6.5,
       averageBand: 6.2,
@@ -205,8 +205,8 @@ describe('HomePage', () => {
       recentSavedAttempts: [],
       summary: writingSummary,
       progress: {
-        direction: 'stable',
-        label: 'Stable',
+        direction: 'steady',
+        label: 'Steady',
         detail: 'Holding steady.',
         delta: 0,
         latestRange: { lower: 6, upper: 6.5 },
@@ -267,7 +267,7 @@ describe('HomePage', () => {
         latestAttemptAt: null,
         lowConfidenceCount: 0,
         sessionsWithAudio: 0,
-        partBreakdown: {},
+        partBreakdown: { 'part-1': 0, 'part-2': 0, 'part-3': 0 },
       },
       studyFocus: [],
     };

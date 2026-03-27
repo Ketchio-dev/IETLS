@@ -41,9 +41,9 @@ describe('RootLayout', () => {
     expect(html).toContain('Speaking alpha');
     // Listening is labeled as placeholder
     expect(html).toContain('Listening placeholder');
-    // Reading and Writing have no qualifier suffix
-    expect(html).toMatch(/href="\/reading"[^>]*>.*?Reading/s);
-    expect(html).toMatch(/href="\/writing"[^>]*>.*?Writing/s);
+    // Reading and Writing have no qualifier suffix — their link text is just the skill name
+    expect(html).toContain('>Reading<');
+    expect(html).toContain('>Writing<');
   });
 
   it('uses reading + writing branding in the nav brand', () => {
