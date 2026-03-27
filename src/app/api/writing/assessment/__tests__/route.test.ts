@@ -45,6 +45,21 @@ describe('POST /api/writing/assessment', () => {
     expect(mocks.submitDefaultAssessment).not.toHaveBeenCalled();
   });
 
+  it('returns 422 for negative timeSpentMinutes before reaching the assessment workspace', async () => {
+    const response = await POST(new Request('http://localhost/api/writing/assessment', {
+      method: 'POST',
+      body: JSON.stringify({
+        promptId: samplePrompt.id,
+        response: 'This response is comfortably longer than fifty characters so the route can reject the invalid duration value.',
+        timeSpentMinutes: -1,
+      }),
+    }));
+
+    expect(response.status).toBe(422);
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid request payload.' });
+    expect(mocks.submitDefaultAssessment).not.toHaveBeenCalled();
+  });
+
   it('returns a 400 payload from the shared assessment workspace for short responses', async () => {
     const invalid: SubmitWritingAssessmentResult = {
       ok: false,
@@ -172,5 +187,27 @@ describe('POST /api/writing/assessment', () => {
       timeSpentMinutes: payload.submission.timeSpentMinutes,
     });
     await expect(response.json()).resolves.toEqual(payload);
+  });
+
+  it('passes through scorer-unavailable responses from the shared assessment workspace', async () => {
+    mocks.submitDefaultAssessment.mockResolvedValue({
+      ok: false,
+      error: 'Live writing scorer timed out. Please try again.',
+      status: 503,
+    } satisfies SubmitWritingAssessmentResult);
+
+    const response = await POST(new Request('http://localhost/api/writing/assessment', {
+      method: 'POST',
+      body: JSON.stringify({
+        promptId: samplePrompt.id,
+        response: 'This response is comfortably longer than fifty characters so the route can surface provider outages.',
+        timeSpentMinutes: 18,
+      }),
+    }));
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Live writing scorer timed out. Please try again.',
+    });
   });
 });

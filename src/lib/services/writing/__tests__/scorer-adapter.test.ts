@@ -3,7 +3,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { samplePrompt, sampleSubmission, sampleTask1Prompt } from '@/lib/fixtures/writing';
 import { createSubmissionRecord } from '@/lib/services/assessment';
 import { extractWritingEvidence } from '@/lib/services/writing/evidence-extractor';
-import { WRITING_RUBRIC_SCHEMA_VERSION, scoreWritingWithAdapter, scoreWritingWithMockAdapter } from '@/lib/services/writing/scorer-adapter';
+import {
+  WRITING_RUBRIC_SCHEMA_VERSION,
+  scoreWritingWithAdapter,
+  scoreWritingWithMockAdapter,
+  WritingScorerUnavailableError,
+} from '@/lib/services/writing/scorer-adapter';
 
 function buildEvidence() {
   return extractWritingEvidence(samplePrompt, createSubmissionRecord(sampleSubmission));
@@ -56,6 +61,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 describe('scoreWritingWithAdapter', () => {
@@ -199,21 +205,19 @@ describe('scoreWritingWithAdapter', () => {
     expect(body?.messages?.[0]?.content).toContain('Task 1 scorer');
   });
 
-  it('falls back to the mock scorer when OpenRouter config is missing', async () => {
+  it('fails closed when OpenRouter config is missing', async () => {
     vi.stubEnv('IELTS_SCORER_PROVIDER', 'openrouter');
 
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
-    const result = await scoreWritingWithAdapter(samplePrompt, buildEvidence(), sampleSubmission.response);
-
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(result.evaluationTrace.scorerProvider).toBe('mock-rule-based');
-    expect(result.evaluationTrace.usedMockFallback).toBe(true);
-    expect(result.evaluationTrace.notes[0]).toContain('OPENROUTER_API_KEY is missing');
+    await expect(scoreWritingWithAdapter(samplePrompt, buildEvidence(), sampleSubmission.response)).rejects.toThrow(
+      WritingScorerUnavailableError,
+    );
   });
 
-  it('falls back to the mock scorer when OpenRouter output does not satisfy the contract', async () => {
+  it('fails closed when OpenRouter output does not satisfy the contract', async () => {
     vi.stubEnv('IELTS_SCORER_PROVIDER', 'openrouter');
     vi.stubEnv('OPENROUTER_API_KEY', 'test-key');
 
@@ -248,15 +252,15 @@ describe('scoreWritingWithAdapter', () => {
 
     vi.stubGlobal('fetch', fetchMock);
 
-    const result = await scoreWritingWithAdapter(samplePrompt, buildEvidence(), sampleSubmission.response);
+    const scoringPromise = scoreWritingWithAdapter(samplePrompt, buildEvidence(), sampleSubmission.response);
 
+    await expect(scoringPromise).rejects.toThrow(
+      'Live writing scorer returned an invalid response. Please try again.',
+    );
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(result.evaluationTrace.scorerProvider).toBe('mock-rule-based');
-    expect(result.evaluationTrace.usedMockFallback).toBe(true);
-    expect(result.evaluationTrace.notes[0]).toContain('did not match the writing rubric scorecard contract');
   });
 
-  it('falls back to the mock scorer when overallBand differs from criterion average by more than 1.5', async () => {
+  it('fails closed when overallBand differs from criterion average by more than 1.5', async () => {
     vi.stubEnv('IELTS_SCORER_PROVIDER', 'openrouter');
     vi.stubEnv('OPENROUTER_API_KEY', 'test-key');
 
@@ -315,12 +319,12 @@ describe('scoreWritingWithAdapter', () => {
 
     vi.stubGlobal('fetch', fetchMock);
 
-    const result = await scoreWritingWithAdapter(samplePrompt, buildEvidence(), sampleSubmission.response);
+    const scoringPromise = scoreWritingWithAdapter(samplePrompt, buildEvidence(), sampleSubmission.response);
 
+    await expect(scoringPromise).rejects.toThrow(
+      'Live writing scorer returned an invalid response. Please try again.',
+    );
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(result.evaluationTrace.scorerProvider).toBe('mock-rule-based');
-    expect(result.evaluationTrace.usedMockFallback).toBe(true);
-    expect(result.evaluationTrace.notes[0]).toContain('did not match the writing rubric scorecard contract');
   });
 
   it('returns usedMockFallback false when scoreWritingWithMockAdapter is called with no configured provider', () => {
@@ -358,5 +362,34 @@ describe('scoreWritingWithAdapter', () => {
     const notesText = result.evaluationTrace.notes.join(' ');
     expect(notesText).toContain('provider model');
     expect(notesText).toContain('local evidence signals only');
+  });
+
+  it('fails closed when OpenRouter times out', async () => {
+    vi.useFakeTimers();
+    vi.stubEnv('IELTS_SCORER_PROVIDER', 'openrouter');
+    vi.stubEnv('OPENROUTER_API_KEY', 'test-key');
+    vi.stubEnv('OPENROUTER_TIMEOUT_MS', '1');
+
+    const fetchMock = vi.fn(
+      (_input: unknown, init?: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => {
+            const error = new Error('The operation was aborted.');
+            error.name = 'AbortError';
+            reject(error);
+          });
+        }),
+    );
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const scoringPromise = scoreWritingWithAdapter(samplePrompt, buildEvidence(), sampleSubmission.response);
+    const rejectionExpectation = expect(scoringPromise).rejects.toThrow(
+      'Live writing scorer timed out. Please try again.',
+    );
+
+    await vi.advanceTimersByTimeAsync(5);
+
+    await rejectionExpectation;
   });
 });

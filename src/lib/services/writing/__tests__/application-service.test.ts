@@ -12,6 +12,7 @@ import type { JsonStoragePort, StorageFile } from '@/lib/server/storage';
 import { runAssessmentPipeline } from '@/lib/services/assessment';
 
 import { createWritingApplicationService } from '../application-service';
+import { WritingScorerUnavailableError } from '../scorer-adapter';
 
 function createInMemoryStoragePort(): JsonStoragePort {
   const files = new Map<StorageFile, unknown>();
@@ -140,6 +141,12 @@ describe('writing application service', () => {
       response: 'too short',
       timeSpentMinutes: 12,
     });
+    const invalidDuration = await service.submitAssessment({
+      promptId: samplePrompt.id,
+      response:
+        'This response is comfortably longer than fifty characters, but the duration is invalid and should be rejected.',
+      timeSpentMinutes: Number.NaN,
+    });
     const missing = await service.submitAssessment({
       promptId: 'missing-prompt',
       response:
@@ -158,6 +165,11 @@ describe('writing application service', () => {
       error: 'Provide a promptId and at least 50 characters of writing.',
       status: 400,
     });
+    expect(invalidDuration).toEqual({
+      ok: false,
+      error: 'Provide a finite, non-negative timeSpentMinutes value.',
+      status: 400,
+    });
     expect(missing).toEqual({
       ok: false,
       error: 'Unknown writing prompt requested.',
@@ -170,5 +182,27 @@ describe('writing application service', () => {
     }
     expect(saved.payload.savedAssessments[0]?.submissionId).toBe('submission-0');
     expect((await repository.listSavedAssessments(5))[0]?.submissionId).toBe('submission-0');
+  });
+
+  it('surfaces live-scorer failures as a retryable service error instead of persisting a mock result', async () => {
+    const repository = createWritingAssessmentRepository(createInMemoryStoragePort());
+    const runPipeline = vi.fn(async () => {
+      throw new WritingScorerUnavailableError('Live writing scorer timed out. Please try again.');
+    });
+    const service = createWritingApplicationService({ repository, runPipeline });
+
+    const result = await service.submitAssessment({
+      promptId: samplePrompt.id,
+      response:
+        'This response is comfortably longer than fifty characters so the service can surface a scorer outage cleanly.',
+      timeSpentMinutes: 21,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: 'Live writing scorer timed out. Please try again.',
+      status: 503,
+    });
+    expect(await repository.listSavedAssessments(5)).toEqual([]);
   });
 });

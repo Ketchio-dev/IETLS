@@ -18,5 +18,9 @@ export async function POST(request: Request) {
 
   const result = await submitAssessmentForModule(LISTENING_ASSESSMENT_MODULE_ID, body);
 
-  return NextResponse.json({ error: result.error }, { status: result.status });
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
+  return NextResponse.json(result.payload);
 }

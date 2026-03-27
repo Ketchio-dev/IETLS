@@ -125,6 +125,13 @@ interface WritingScorerAdapterInput {
   responseText: string;
 }
 
+export class WritingScorerUnavailableError extends Error {
+  constructor(message = 'Live writing scorer is unavailable right now. Please try again.') {
+    super(message);
+    this.name = 'WritingScorerUnavailableError';
+  }
+}
+
 export interface WritingScorerAdapter {
   provider: string;
   model: string;
@@ -229,6 +236,24 @@ function getOpenRouterConfig(): OpenRouterConfig {
     title: process.env.OPENROUTER_APP_TITLE?.trim() || null,
     timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : OPENROUTER_TIMEOUT_MS,
   };
+}
+
+function buildOpenRouterEndpoint(baseUrl: string) {
+  let url: URL;
+
+  try {
+    url = new URL(baseUrl);
+  } catch {
+    throw new WritingScorerUnavailableError('Live writing scorer is misconfigured right now. Please try again later.');
+  }
+
+  const hostname = url.hostname.toLowerCase();
+
+  if (url.protocol !== 'https:' || (hostname !== 'openrouter.ai' && hostname !== 'www.openrouter.ai')) {
+    throw new WritingScorerUnavailableError('Live writing scorer is misconfigured right now. Please try again later.');
+  }
+
+  return `${url.toString().replace(/\/$/, '')}/chat/completions`;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -434,7 +459,7 @@ async function requestOpenRouterScore(input: WritingScorerAdapterInput, config: 
       headers['X-Title'] = config.title;
     }
 
-    const response = await fetch(`${config.baseUrl.replace(/\/$/, '')}/chat/completions`, {
+    const response = await fetch(buildOpenRouterEndpoint(config.baseUrl), {
       method: 'POST',
       headers,
       signal: controller.signal,
@@ -466,10 +491,7 @@ async function requestOpenRouterScore(input: WritingScorerAdapterInput, config: 
     const body = (await response.json()) as Record<string, unknown>;
 
     if (!response.ok) {
-      const message = isRecord(body.error) && typeof body.error.message === 'string'
-        ? body.error.message
-        : `HTTP ${response.status}`;
-      throw new Error(`OpenRouter request failed: ${message}`);
+      throw new WritingScorerUnavailableError('Live writing scorer request failed. Please try again.');
     }
 
     const choice = Array.isArray(body.choices) ? body.choices[0] : null;
@@ -477,14 +499,21 @@ async function requestOpenRouterScore(input: WritingScorerAdapterInput, config: 
     const content = getAssistantMessageContent(message?.content);
 
     if (!content) {
-      throw new Error('OpenRouter response did not include a JSON message payload.');
+      throw new WritingScorerUnavailableError('Live writing scorer returned an invalid response. Please try again.');
     }
 
-    const parsed = JSON.parse(extractJsonPayload(content)) as unknown;
+    let parsed: unknown;
+
+    try {
+      parsed = JSON.parse(extractJsonPayload(content)) as unknown;
+    } catch {
+      throw new WritingScorerUnavailableError('Live writing scorer returned an invalid response. Please try again.');
+    }
+
     const payload = normalizeProviderRubricResponse(parsed, input.prompt.taskType);
 
     if (!payload) {
-      throw new Error('OpenRouter output did not match the writing rubric scorecard contract.');
+      throw new WritingScorerUnavailableError('Live writing scorer returned an invalid response. Please try again.');
     }
 
     const responseModel = typeof body.model === 'string' && body.model.trim().length > 0 ? body.model : config.model;
@@ -515,6 +544,16 @@ async function requestOpenRouterScore(input: WritingScorerAdapterInput, config: 
         ),
       },
     } satisfies StructuredRubricScorecard;
+  } catch (error) {
+    if (error instanceof WritingScorerUnavailableError) {
+      throw error;
+    }
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new WritingScorerUnavailableError('Live writing scorer timed out. Please try again.');
+    }
+
+    throw new WritingScorerUnavailableError();
   } finally {
     clearTimeout(timeout);
   }
@@ -536,26 +575,13 @@ const openRouterScorerAdapter: WritingScorerAdapter = {
   model: DEFAULT_OPENROUTER_MODEL,
   schemaVersion: WRITING_RUBRIC_SCHEMA_VERSION,
   async score(input) {
-    const configuredProvider = getConfiguredProvider();
     const config = getOpenRouterConfig();
 
     if (!config.apiKey) {
-      return createMockScorecard(input.prompt, input.evidence, {
-        configuredProvider,
-        fallbackReason: 'OpenRouter fallback: OPENROUTER_API_KEY is missing, so the mock scorer was used.',
-      });
+      throw new WritingScorerUnavailableError('Live writing scorer is not configured right now. Please try again later.');
     }
 
-    try {
-      return await requestOpenRouterScore(input, config);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown OpenRouter failure.';
-
-      return createMockScorecard(input.prompt, input.evidence, {
-        configuredProvider,
-        fallbackReason: `OpenRouter fallback: ${message}`,
-      });
-    }
+    return requestOpenRouterScore(input, config);
   },
 };
 

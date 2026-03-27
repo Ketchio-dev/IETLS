@@ -9,8 +9,8 @@ A Next.js platform for IELTS Academic practice with a strong Writing experience,
 - Practice estimate report with criterion bands, scorer status, confidence reasons, warnings, and revision actions
 - Assessment architecture split into evidence extraction, scoring, and feedback generation
 - Local persistence for prompts, recent submissions, saved scorecards, dashboard summaries, and prompt-specific history
-- Gemini 3 Flash kept as the default live-scorer model when OpenRouter is enabled, with deterministic mock fallback
-- **Reading** module with 36 crawled passages and 457 questions across Academic Reading Test format
+- Gemini 3 Flash kept as the default live-scorer model when OpenRouter is enabled, with deterministic mock mode available when explicitly selected
+- **Reading** module with 51 runtime sets and 617 questions across Academic Reading Test format
 - **Speaking** alpha with transcript-first practice and session persistence
 - Listening registered as a lightweight placeholder module through the shared assessment seam
 
@@ -21,7 +21,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000` for Writing, `http://localhost:3000/dashboard` for the Writing dashboard, `/speaking` for Speaking alpha, `/reading` for the Reading module, and `/listening` for the Listening placeholder.
+Open `http://localhost:3000` for the module hub, `http://localhost:3000/writing` for Writing, `http://localhost:3000/dashboard` for the Writing dashboard, `/speaking` for Speaking alpha, `/reading` for the Reading module, and `/listening` for the Listening placeholder.
 
 ## Verification
 
@@ -34,7 +34,8 @@ npm run build
 
 ## Routes
 
-- `/` → writing practice shell with task switching, timed drafting, saved-attempt inspection, and assessment submission
+- `/` → module hub linking Writing, Reading, Speaking, and Listening workspaces
+- `/writing` → writing practice shell with task switching, timed drafting, saved-attempt inspection, and assessment submission
 - `/dashboard` → persisted summary of recent saved attempts, criterion trends, compare support, scorer usage, and study-plan guidance
 - `/speaking` + `/speaking/dashboard` → Speaking alpha transcript-first practice and dashboard
 - `/reading` + `/reading/dashboard` → Reading module with crawled passage bank, drill interface, and dashboard
@@ -57,14 +58,15 @@ OPENROUTER_APP_TITLE=IELTS Academic Platform
 OPENROUTER_TIMEOUT_MS=15000
 ```
 
-Recommended model: `google/gemini-3-flash`. The scorer still validates the returned JSON against the structured rubric contract and automatically falls back to the mock scorer when config is missing, the request fails, or the provider output is invalid. The report `evaluationTrace` shows whether OpenRouter or the mock fallback produced the final scorecard.
+Recommended model: `google/gemini-3-flash`. The scorer still validates the returned JSON against the structured rubric contract. When `IELTS_SCORER_PROVIDER=openrouter`, provider outages, invalid upstream payloads, and misconfiguration now fail closed with a retryable error instead of silently substituting a mock score. Use `IELTS_SCORER_PROVIDER=mock` when you want deterministic local scoring on purpose. The report `evaluationTrace` shows whether OpenRouter or the explicit mock scorer produced the final scorecard.
 
 
 ## Reading content pipeline
 
-The Reading module ships with 36 crawled passages and 457 questions compiled into a runtime bank. You can refresh or extend this bank with the crawl scripts:
+The Reading module ships with 51 runtime sets and 617 questions compiled into a runtime bank. You can refresh or extend this bank with the generation + crawl scripts:
 
 ```bash
+npm run reading:generate             # generate/import AI-ready reading items
 npm run reading:crawl                # crawl ielts-up.com (33 passages)
 npm run reading:crawl:ieltsbuddy     # crawl ieltsbuddy.com (3 passages)
 npm run reading:crawl:all            # run both sources in sequence

@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 
 import { submitDefaultAssessment } from '@/lib/server/assessment-workspace';
 
+function isValidTimeSpentMinutes(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+}
+
 export async function POST(request: Request) {
   let body: unknown;
 
@@ -18,7 +22,7 @@ export async function POST(request: Request) {
     typeof (body as { response?: unknown }).response !== 'string' ||
     ('timeSpentMinutes' in body &&
       typeof (body as { timeSpentMinutes?: unknown }).timeSpentMinutes !== 'undefined' &&
-      typeof (body as { timeSpentMinutes?: unknown }).timeSpentMinutes !== 'number')
+      !isValidTimeSpentMinutes((body as { timeSpentMinutes?: unknown }).timeSpentMinutes))
   ) {
     return NextResponse.json({ error: 'Invalid request payload.' }, { status: 422 });
   }

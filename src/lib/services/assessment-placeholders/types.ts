@@ -64,8 +64,13 @@ export interface SubmitPlaceholderAssessmentInput {
   note?: string | string[];
 }
 
-export interface SubmitPlaceholderAssessmentResult {
-  ok: false;
-  error: string;
-  status: 501;
-}
+export type SubmitPlaceholderAssessmentResult =
+  | {
+      ok: true;
+      payload: Record<string, unknown>;
+    }
+  | {
+      ok: false;
+      error: string;
+      status: 501;
+    };

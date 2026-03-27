@@ -57,4 +57,27 @@ describe('POST /api/listening/assessment', () => {
     expect(mocks.submitAssessmentForModule).toHaveBeenCalledWith(LISTENING_ASSESSMENT_MODULE_ID, body);
     await expect(response.json()).resolves.toEqual({ error: result.error });
   });
+
+  it('returns a success payload when the module starts supporting submissions', async () => {
+    mocks.submitAssessmentForModule.mockResolvedValue({
+      ok: true,
+      payload: {
+        attemptId: 'listening-attempt-1',
+        score: 32,
+      },
+    });
+
+    const body = { answers: { q1: 'A' } };
+    const response = await POST(new Request('http://localhost/api/listening/assessment', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.submitAssessmentForModule).toHaveBeenCalledWith(LISTENING_ASSESSMENT_MODULE_ID, body);
+    await expect(response.json()).resolves.toEqual({
+      attemptId: 'listening-attempt-1',
+      score: 32,
+    });
+  });
 });

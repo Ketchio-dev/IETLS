@@ -22,6 +22,7 @@ import { runAssessmentPipeline } from '@/lib/services/assessment';
 
 import { buildDashboardSummary } from './dashboard';
 import { buildProgressSummary } from './progress-summary';
+import { WritingScorerUnavailableError } from './scorer-adapter';
 
 type SearchParamValue = string | string[] | undefined;
 type AssessmentPipelineRunner = typeof runAssessmentPipeline;
@@ -69,7 +70,7 @@ export type SubmitWritingAssessmentResult =
   | {
       ok: false;
       error: string;
-      status: 400 | 404;
+      status: 400 | 404 | 503;
     };
 
 interface WritingApplicationServiceOptions {
@@ -169,6 +170,14 @@ export function createWritingApplicationService({
       };
     }
 
+    if (!Number.isFinite(timeSpentMinutes) || timeSpentMinutes < 0) {
+      return {
+        ok: false,
+        error: 'Provide a finite, non-negative timeSpentMinutes value.',
+        status: 400,
+      };
+    }
+
     const prompts = await ensurePromptBank();
     const prompt = prompts.find((item) => item.id === promptId);
 
@@ -181,23 +190,35 @@ export function createWritingApplicationService({
     }
 
     await repository.seedPrompt(prompt);
-    const result = await runPipeline(prompt, {
-      promptId,
-      taskType: prompt.taskType,
-      response,
-      timeSpentMinutes,
-    });
-    const stored = await repository.saveAssessmentResult(result);
+    try {
+      const result = await runPipeline(prompt, {
+        promptId,
+        taskType: prompt.taskType,
+        response,
+        timeSpentMinutes,
+      });
+      const stored = await repository.saveAssessmentResult(result);
 
-    return {
-      ok: true,
-      payload: {
-        report: stored.report,
-        submission: stored.submission,
-        recentAttempts: stored.recentAttempts,
-        savedAssessments: stored.savedAssessments,
-      },
-    };
+      return {
+        ok: true,
+        payload: {
+          report: stored.report,
+          submission: stored.submission,
+          recentAttempts: stored.recentAttempts,
+          savedAssessments: stored.savedAssessments,
+        },
+      };
+    } catch (error) {
+      if (error instanceof WritingScorerUnavailableError) {
+        return {
+          ok: false,
+          error: error.message,
+          status: 503,
+        };
+      }
+
+      throw error;
+    }
   }
 
   return {
