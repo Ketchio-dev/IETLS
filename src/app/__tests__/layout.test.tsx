@@ -83,10 +83,11 @@ describe('RootLayout', () => {
     const html = renderToStaticMarkup(RootLayout({ children: React.createElement('main', null, 'Child') }));
 
     expect(html).toContain('site-nav-brand-kicker');
-    expect(html).toContain('IELTS Academic');
-    // Kicker element appears inside the brand, before "Reading + Writing"
-    const kickerIdx = html.indexOf('site-nav-brand-kicker');
-    const brandTextIdx = html.indexOf('Reading + Writing');
+    // The kicker span with "IELTS Academic" appears inside the brand anchor, before the brand text span
+    // Both are inside .site-nav-brand — verify the kicker class comes before the brand text within that element
+    const brandAnchorStart = html.indexOf('site-nav-brand"');
+    const kickerIdx = html.indexOf('site-nav-brand-kicker', brandAnchorStart);
+    const brandTextIdx = html.indexOf('Reading + Writing', kickerIdx);
     expect(kickerIdx).toBeGreaterThan(-1);
     expect(brandTextIdx).toBeGreaterThan(-1);
     expect(kickerIdx).toBeLessThan(brandTextIdx);
