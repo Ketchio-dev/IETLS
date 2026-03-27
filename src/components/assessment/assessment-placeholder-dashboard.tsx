@@ -3,48 +3,6 @@ import Link from 'next/link';
 import { DashboardMetricGrid } from '@/components/dashboard';
 import type { PlaceholderAssessmentDashboardPageData } from '@/lib/services/assessment-placeholders/application-service';
 
-function PrivateImportDashboardPanel({
-  summary,
-}: {
-  summary: NonNullable<PlaceholderAssessmentDashboardPageData['privateImportSummary']>;
-}) {
-  return (
-    <article className="panel history-panel">
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">Private import status</p>
-          <h2>Local bank inventory</h2>
-        </div>
-      </div>
-      <p className="summary-copy">
-        Run <code>{summary.importCommand}</code> after editing files in <code>{summary.sourceDir}</code>.
-      </p>
-      <ul className="plain-list compact-list">
-        <li>Imported sets: {summary.importedSetCount}</li>
-        <li>Detected source files: {summary.detectedSourceFiles.length}</li>
-        <li>Compiled source files: {summary.compiledSourceFiles.length}</li>
-        <li>Latest import: {summary.latestImportedAt ?? 'Not compiled yet'}</li>
-      </ul>
-      {summary.sets.length > 0 ? (
-        <ul className="plain-list compact-list">
-          {summary.sets.map((set) => (
-            <li key={set.id}>
-              <strong>{set.title}</strong> — {set.sourceFile}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      {summary.warnings.length > 0 ? (
-        <ul className="plain-list compact-list import-warning-list">
-          {summary.warnings.map((warning) => (
-            <li key={warning}>{warning}</li>
-          ))}
-        </ul>
-      ) : null}
-    </article>
-  );
-}
-
 export function AssessmentPlaceholderDashboard({
   moduleLabel,
   statusLabel,
@@ -54,7 +12,6 @@ export function AssessmentPlaceholderDashboard({
   routeBase,
   statusCards,
   nextSteps,
-  privateImportSummary,
 }: PlaceholderAssessmentDashboardPageData) {
   return (
     <main className="app-shell">
@@ -115,8 +72,6 @@ export function AssessmentPlaceholderDashboard({
               ))}
             </ul>
           </article>
-
-          {privateImportSummary ? <PrivateImportDashboardPanel summary={privateImportSummary} /> : null}
         </div>
       </section>
     </main>

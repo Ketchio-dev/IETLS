@@ -1,4 +1,3 @@
-import { loadReadingPrivateImportSummary } from '@/lib/server/reading-private-import-repository';
 import type {
   PlaceholderAssessmentDashboardPageData,
   PlaceholderAssessmentModuleId,
@@ -85,36 +84,6 @@ export function createPlaceholderAssessmentApplicationService(definition: Placeh
   };
 }
 
-const readingPlaceholderDefinition: PlaceholderAssessmentDefinition = {
-  moduleId: 'reading',
-  moduleLabel: 'IELTS Academic Reading Placeholder',
-  statusLabel: 'Placeholder',
-  summary: 'A structural placeholder for future Academic Reading work routed through the shared assessment-module seam.',
-  routeBase: '/reading',
-  practiceTitle: 'Reading module placeholder',
-  practiceDescription: 'This route proves the platform can register Reading without pretending the passage bank, item generation, or scoring engine already exists.',
-  dashboardTitle: 'Reading dashboard placeholder',
-  dashboardDescription: 'Use this placeholder dashboard as a seam check while Reading content, item stats, and scoring pipelines are still out of scope.',
-  plannedMilestones: [
-    'Introduce licensed or first-party passage sources before generating scored content.',
-    'Add item metadata and ambiguity validation before shipping learner-facing question sets.',
-    'Measure difficulty and retire weak questions once real attempt data exists.',
-  ],
-  currentGuardrails: [
-    'No generated passages or scored question sets are exposed here yet.',
-    'No exam-simulation claims are made until answer keys and ambiguity checks exist.',
-  ],
-  statusCards: [
-    { label: 'Content', value: 'Not started', detail: 'Passage bank and question types are intentionally absent.' },
-    { label: 'Scoring', value: 'Not started', detail: 'No raw-score, band conversion, or rationale pipeline yet.' },
-    { label: 'Validation', value: 'Planned', detail: 'Future work needs ambiguity checks and item-stat tracking.' },
-  ],
-  nextSteps: [
-    'Design passage licensing and ownership rules first.',
-    'Add answer-span-backed item contracts before any scored drills.',
-  ],
-};
-
 const listeningPlaceholderService = createPlaceholderAssessmentApplicationService({
   moduleId: 'listening',
   moduleLabel: 'IELTS Academic Listening Placeholder',
@@ -144,54 +113,6 @@ const listeningPlaceholderService = createPlaceholderAssessmentApplicationServic
     'Add answer timeline validation before exposing scored drills.',
   ],
 });
-
-export async function loadReadingPracticePageData(): Promise<PlaceholderAssessmentPracticePageData> {
-  return {
-    moduleId: readingPlaceholderDefinition.moduleId,
-    moduleLabel: readingPlaceholderDefinition.moduleLabel,
-    statusLabel: readingPlaceholderDefinition.statusLabel,
-    summary: readingPlaceholderDefinition.summary,
-    practiceTitle: readingPlaceholderDefinition.practiceTitle,
-    practiceDescription: readingPlaceholderDefinition.practiceDescription,
-    routeBase: readingPlaceholderDefinition.routeBase,
-    plannedMilestones: clone(readingPlaceholderDefinition.plannedMilestones),
-    currentGuardrails: clone(readingPlaceholderDefinition.currentGuardrails),
-    privateImportSummary: await loadReadingPrivateImportSummary(),
-  };
-}
-
-export async function loadReadingDashboardPageData(): Promise<PlaceholderAssessmentDashboardPageData> {
-  return {
-    moduleId: readingPlaceholderDefinition.moduleId,
-    moduleLabel: readingPlaceholderDefinition.moduleLabel,
-    statusLabel: readingPlaceholderDefinition.statusLabel,
-    summary: readingPlaceholderDefinition.summary,
-    dashboardTitle: readingPlaceholderDefinition.dashboardTitle,
-    dashboardDescription: readingPlaceholderDefinition.dashboardDescription,
-    routeBase: readingPlaceholderDefinition.routeBase,
-    statusCards: clone(readingPlaceholderDefinition.statusCards),
-    nextSteps: clone(readingPlaceholderDefinition.nextSteps),
-    privateImportSummary: await loadReadingPrivateImportSummary(),
-  };
-}
-
-export async function loadReadingTaskData(): Promise<PlaceholderAssessmentTaskData> {
-  return {
-    moduleId: readingPlaceholderDefinition.moduleId,
-    title: readingPlaceholderDefinition.practiceTitle,
-    description: readingPlaceholderDefinition.practiceDescription,
-    plannedMilestones: clone(readingPlaceholderDefinition.plannedMilestones),
-    privateImportSummary: await loadReadingPrivateImportSummary(),
-  };
-}
-
-export async function submitReadingAssessment(): Promise<SubmitPlaceholderAssessmentResult> {
-  return {
-    ok: false,
-    error: `${readingPlaceholderDefinition.moduleLabel} is a placeholder module for now; no scoring pipeline is implemented yet. Use the private import pipeline first, then implement the real reading drill flow.`,
-    status: 501,
-  };
-}
 
 export const loadListeningPracticePageData = listeningPlaceholderService.loadPracticePageData;
 export const loadListeningDashboardPageData = listeningPlaceholderService.loadDashboardPageData;

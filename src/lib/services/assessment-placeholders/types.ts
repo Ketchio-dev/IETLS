@@ -1,6 +1,27 @@
-import type { PrivateReadingImportSummary } from '@/lib/services/reading-imports/types';
+export type PlaceholderAssessmentModuleId = 'listening' | 'reading';
 
-export type PlaceholderAssessmentModuleId = 'reading' | 'listening';
+export interface PrivateImportSetSummary {
+  id: string;
+  title: string;
+  sourceLabel: string;
+  sourceFile: string;
+  importedAt: string;
+  questionCount: number;
+  passageWordCount: number;
+  types: string[];
+}
+
+export interface PrivateImportSummary {
+  sourceDir: string;
+  importCommand: string;
+  detectedSourceFiles: string[];
+  compiledSourceFiles: string[];
+  importedSetCount: number;
+  latestImportedAt: string | null;
+  compiledOutputLabel: string;
+  sets: PrivateImportSetSummary[];
+  warnings: string[];
+}
 
 export interface PlaceholderAssessmentPracticePageData {
   moduleId: PlaceholderAssessmentModuleId;
@@ -12,7 +33,7 @@ export interface PlaceholderAssessmentPracticePageData {
   routeBase: string;
   plannedMilestones: string[];
   currentGuardrails: string[];
-  privateImportSummary?: PrivateReadingImportSummary;
+  privateImportSummary?: PrivateImportSummary;
 }
 
 export interface PlaceholderAssessmentDashboardPageData {
@@ -29,7 +50,7 @@ export interface PlaceholderAssessmentDashboardPageData {
     detail: string;
   }>;
   nextSteps: string[];
-  privateImportSummary?: PrivateReadingImportSummary;
+  privateImportSummary?: PrivateImportSummary;
 }
 
 export interface PlaceholderAssessmentTaskData {
@@ -37,7 +58,6 @@ export interface PlaceholderAssessmentTaskData {
   title: string;
   description: string;
   plannedMilestones: string[];
-  privateImportSummary?: PrivateReadingImportSummary;
 }
 
 export interface SubmitPlaceholderAssessmentInput {

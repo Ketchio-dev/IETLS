@@ -349,10 +349,10 @@ function parseAnswerLi(raw) {
     return { answer, type: 'sentence_completion', explanation };
   }
 
-  // Fallback: clean the whole thing
+  // Fallback: clean the whole thing — treat as sentence_completion rather than unknown
   const explanation = extractExplanation(raw);
   const answer = clean(raw).replace(/\(.*?\)/g, '').trim();
-  return { answer, type: 'unknown', explanation };
+  return { answer, type: 'sentence_completion', explanation };
 }
 
 function extractExplanation(raw) {
@@ -397,7 +397,7 @@ function buildQuestions(questionPrompts, answerList) {
     const promptData = questionPrompts.get(qNum);
 
     const prompt = promptData?.prompt || `Question ${qNum}`;
-    const type = ans.type !== 'unknown' ? ans.type : (promptData?.type || 'unknown');
+    const type = ans.type !== 'unknown' ? ans.type : (promptData?.type !== 'unknown' ? (promptData?.type || 'sentence_completion') : 'sentence_completion');
 
     if (!ans.answer) continue;
 

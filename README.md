@@ -1,6 +1,6 @@
-# IELTS Academic Platform MVP
+# IELTS Academic Platform
 
-A Next.js MVP for IELTS Academic practice with a strong Writing experience, a Speaking alpha seam, and full-platform Reading/Listening placeholders:
+A Next.js platform for IELTS Academic practice with a strong Writing experience, a full Reading module, a Speaking alpha, and a Listening placeholder:
 
 - Task-aware prompt bank for **Writing Task 1 Academic** and **Writing Task 2**
 - Structured Task 1 visual briefs plus the existing Task 2 essay prompts
@@ -10,7 +10,9 @@ A Next.js MVP for IELTS Academic practice with a strong Writing experience, a Sp
 - Assessment architecture split into evidence extraction, scoring, and feedback generation
 - Local persistence for prompts, recent submissions, saved scorecards, dashboard summaries, and prompt-specific history
 - Gemini 3 Flash kept as the default live-scorer model when OpenRouter is enabled, with deterministic mock fallback
-- Reading and Listening registered as lightweight placeholder modules through the shared assessment seam
+- **Reading** module with 36 crawled passages and 457 questions across Academic Reading Test format
+- **Speaking** alpha with transcript-first practice and session persistence
+- Listening registered as a lightweight placeholder module through the shared assessment seam
 
 ## Getting started
 
@@ -19,7 +21,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000` for Writing, `http://localhost:3000/dashboard` for the Writing dashboard, `/speaking` for Speaking alpha, `/reading` for the Reading placeholder, and `/listening` for the Listening placeholder.
+Open `http://localhost:3000` for Writing, `http://localhost:3000/dashboard` for the Writing dashboard, `/speaking` for Speaking alpha, `/reading` for the Reading module, and `/listening` for the Listening placeholder.
 
 ## Verification
 
@@ -35,7 +37,7 @@ npm run build
 - `/` → writing practice shell with task switching, timed drafting, saved-attempt inspection, and assessment submission
 - `/dashboard` → persisted summary of recent saved attempts, criterion trends, compare support, scorer usage, and study-plan guidance
 - `/speaking` + `/speaking/dashboard` → Speaking alpha transcript-first practice and dashboard
-- `/reading` + `/reading/dashboard` → Reading placeholder routes proving the module seam without fake scoring
+- `/reading` + `/reading/dashboard` → Reading module with crawled passage bank, drill interface, and dashboard
 - `/listening` + `/listening/dashboard` → Listening placeholder routes proving the module seam without fake scoring
 - `GET /api/writing/task` → returns the current prompt plus the prompt bank
 - `POST /api/writing/assessment` → generates a practice estimate and stores the attempt locally
@@ -51,23 +53,28 @@ IELTS_SCORER_MODEL=google/gemini-3-flash
 # optional
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 OPENROUTER_HTTP_REFERER=http://localhost:3000
-OPENROUTER_APP_TITLE=IELTS Academic Writing MVP
+OPENROUTER_APP_TITLE=IELTS Academic Platform
 OPENROUTER_TIMEOUT_MS=15000
 ```
 
 Recommended model: `google/gemini-3-flash`. The scorer still validates the returned JSON against the structured rubric contract and automatically falls back to the mock scorer when config is missing, the request fails, or the provider output is invalid. The report `evaluationTrace` shows whether OpenRouter or the mock fallback produced the final scorecard.
 
 
-## Private Reading import pipeline
+## Reading content pipeline
 
-Reading is still a placeholder module, but you can now compile your own local/private Reading materials into a structured bank without the app fetching third-party content for you.
-
-1. Put your personally sourced `.json` files in `data/private-reading-imports/`
-2. Run:
+The Reading module ships with 36 crawled passages and 457 questions compiled into a runtime bank. You can refresh or extend this bank with the crawl scripts:
 
 ```bash
-npm run reading:import-private
+npm run reading:crawl                # crawl ielts-up.com (33 passages)
+npm run reading:crawl:ieltsbuddy     # crawl ieltsbuddy.com (3 passages)
+npm run reading:crawl:all            # run both sources in sequence
+npm run reading:import-private       # compile private imports into the runtime bank
 ```
+
+You can also supply your own locally sourced `.json` files:
+
+1. Put your personally sourced `.json` files in `data/private-reading-imports/`
+2. Run `npm run reading:import-private`
 
 This compiles a local bank to `data/runtime/reading-private-imports.json` and surfaces the import status on `/reading` and `/reading/dashboard`.
 
@@ -88,7 +95,7 @@ The default runtime persistence adapter remains file-backed (`src/lib/server/sto
 
 A follow-on refactor keeps route/page wiring thin by moving practice-shell and dashboard data loading behind narrow server-side application-service boundaries, then registering each slice behind a shared assessment-workspace registry. Writing remains the most complete workspace today, while speaking, reading, and listening now resolve through the same shared registry/workspace seam with alpha or placeholder readiness.
 
-The current foundation also routes practice-shell, dashboard, and assessment URLs through a shared assessment-module registry/workspace boundary (`src/lib/assessment-modules/`) so new modules can plug into the app without re-hardcoding workspace paths across pages, routes, and components. That seam is now the intended landing zone for the next **second-module validation slice**: a Speaking alpha scaffold that proves the registry/server boundary can carry a second module without disturbing the current Writing UX.
+The current foundation also routes practice-shell, dashboard, and assessment URLs through a shared assessment-module registry/workspace boundary (`src/lib/assessment-modules/`) so new modules can plug into the app without re-hardcoding workspace paths across pages, routes, and components.
 
 ## Review and implementation notes
 

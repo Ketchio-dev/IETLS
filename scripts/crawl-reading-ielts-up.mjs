@@ -222,6 +222,11 @@ function extractQuestions(html, answerKey) {
     }
   }
 
+  // Final safety: any question still typed "unknown" becomes sentence_completion
+  for (const q of questions) {
+    if (q.type === 'unknown') q.type = 'sentence_completion';
+  }
+
   return questions;
 }
 
