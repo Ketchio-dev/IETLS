@@ -2,6 +2,18 @@ import type { CriterionName, EvidenceSignal, EssaySubmission, WritingPrompt } fr
 
 import { countMatches, countParagraphs, countWords } from './metrics';
 
+const DATA_MENTION_PATTERN = /\b\d+(?:\.\d+)?%?\b/g;
+const TASK1_OVERVIEW_PATTERN = /\b(overall|in general|it is clear that|it can be seen that)\b/i;
+const TASK1_COMPARISON_PATTERN = /more than|less than|higher than|lower than|compared with|in contrast|whereas|while/gi;
+const TASK1_TREND_PATTERN = /increase|rise|grew|peak|decline|fall|drop|remain|stable|fluctuat/gi;
+const TASK1_TIME_PATTERN = /\b(\d{4}|morning|afternoon|evening|midday|at \d{1,2}:\d{2})\b/gi;
+const GENERAL_WORD_PATTERN = /\b(thing|things|good|bad|important|nice|problem)\b/gi;
+const SENTENCE_VARIETY_TASK1_PATTERN = /,|;| which | that | although | while | whereas | respectively /gi;
+const SENTENCE_VARIETY_TASK2_PATTERN = /,|;| which | that | although | because | while /gi;
+const OPINION_PATTERN = /\b(I believe|I think|In my opinion|I would argue|Overall, I believe)\b/i;
+const BALANCED_DISCUSSION_PATTERN = /\b(on the one hand|on the other hand|however|while|whereas)\b/i;
+const EXAMPLE_PATTERN = /for example|for instance|such as/gi;
+
 const buildSignal = (
   id: string,
   criterion: CriterionName | 'Overall',
@@ -13,16 +25,17 @@ const buildSignal = (
 
 function extractTask1Evidence(prompt: WritingPrompt, submission: EssaySubmission): EvidenceSignal[] {
   const response = submission.response;
+  const normalizedResponse = response.toLowerCase();
   const wordCount = countWords(response);
   const paragraphs = countParagraphs(response);
-  const keywordHits = prompt.keywordTargets.filter((keyword) => response.toLowerCase().includes(keyword)).length;
-  const numberMentions = countMatches(response, /\d+(?:\.\d+)?%?/g);
-  const hasOverview = /(overall|in general|it is clear that|it can be seen that)/i.test(response);
-  const comparisonHits = countMatches(response, /more than|less than|higher than|lower than|compared with|in contrast|whereas|while/gi);
-  const trendHits = countMatches(response, /increase|rise|grew|peak|decline|fall|drop|remain|stable|fluctuat/gi);
-  const timeMarkers = countMatches(response, /(2004|2014|morning|afternoon|evening|midday|at \d{1,2}:\d{2})/gi);
-  const repeatedGeneralWords = countMatches(response, /(thing|things|good|bad|important|nice)/gi);
-  const sentenceVariety = countMatches(response, /,|;| which | that | although | while | whereas | respectively /gi);
+  const keywordHits = prompt.keywordTargets.filter((keyword) => normalizedResponse.includes(keyword)).length;
+  const numberMentions = countMatches(response, DATA_MENTION_PATTERN);
+  const hasOverview = TASK1_OVERVIEW_PATTERN.test(response);
+  const comparisonHits = countMatches(response, TASK1_COMPARISON_PATTERN);
+  const trendHits = countMatches(response, TASK1_TREND_PATTERN);
+  const timeMarkers = countMatches(response, TASK1_TIME_PATTERN);
+  const repeatedGeneralWords = countMatches(response, GENERAL_WORD_PATTERN);
+  const sentenceVariety = countMatches(response, SENTENCE_VARIETY_TASK1_PATTERN);
 
   return [
     buildSignal(
@@ -30,7 +43,7 @@ function extractTask1Evidence(prompt: WritingPrompt, submission: EssaySubmission
       'Task Achievement',
       'Task 1 coverage',
       wordCount >= prompt.suggestedWordCount ? 'strong' : wordCount >= 130 ? 'developing' : 'weak',
-      'Approx. ' + wordCount + ' words against a ' + prompt.suggestedWordCount + '+ word target.',
+      `Approx. ${wordCount} words against a ${prompt.suggestedWordCount}+ word target.`,
       'rule-based',
     ),
     buildSignal(
@@ -48,7 +61,7 @@ function extractTask1Evidence(prompt: WritingPrompt, submission: EssaySubmission
       'Task Achievement',
       'Key feature selection',
       numberMentions >= 4 && keywordHits >= 3 ? 'strong' : numberMentions >= 2 ? 'developing' : 'weak',
-      'Detected ' + numberMentions + ' numeric/data references and ' + keywordHits + ' task keywords from the visual prompt.',
+      `Detected ${numberMentions} numeric/data references and ${keywordHits} task keywords from the visual prompt.`,
       'model-ready',
     ),
     buildSignal(
@@ -56,7 +69,7 @@ function extractTask1Evidence(prompt: WritingPrompt, submission: EssaySubmission
       'Coherence & Cohesion',
       'Paragraph control',
       paragraphs >= 4 ? 'strong' : paragraphs >= 3 ? 'developing' : 'weak',
-      'Detected ' + paragraphs + ' main paragraph block(s).',
+      `Detected ${paragraphs} main paragraph block(s).`,
       'rule-based',
     ),
     buildSignal(
@@ -64,7 +77,7 @@ function extractTask1Evidence(prompt: WritingPrompt, submission: EssaySubmission
       'Coherence & Cohesion',
       'Comparisons and grouping',
       comparisonHits >= 2 ? 'strong' : comparisonHits === 1 ? 'developing' : 'weak',
-      'Detected ' + comparisonHits + ' explicit comparison cue(s).',
+      `Detected ${comparisonHits} explicit comparison cue(s).`,
       'rubric-based',
     ),
     buildSignal(
@@ -72,7 +85,7 @@ function extractTask1Evidence(prompt: WritingPrompt, submission: EssaySubmission
       'Lexical Resource',
       'Trend vocabulary',
       trendHits >= 4 ? 'strong' : trendHits >= 2 ? 'developing' : 'weak',
-      'Detected ' + trendHits + ' trend or change descriptors across the response.',
+      `Detected ${trendHits} trend or change descriptors across the response.`,
       'model-ready',
     ),
     buildSignal(
@@ -80,7 +93,7 @@ function extractTask1Evidence(prompt: WritingPrompt, submission: EssaySubmission
       'Lexical Resource',
       'Precision vs repetition',
       repeatedGeneralWords <= 1 ? 'strong' : repeatedGeneralWords <= 3 ? 'developing' : 'weak',
-      'Repeated general-purpose vocabulary count: ' + repeatedGeneralWords + '.',
+      `Repeated general-purpose vocabulary count: ${repeatedGeneralWords}.`,
       'rule-based',
     ),
     buildSignal(
@@ -88,7 +101,7 @@ function extractTask1Evidence(prompt: WritingPrompt, submission: EssaySubmission
       'Grammatical Range & Accuracy',
       'Sentence variety',
       sentenceVariety >= 4 ? 'strong' : sentenceVariety >= 2 ? 'developing' : 'weak',
-      'Detected ' + sentenceVariety + ' clause-complexity signals from punctuation and subordination cues.',
+      `Detected ${sentenceVariety} clause-complexity signals from punctuation and subordination cues.`,
       'rule-based',
     ),
     buildSignal(
@@ -96,7 +109,7 @@ function extractTask1Evidence(prompt: WritingPrompt, submission: EssaySubmission
       'Grammatical Range & Accuracy',
       'Time and data references',
       timeMarkers >= 3 ? 'strong' : timeMarkers >= 1 ? 'developing' : 'weak',
-      'Detected ' + timeMarkers + ' year or time reference cue(s) tied to the data description.',
+      `Detected ${timeMarkers} year or time reference cue(s) tied to the data description.`,
       'rubric-based',
     ),
   ];
@@ -104,14 +117,15 @@ function extractTask1Evidence(prompt: WritingPrompt, submission: EssaySubmission
 
 function extractTask2Evidence(prompt: WritingPrompt, submission: EssaySubmission): EvidenceSignal[] {
   const response = submission.response;
+  const normalizedResponse = response.toLowerCase();
   const wordCount = countWords(response);
   const paragraphs = countParagraphs(response);
-  const sentenceVariety = countMatches(response, /,|;| which | that | although | because | while /gi);
-  const keywordHits = prompt.keywordTargets.filter((keyword) => response.toLowerCase().includes(keyword)).length;
-  const hasOpinion = /(I believe|I think|In my opinion|I would argue|Overall, I believe)/i.test(response);
-  const hasBalancedDiscussion = /(on the one hand|on the other hand|however|while|whereas)/i.test(response);
-  const examples = countMatches(response, /for example|for instance|such as/gi);
-  const repeatedGeneralWords = countMatches(response, /(thing|things|good|bad|important|problem)/gi);
+  const sentenceVariety = countMatches(response, SENTENCE_VARIETY_TASK2_PATTERN);
+  const keywordHits = prompt.keywordTargets.filter((keyword) => normalizedResponse.includes(keyword)).length;
+  const hasOpinion = OPINION_PATTERN.test(response);
+  const hasBalancedDiscussion = BALANCED_DISCUSSION_PATTERN.test(response);
+  const examples = countMatches(response, EXAMPLE_PATTERN);
+  const repeatedGeneralWords = countMatches(response, GENERAL_WORD_PATTERN);
 
   return [
     buildSignal(
@@ -119,7 +133,7 @@ function extractTask2Evidence(prompt: WritingPrompt, submission: EssaySubmission
       'Task Response',
       'Task coverage',
       wordCount >= prompt.suggestedWordCount ? 'strong' : wordCount >= 220 ? 'developing' : 'weak',
-      'Approx. ' + wordCount + ' words against a ' + prompt.suggestedWordCount + '+ word target.',
+      `Approx. ${wordCount} words against a ${prompt.suggestedWordCount}+ word target.`,
       'rule-based',
     ),
     buildSignal(
@@ -127,7 +141,7 @@ function extractTask2Evidence(prompt: WritingPrompt, submission: EssaySubmission
       'Task Response',
       'Prompt relevance',
       keywordHits >= 3 ? 'strong' : keywordHits >= 2 ? 'developing' : 'weak',
-      'Detected ' + keywordHits + ' core topic keywords from the prompt in the response.',
+      `Detected ${keywordHits} core topic keywords from the prompt in the response.`,
       'rule-based',
     ),
     buildSignal(
@@ -143,7 +157,7 @@ function extractTask2Evidence(prompt: WritingPrompt, submission: EssaySubmission
       'Coherence & Cohesion',
       'Paragraph control',
       paragraphs >= 4 ? 'strong' : paragraphs >= 3 ? 'developing' : 'weak',
-      'Detected ' + paragraphs + ' main paragraph block(s).',
+      `Detected ${paragraphs} main paragraph block(s).`,
       'rule-based',
     ),
     buildSignal(
@@ -151,7 +165,9 @@ function extractTask2Evidence(prompt: WritingPrompt, submission: EssaySubmission
       'Coherence & Cohesion',
       'Balanced discussion cues',
       hasBalancedDiscussion ? 'strong' : 'developing',
-      hasBalancedDiscussion ? 'The draft uses compare/contrast language to manage both views.' : 'Discussion cues are limited, so paragraph progression may feel abrupt.',
+      hasBalancedDiscussion
+        ? 'The draft uses compare/contrast language to manage both views.'
+        : 'Discussion cues are limited, so paragraph progression may feel abrupt.',
       'rubric-based',
     ),
     buildSignal(
@@ -159,7 +175,7 @@ function extractTask2Evidence(prompt: WritingPrompt, submission: EssaySubmission
       'Lexical Resource',
       'Topic vocabulary',
       keywordHits >= 4 ? 'strong' : keywordHits >= 2 ? 'developing' : 'weak',
-      'Topical vocabulary coverage is ' + (keywordHits >= 4 ? 'strong' : keywordHits >= 2 ? 'emerging' : 'thin') + ' for this prompt.',
+      `Topical vocabulary coverage is ${keywordHits >= 4 ? 'strong' : keywordHits >= 2 ? 'emerging' : 'thin'} for this prompt.`,
       'model-ready',
     ),
     buildSignal(
@@ -167,7 +183,7 @@ function extractTask2Evidence(prompt: WritingPrompt, submission: EssaySubmission
       'Lexical Resource',
       'Precision vs repetition',
       repeatedGeneralWords <= 2 ? 'strong' : repeatedGeneralWords <= 5 ? 'developing' : 'weak',
-      'Repeated general-purpose vocabulary count: ' + repeatedGeneralWords + '.',
+      `Repeated general-purpose vocabulary count: ${repeatedGeneralWords}.`,
       'rule-based',
     ),
     buildSignal(
@@ -175,7 +191,7 @@ function extractTask2Evidence(prompt: WritingPrompt, submission: EssaySubmission
       'Grammatical Range & Accuracy',
       'Sentence variety',
       sentenceVariety >= 6 ? 'strong' : sentenceVariety >= 3 ? 'developing' : 'weak',
-      'Detected ' + sentenceVariety + ' clause-complexity signals from punctuation and subordination cues.',
+      `Detected ${sentenceVariety} clause-complexity signals from punctuation and subordination cues.`,
       'rule-based',
     ),
     buildSignal(
@@ -183,14 +199,12 @@ function extractTask2Evidence(prompt: WritingPrompt, submission: EssaySubmission
       'Task Response',
       'Example support',
       examples >= 2 ? 'strong' : examples === 1 ? 'developing' : 'weak',
-      'Detected ' + examples + ' explicit example cue(s).',
+      `Detected ${examples} explicit example cue(s).`,
       'rubric-based',
     ),
   ];
 }
 
 export function extractWritingEvidence(prompt: WritingPrompt, submission: EssaySubmission): EvidenceSignal[] {
-  return prompt.taskType === 'task-1'
-    ? extractTask1Evidence(prompt, submission)
-    : extractTask2Evidence(prompt, submission);
+  return prompt.taskType === 'task-1' ? extractTask1Evidence(prompt, submission) : extractTask2Evidence(prompt, submission);
 }

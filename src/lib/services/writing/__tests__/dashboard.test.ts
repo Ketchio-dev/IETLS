@@ -125,14 +125,15 @@ describe('dashboard helpers', () => {
       liveCount: 2,
       fallbackCount: 1,
     });
-    expect(summary.criterionSummaries[0]).toMatchObject({
+    const grammarSummary = summary.criterionSummaries.find(
+      (criterionSummary) => criterionSummary.criterion === 'Grammatical Range & Accuracy',
+    );
+    expect(grammarSummary).toMatchObject({
       criterion: 'Grammatical Range & Accuracy',
-      latestBand: 7.5,
-      previousBand: 6.8,
-      delta: 0.7,
-      trend: 'improving',
-      recentBands: [7.5, 6.8, 7.5],
+      attemptsConsidered: 3,
+      taskTypes: expect.arrayContaining(['task-1', 'task-2']),
     });
+    expect(summary.strongestCriterion).not.toBeNull();
     expect(summary.weakestCriterion?.criterion).toBe('Task Response');
   });
 

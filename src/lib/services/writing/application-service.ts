@@ -169,7 +169,8 @@ export function createWritingApplicationService({
       };
     }
 
-    const prompt = promptBank.find((item) => item.id === promptId);
+    const prompts = await ensurePromptBank();
+    const prompt = prompts.find((item) => item.id === promptId);
 
     if (!prompt) {
       return {

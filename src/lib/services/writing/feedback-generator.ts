@@ -1,4 +1,11 @@
-import type { AssessmentWarning, BandRange, CriterionScore, EvidenceSignal, FeedbackAction } from '@/lib/domain';
+import type {
+  AssessmentWarning,
+  BandRange,
+  CriterionScore,
+  EvidenceSignal,
+  FeedbackAction,
+  WritingTaskType,
+} from '@/lib/domain';
 
 export function generateFeedbackActions(scores: CriterionScore[], evidence: EvidenceSignal[]): FeedbackAction[] {
   const weakest = [...scores].sort((a, b) => a.band - b.band).slice(0, 3);
@@ -9,11 +16,13 @@ export function generateFeedbackActions(scores: CriterionScore[], evidence: Evid
     description:
       score.criterion === 'Task Response'
         ? 'Add one more fully developed idea with a cause, consequence, and stakeholder impact.'
-        : score.criterion === 'Coherence & Cohesion'
-          ? 'Rewrite topic sentences so each paragraph makes one clear argumentative move.'
-          : score.criterion === 'Lexical Resource'
-            ? 'Replace repeated general words with prompt-specific policy or infrastructure vocabulary.'
-            : 'Reserve 3 minutes to proofread articles, agreement, and punctuation after drafting.',
+        : score.criterion === 'Task Achievement'
+          ? 'Strengthen the overview and group the most important features before listing detail data.'
+          : score.criterion === 'Coherence & Cohesion'
+            ? 'Rewrite topic sentences so each paragraph makes one clear argumentative move.'
+            : score.criterion === 'Lexical Resource'
+              ? 'Replace repeated general words with prompt-specific policy or infrastructure vocabulary.'
+              : 'Reserve 3 minutes to proofread articles, agreement, and punctuation after drafting.',
     impact: evidence.some((item) => item.criterion === score.criterion && item.strength === 'weak') ? 'high' : 'medium',
   }));
 }
@@ -26,9 +35,12 @@ export function summarizeRisks(evidence: EvidenceSignal[]) {
   return evidence.filter((item) => item.strength !== 'strong').slice(0, 4).map((item) => item.detail);
 }
 
-export function buildSummary(overallBandRange: BandRange, wordCount: number) {
-  if (wordCount < 220) {
-    return 'The draft shows promise, but it is under-developed for a stable Task 2 estimate. Add depth before trusting the current score range.';
+export function buildSummary(taskType: WritingTaskType, overallBandRange: BandRange, wordCount: number) {
+  const minWords = taskType === 'task-1' ? 150 : 250;
+  const taskLabel = taskType === 'task-1' ? 'Task 1' : 'Task 2';
+
+  if (wordCount < minWords) {
+    return `The draft shows promise, but it is under-developed for a stable ${taskLabel} estimate. Add depth before trusting the current score range.`;
   }
 
   if (overallBandRange.lower >= 7) {
@@ -38,7 +50,13 @@ export function buildSummary(overallBandRange: BandRange, wordCount: number) {
   return `This draft is workable for a Band ${overallBandRange.lower.toFixed(1)}-${overallBandRange.upper.toFixed(1)} practice range, but the biggest gains still come from clearer support, tighter organization, and more precise language.`;
 }
 
-export function buildWarnings(wordCount: number, confidence: CriterionScore['confidence']): AssessmentWarning[] {
+export function buildWarnings(
+  taskType: WritingTaskType,
+  wordCount: number,
+  confidence: CriterionScore['confidence'],
+): AssessmentWarning[] {
+  const minWords = taskType === 'task-1' ? 150 : 250;
+  const taskLabel = taskType === 'task-1' ? 'Task 1' : 'Task 2';
   const warnings: AssessmentWarning[] = [
     {
       code: 'practice-estimate',
@@ -46,10 +64,10 @@ export function buildWarnings(wordCount: number, confidence: CriterionScore['con
     },
   ];
 
-  if (wordCount < 250) {
+  if (wordCount < minWords) {
     warnings.push({
       code: 'under-length',
-      message: 'The response is below the usual Task 2 target length, which limits scoring confidence.',
+      message: `The response is below the usual ${taskLabel} target length, which limits scoring confidence.`,
     });
   }
 

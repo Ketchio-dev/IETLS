@@ -36,6 +36,14 @@ const rangePaddingByConfidence: Record<ConfidenceLevel, number> = {
   low: 1.5,
 };
 
+const baselineByCriterion: Record<CriterionName, number> = {
+  'Task Achievement': 4.5,
+  'Task Response': 4.5,
+  'Coherence & Cohesion': 4.5,
+  'Lexical Resource': 4,
+  'Grammatical Range & Accuracy': 4,
+};
+
 export function getCriteriaForTaskType(taskType: WritingTaskType): CriterionName[] {
   return criteriaByTaskType[taskType];
 }
@@ -55,15 +63,9 @@ function deriveBandRange(band: number, confidence: ConfidenceLevel): BandRange {
 function scoreCriterion(criterion: CriterionName, evidence: EvidenceSignal[], prompt: WritingPrompt): CriterionScore {
   const relevant = getCriterionEvidence(criterion, evidence, prompt.taskType);
   const weight = relevant.reduce((sum, item) => sum + strengthToWeight[item.strength], 0);
-  const normalized = relevant.length ? weight / relevant.length : 0.5;
-  const baseline = criterion === 'Task Achievement' || criterion === 'Task Response'
-    ? 5.5
-    : criterion === 'Coherence & Cohesion'
-      ? 5.5
-      : 5;
-  const promptAdjustment = prompt.taskType === 'task-2' ? 0.25 : 0;
-  const band = clampBand(baseline + normalized * 2 + promptAdjustment);
+  const normalized = relevant.length ? weight / relevant.length : 0;
   const weakSignals = relevant.filter((item) => item.strength === 'weak').length;
+  const band = clampBand(baselineByCriterion[criterion] + normalized * 2 - weakSignals * 0.5);
   const confidence: ConfidenceLevel = weakSignals >= 2 ? 'low' : weakSignals === 1 ? 'medium' : 'high';
 
   const rationale =
@@ -117,8 +119,8 @@ export function deriveOverallConfidence(
 
   const reasons = [
     'This is a practice estimate, not an official IELTS score.',
-    'The current scoring range is Band ' + overallBandRange.lower.toFixed(1) + '-' + overallBandRange.upper.toFixed(1) + ' based on the signals in this draft.',
-    ...(weakSignals > 0 ? [weakSignals + ' evidence signal(s) remain weak, so the score range could move after revision.'] : []),
+    `The current scoring range is Band ${overallBandRange.lower.toFixed(1)}-${overallBandRange.upper.toFixed(1)} based on the signals in this draft.`,
+    ...(weakSignals > 0 ? [`${weakSignals} evidence signal(s) remain weak, so the score range could move after revision.`] : []),
     ...(lowConfidenceScores > 0 ? ['At least one criterion relies on incomplete evidence, so the reported range is intentionally wider.'] : []),
   ];
 

@@ -161,6 +161,12 @@ function getRubricVersion(prompt: WritingPrompt) {
   return RUBRIC_VERSION_BY_TASK_TYPE[prompt.taskType];
 }
 
+function getSystemPrompt(taskType: WritingTaskType) {
+  return taskType === 'task-1'
+    ? 'You are an IELTS Academic Writing Task 1 scorer. Return strict JSON only. Do not include markdown or prose outside the JSON object.'
+    : 'You are an IELTS Academic Writing Task 2 scorer. Return strict JSON only. Do not include markdown or prose outside the JSON object.';
+}
+
 function buildCriterionTrace(
   prompt: WritingPrompt,
   criterion: CriterionName,
@@ -461,8 +467,7 @@ async function requestOpenRouterScore(input: WritingScorerAdapterInput, config: 
         messages: [
           {
             role: 'system',
-            content:
-              'You are an IELTS Academic Writing Task 2 scorer. Return strict JSON only. Do not include markdown or prose outside the JSON object.',
+            content: getSystemPrompt(input.prompt.taskType),
           },
           {
             role: 'user',

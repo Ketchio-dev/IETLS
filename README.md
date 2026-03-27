@@ -86,7 +86,7 @@ Persisted data now powers both the practice shell and the dashboard, so saved at
 
 The default runtime persistence adapter remains file-backed (`src/lib/server/storage.ts`), but the repository now reads and writes through a small storage port so the persistence boundary can be swapped in tests or future adapters without changing route/page callers.
 
-A follow-on refactor keeps route/page wiring thin by moving practice-shell and dashboard data loading behind a narrow server-side writing application-service boundary, then registering that slice behind a shared assessment-workspace registry. Writing remains the only registered workspace today, but the app entrypoints now resolve through a shared registry/workspace seam instead of importing writing-only orchestration directly.
+A follow-on refactor keeps route/page wiring thin by moving practice-shell and dashboard data loading behind narrow server-side application-service boundaries, then registering each slice behind a shared assessment-workspace registry. Writing remains the most complete workspace today, while speaking, reading, and listening now resolve through the same shared registry/workspace seam with alpha or placeholder readiness.
 
 The current foundation also routes practice-shell, dashboard, and assessment URLs through a shared assessment-module registry/workspace boundary (`src/lib/assessment-modules/`) so new modules can plug into the app without re-hardcoding workspace paths across pages, routes, and components. That seam is now the intended landing zone for the next **second-module validation slice**: a Speaking alpha scaffold that proves the registry/server boundary can carry a second module without disturbing the current Writing UX.
 

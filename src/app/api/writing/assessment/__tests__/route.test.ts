@@ -18,6 +18,33 @@ afterEach(() => {
 });
 
 describe('POST /api/writing/assessment', () => {
+  it('returns 400 for invalid JSON before reaching the assessment workspace', async () => {
+    const response = await POST(new Request('http://localhost/api/writing/assessment', {
+      method: 'POST',
+      body: '{invalid-json',
+      headers: { 'Content-Type': 'application/json' },
+    }));
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid JSON body.' });
+    expect(mocks.submitDefaultAssessment).not.toHaveBeenCalled();
+  });
+
+  it('returns 422 for malformed payloads before reaching the assessment workspace', async () => {
+    const response = await POST(new Request('http://localhost/api/writing/assessment', {
+      method: 'POST',
+      body: JSON.stringify({
+        promptId: samplePrompt.id,
+        response: ['not-a-string'],
+        timeSpentMinutes: '15',
+      }),
+    }));
+
+    expect(response.status).toBe(422);
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid request payload.' });
+    expect(mocks.submitDefaultAssessment).not.toHaveBeenCalled();
+  });
+
   it('returns a 400 payload from the shared assessment workspace for short responses', async () => {
     const invalid: SubmitWritingAssessmentResult = {
       ok: false,

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { samplePrompt, sampleSubmission } from '@/lib/fixtures/writing';
+import { samplePrompt, sampleSubmission, sampleTask1Prompt } from '@/lib/fixtures/writing';
 import { createSubmissionRecord } from '@/lib/services/assessment';
 import { extractWritingEvidence } from '@/lib/services/writing/evidence-extractor';
 import { WRITING_RUBRIC_SCHEMA_VERSION, scoreWritingWithAdapter } from '@/lib/services/writing/scorer-adapter';
@@ -125,6 +125,78 @@ describe('scoreWritingWithAdapter', () => {
         body: expect.stringContaining('"model":"google/gemini-3-flash"'),
       }),
     );
+  });
+
+  it('uses a Task 1 system prompt when scoring Academic Task 1', async () => {
+    vi.stubEnv('IELTS_SCORER_PROVIDER', 'openrouter');
+    vi.stubEnv('OPENROUTER_API_KEY', 'test-key');
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: 'gen-789',
+        model: 'google/gemini-3-flash',
+        usage: { total_tokens: 180 },
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                ...buildOpenRouterPayload(),
+                criterionScores: [
+                  {
+                    criterion: 'Task Achievement',
+                    band: 7,
+                    bandRange: { lower: 6.5, upper: 7.5 },
+                    rationale: 'The report captures the main features clearly.',
+                    confidence: 'high' as const,
+                  },
+                  {
+                    criterion: 'Coherence & Cohesion',
+                    band: 6.5,
+                    bandRange: { lower: 6, upper: 7 },
+                    rationale: 'Paragraphing is logical.',
+                    confidence: 'medium' as const,
+                  },
+                  {
+                    criterion: 'Lexical Resource',
+                    band: 7,
+                    bandRange: { lower: 6.5, upper: 7.5 },
+                    rationale: 'Trend language is mostly precise.',
+                    confidence: 'medium' as const,
+                  },
+                  {
+                    criterion: 'Grammatical Range & Accuracy',
+                    band: 6.5,
+                    bandRange: { lower: 6, upper: 7 },
+                    rationale: 'Complex forms appear, though control is uneven.',
+                    confidence: 'medium' as const,
+                  },
+                ],
+              }),
+            },
+          },
+        ],
+      }),
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    await scoreWritingWithAdapter(
+      sampleTask1Prompt,
+      extractWritingEvidence(sampleTask1Prompt, {
+        promptId: sampleTask1Prompt.id,
+        taskType: sampleTask1Prompt.taskType,
+        response:
+          'Overall, passenger numbers peak at 8:00 and 18:00, while usage is lowest at the beginning and end of the day.',
+        timeSpentMinutes: 18,
+      }),
+      'Overall, passenger numbers peak at 8:00 and 18:00, while usage is lowest at the beginning and end of the day.',
+    );
+
+    const [, request] = fetchMock.mock.calls[0] ?? [];
+    const body = typeof request?.body === 'string' ? JSON.parse(request.body) : null;
+
+    expect(body?.messages?.[0]?.content).toContain('Task 1 scorer');
   });
 
   it('falls back to the mock scorer when OpenRouter config is missing', async () => {
