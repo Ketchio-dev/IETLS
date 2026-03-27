@@ -296,7 +296,7 @@ export default async function HomePage() {
       </section>
 
       <nav className="quick-actions-strip" aria-label="Quick practice actions">
-        <Link className="quick-action-card" href="/reading" data-module="reading">
+        <Link className="quick-action-card" href="/reading" data-quick="reading">
           <div className="quick-action-icon" aria-hidden="true"><ReadingIcon /></div>
           <div className="quick-action-text">
             <strong>Reading practice</strong>
@@ -310,7 +310,7 @@ export default async function HomePage() {
             <span>{writingDashboard.prompts.length} prompts ready</span>
           </div>
         </Link>
-        <Link className="quick-action-card" href="/reading/dashboard" data-module="reading">
+        <Link className="quick-action-card" href="/reading/dashboard" data-quick="reading">
           <div className="quick-action-icon" aria-hidden="true"><ReadingIcon /></div>
           <div className="quick-action-text">
             <strong>Reading dashboard</strong>
