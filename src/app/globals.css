@@ -974,6 +974,44 @@ input[type='file'] {
 }
 
 /* ============================================================
+   Experimental section (Speaking / Listening de-emphasis)
+   ============================================================ */
+
+.experimental-section {
+  margin-top: 1rem;
+}
+
+.experimental-section-header {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.experimental-section-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 0;
+}
+
+.experimental-section-subtitle {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: 0.25rem 0 0;
+}
+
+.module-card--experimental {
+  opacity: 0.7;
+  border-style: dashed;
+}
+
+.module-card--experimental:hover {
+  opacity: 0.9;
+}
+
+/* ============================================================
    Responsive: desktop (>= 800px)
    ============================================================ */
 
