@@ -183,4 +183,184 @@ describe('HomePage', () => {
     expect(screen.getByText(/band 6\.5/i)).toBeInTheDocument();
     expect(screen.getByText('Planned')).toBeInTheDocument();
   });
+
+  it('renders reading and writing module cards in the primary section before secondary modules', async () => {
+    const writingSummary: WritingDashboardSummary = {
+      totalAttempts: 3,
+      taskCounts: { 'task-1': 3, 'task-2': 0 },
+      latestRange: { lower: 6, upper: 6.5 },
+      bestBand: 6.5,
+      averageBand: 6.2,
+      averageWordCount: 240,
+      totalPracticeMinutes: 90,
+      activeDays: 2,
+      latestAttemptAt: '2026-03-26T10:00:00.000Z',
+      providerBreakdown: [],
+      criterionSummaries: [],
+      strongestCriterion: null,
+      weakestCriterion: null,
+    };
+    const writingPageData: WritingDashboardPageData = {
+      prompts: writingPromptBank,
+      recentSavedAttempts: [],
+      summary: writingSummary,
+      progress: {
+        direction: 'steady',
+        label: 'Steady',
+        detail: 'Holding steady.',
+        delta: 0,
+        latestRange: { lower: 6, upper: 6.5 },
+        attemptsConsidered: 3,
+        averageWordCount: 240,
+      },
+      studyPlan: {
+        version: 1,
+        generatedAt: '2026-03-26T10:00:00.000Z',
+        basedOnSubmissionId: null,
+        attemptsConsidered: 3,
+        headline: 'Keep going',
+        focus: 'Focus area',
+        horizonLabel: 'Next block',
+        recommendedSessionLabel: 'Task 1',
+        steps: [],
+        carryForward: [],
+      },
+    };
+    const readingPageData: ReadingDashboardPageData = {
+      moduleId: 'reading',
+      moduleLabel: 'IELTS Academic Reading',
+      summary: 'Summary',
+      routeBase: '/reading',
+      importSummary: {
+        sourceDir: 'data/private-reading-imports',
+        importCommand: 'npm run reading:import-private',
+        detectedSourceFiles: [],
+        compiledSourceFiles: [],
+        importedSetCount: 0,
+        latestImportedAt: null,
+        compiledOutputLabel: 'data/runtime/reading-private-imports.json',
+        sets: [],
+        warnings: [],
+      },
+      availableSets: [],
+      recentAttempts: [],
+      dashboardSummary: {
+        totalAttempts: 0,
+        averagePercentage: 0,
+        bestScoreLabel: 'N/A',
+        latestAttemptAt: null,
+        averageTimeSpentSeconds: 0,
+        strongestType: null,
+        weakestType: null,
+      },
+      studyFocus: [],
+    };
+    const speakingPageData: SpeakingDashboardPageData = {
+      prompts: speakingPromptBank,
+      recentSessions: [],
+      summary: {
+        totalSessions: 0,
+        averageBand: null,
+        bestBand: null,
+        latestRange: null,
+        averageDurationSeconds: 0,
+        latestAttemptAt: null,
+        lowConfidenceCount: 0,
+        sessionsWithAudio: 0,
+        partBreakdown: { 'part-1': 0, 'part-2': 0, 'part-3': 0 },
+      },
+      studyFocus: [],
+    };
+    const listeningPageData: PlaceholderAssessmentDashboardPageData = {
+      moduleId: 'listening',
+      moduleLabel: 'Listening',
+      statusLabel: 'Placeholder',
+      summary: 'Placeholder',
+      dashboardTitle: 'Listening',
+      dashboardDescription: 'Not ready.',
+      routeBase: '/listening',
+      statusCards: [
+        { label: 'Scripts', value: 'N/A', detail: 'None.' },
+        { label: 'Audio', value: 'N/A', detail: 'None.' },
+        { label: 'Status', value: 'Planned', detail: 'Later.' },
+      ],
+      nextSteps: [],
+    };
+
+    mocks.loadDefaultAssessmentDashboardPageData.mockResolvedValue(writingPageData);
+    mocks.loadAssessmentDashboardPageData.mockImplementation(async (moduleId: string) => {
+      switch (moduleId) {
+        case READING_ASSESSMENT_MODULE_ID:
+          return readingPageData;
+        case SPEAKING_ASSESSMENT_MODULE_ID:
+          return speakingPageData;
+        case LISTENING_ASSESSMENT_MODULE_ID:
+          return listeningPageData;
+        default:
+          throw new Error(`Unexpected module id: ${moduleId}`);
+      }
+    });
+
+    const { container } = render(await HomePage());
+
+    // Reading and writing module cards appear in the primary section (first module-hub-grid)
+    const moduleGrids = container.querySelectorAll('[aria-label]');
+    const primaryGrid = container.querySelector('[aria-label="Primary IELTS practice modules"]');
+    const secondaryGrid = container.querySelector('[aria-label="Secondary IELTS modules"]');
+
+    expect(primaryGrid).not.toBeNull();
+    expect(secondaryGrid).not.toBeNull();
+
+    // Primary grid contains reading and writing
+    const primaryModules = primaryGrid!.querySelectorAll('[data-module]');
+    const primaryModuleIds = Array.from(primaryModules).map((el) => el.getAttribute('data-module'));
+    expect(primaryModuleIds).toContain('reading');
+    expect(primaryModuleIds).toContain('writing');
+    expect(primaryModuleIds).not.toContain('speaking');
+    expect(primaryModuleIds).not.toContain('listening');
+
+    // Secondary grid contains speaking and listening
+    const secondaryModules = secondaryGrid!.querySelectorAll('[data-module]');
+    const secondaryModuleIds = Array.from(secondaryModules).map((el) => el.getAttribute('data-module'));
+    expect(secondaryModuleIds).toContain('speaking');
+    expect(secondaryModuleIds).toContain('listening');
+    expect(secondaryModuleIds).not.toContain('reading');
+    expect(secondaryModuleIds).not.toContain('writing');
+
+    // Primary section appears before secondary section in DOM order
+    const allGrids = Array.from(moduleGrids);
+    const primaryIndex = allGrids.indexOf(primaryGrid!);
+    const secondaryIndex = allGrids.indexOf(secondaryGrid!);
+    expect(primaryIndex).toBeLessThan(secondaryIndex);
+
+    // Hero CTA buttons link to reading and writing (not speaking/listening)
+    const heroSection = container.querySelector('.home-hero');
+    expect(heroSection).not.toBeNull();
+    const heroLinks = heroSection!.querySelectorAll('a');
+    const heroHrefs = Array.from(heroLinks).map((a) => a.getAttribute('href'));
+    expect(heroHrefs).toContain('/reading');
+    expect(heroHrefs).toContain('/writing');
+    expect(heroHrefs).not.toContain('/speaking');
+    expect(heroHrefs).not.toContain('/listening');
+
+    // Hero eyebrow mentions Reading + Writing
+    expect(screen.getByText('IELTS Academic Reading + Writing')).toBeInTheDocument();
+
+    // Each module card renders an icon container
+    const moduleIcons = container.querySelectorAll('.module-icon');
+    expect(moduleIcons.length).toBeGreaterThanOrEqual(2);
+
+    // Reading card renders stat cards with expected labels
+    const readingCard = container.querySelector('[data-module="reading"]');
+    expect(readingCard).not.toBeNull();
+    expect(readingCard!.textContent).toContain('Passages');
+    expect(readingCard!.textContent).toContain('Attempts');
+
+    // Writing card renders stat cards with expected labels
+    const writingCard = container.querySelector('[data-module="writing"]');
+    expect(writingCard).not.toBeNull();
+    expect(writingCard!.textContent).toContain('Saved attempts');
+    expect(writingCard!.textContent).toContain('Prompt bank');
+    expect(writingCard!.textContent).toContain('Average band');
+  });
 });
