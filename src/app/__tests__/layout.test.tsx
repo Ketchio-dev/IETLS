@@ -83,6 +83,14 @@ describe('RootLayout', () => {
     expect(hrefs).toEqual(['/reading', '/writing', '/speaking', '/listening']);
   });
 
+  it('renders a dashboard link in the navigation', () => {
+    const html = renderToStaticMarkup(RootLayout({ children: React.createElement('main', null, 'Child') }));
+
+    expect(html).toContain('site-nav-link--dashboard');
+    expect(html).toContain('href="/reading/dashboard"');
+    expect(html).toContain('Dashboards');
+  });
+
   it('renders the IELTS Academic kicker above the brand name', () => {
     const html = renderToStaticMarkup(RootLayout({ children: React.createElement('main', null, 'Child') }));
 

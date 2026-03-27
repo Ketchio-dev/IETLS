@@ -681,4 +681,117 @@ describe('HomePage', () => {
       expect(icon.querySelector('svg')).not.toBeNull();
     });
   });
+
+  it('renders the quick-actions strip with reading and writing shortcuts', async () => {
+    setupMocks();
+    const { container } = render(await HomePage());
+
+    const strip = container.querySelector('.quick-actions-strip');
+    expect(strip).not.toBeNull();
+
+    const quickCards = strip!.querySelectorAll('.quick-action-card');
+    expect(quickCards).toHaveLength(4);
+
+    // First two quick actions are reading and writing practice
+    const hrefs = Array.from(quickCards).map((card) => card.getAttribute('href'));
+    expect(hrefs[0]).toBe('/reading');
+    expect(hrefs[1]).toBe('/writing');
+    expect(hrefs[2]).toBe('/reading/dashboard');
+    expect(hrefs[3]).toBe('/dashboard');
+
+    // Quick action data attributes identify reading and writing
+    const quickTypes = Array.from(quickCards).map((card) => card.getAttribute('data-quick'));
+    expect(quickTypes).toEqual(['reading', 'writing', 'reading', 'writing']);
+
+    // Each quick action card has an icon and text
+    quickCards.forEach((card) => {
+      expect(card.querySelector('.quick-action-icon')).not.toBeNull();
+      expect(card.querySelector('.quick-action-text')).not.toBeNull();
+    });
+  });
+
+  it('renders a section divider between primary and secondary modules', async () => {
+    setupMocks();
+    const { container } = render(await HomePage());
+
+    const divider = container.querySelector('.section-divider');
+    expect(divider).not.toBeNull();
+    expect(divider!.getAttribute('role')).toBe('separator');
+
+    const label = divider!.querySelector('.section-divider-label');
+    expect(label).not.toBeNull();
+    expect(label!.textContent).toBe('Secondary modules');
+
+    // Divider sits between primary and secondary sections in DOM order
+    const appShell = container.querySelector('.app-shell');
+    const children = Array.from(appShell!.children);
+    const dividerIndex = children.indexOf(divider!);
+    const primarySection = container.querySelector('[aria-labelledby="primary-ia-heading"]');
+    const secondarySection = container.querySelector('[aria-labelledby="secondary-ia-heading"]');
+    const primaryIndex = children.indexOf(primarySection!);
+    const secondaryIndex = children.indexOf(secondarySection!);
+    expect(primaryIndex).toBeLessThan(dividerIndex);
+    expect(dividerIndex).toBeLessThan(secondaryIndex);
+  });
+
+  it('gracefully renders "No data yet" when bands and accuracy are null', async () => {
+    const writingData = buildWritingPageData({ averageBand: null, bestBand: null });
+    const readingData = buildReadingPageData({ averagePercentage: null as unknown as number, totalAttempts: 0 });
+    setupMocks(writingData, readingData);
+
+    const { container } = render(await HomePage());
+
+    // Writing band shows "No data yet" in the focus signal
+    const writingSignal = container.querySelector('[data-signal="writing"]');
+    expect(writingSignal).not.toBeNull();
+    expect(writingSignal!.textContent).toContain('No data yet');
+
+    // Writing module card also shows "No data yet" for average band
+    const writingCard = container.querySelector('[data-module="writing"]');
+    expect(writingCard).not.toBeNull();
+    expect(writingCard!.textContent).toContain('No data yet');
+  });
+
+  it('renders the quick-actions strip with dynamic passage and prompt counts', async () => {
+    const readingData = buildReadingPageData();
+    const writingData = buildWritingPageData();
+    setupMocks(writingData, readingData);
+
+    const { container } = render(await HomePage());
+
+    const strip = container.querySelector('.quick-actions-strip');
+    expect(strip).not.toBeNull();
+
+    // Reading practice card shows passage count
+    const readingCard = strip!.querySelector('[data-quick="reading"]');
+    expect(readingCard).not.toBeNull();
+    expect(readingCard!.textContent).toContain('9 passages available');
+
+    // Writing practice card shows prompt count
+    const writingCard = strip!.querySelector('[data-quick="writing"]');
+    expect(writingCard).not.toBeNull();
+    expect(writingCard!.textContent).toContain('prompts ready');
+  });
+
+  it('renders section tags with muted styling only for secondary modules', async () => {
+    setupMocks();
+    const { container } = render(await HomePage());
+
+    // Primary section tags do NOT have --muted modifier
+    const primaryHeader = container.querySelector('.primary-section-header');
+    expect(primaryHeader).not.toBeNull();
+    const primaryTags = primaryHeader!.querySelectorAll('.section-tag');
+    primaryTags.forEach((tag) => {
+      expect(tag.classList.contains('section-tag--muted')).toBe(false);
+    });
+
+    // Secondary section tags DO have --muted modifier
+    const secondaryHeader = container.querySelector('.secondary-section-header');
+    expect(secondaryHeader).not.toBeNull();
+    const secondaryTags = secondaryHeader!.querySelectorAll('.section-tag');
+    expect(secondaryTags.length).toBeGreaterThan(0);
+    secondaryTags.forEach((tag) => {
+      expect(tag.classList.contains('section-tag--muted')).toBe(true);
+    });
+  });
 });
