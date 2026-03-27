@@ -8,7 +8,7 @@ import {
   writingPromptBank,
 } from '@/lib/fixtures/writing';
 import { createWritingAssessmentRepository } from '@/lib/server/writing-assessment-repository';
-import type { JsonStoragePort, StorageFile } from '@/lib/server/storage';
+import type { JsonStoragePort, JsonStorageUpdater, StorageFile } from '@/lib/server/storage';
 import { runAssessmentPipeline } from '@/lib/services/assessment';
 
 import { createWritingApplicationService } from '../application-service';
@@ -16,14 +16,43 @@ import { WritingScorerUnavailableError } from '../scorer-adapter';
 
 function createInMemoryStoragePort(): JsonStoragePort {
   const files = new Map<StorageFile, unknown>();
+  const queues = new Map<StorageFile, Promise<void>>();
+
+  function queueWrite<T>(file: StorageFile, operation: () => Promise<T>) {
+    const previous = queues.get(file) ?? Promise.resolve();
+    const current = previous.catch(() => undefined).then(operation);
+    const release = current.then(
+      () => undefined,
+      () => undefined,
+    );
+
+    queues.set(file, release);
+    void release.finally(() => {
+      if (queues.get(file) === release) {
+        queues.delete(file);
+      }
+    });
+
+    return current;
+  }
 
   return {
     async readJsonFile<T>(file: StorageFile, fallback: T) {
       return files.has(file) ? (structuredClone(files.get(file)) as T) : fallback;
     },
     async writeJsonFile<T>(file: StorageFile, value: T) {
-      files.set(file, structuredClone(value));
-      return `memory://${file}`;
+      return queueWrite(file, async () => {
+        files.set(file, structuredClone(value));
+        return `memory://${file}`;
+      });
+    },
+    async updateJsonFile<T>(file: StorageFile, fallback: T, update: JsonStorageUpdater<T>) {
+      return queueWrite(file, async () => {
+        const current = files.has(file) ? (structuredClone(files.get(file)) as T) : fallback;
+        const next = await update(structuredClone(current));
+        files.set(file, structuredClone(next));
+        return next;
+      });
     },
   };
 }

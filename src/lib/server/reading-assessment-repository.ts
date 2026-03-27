@@ -61,9 +61,9 @@ export function createReadingAssessmentRepository(
   }
 
   async function saveAttempt(attempt: ReadingAttemptSnapshot, limit = 12) {
-    const stored = await readStoredAttempts();
-    const updated = sortAttempts([clone(attempt), ...stored.filter((item) => item.attemptId !== attempt.attemptId)]);
-    await storage.writeJsonFile(READING_ATTEMPTS_FILE, updated);
+    const updated = await storage.updateJsonFile(READING_ATTEMPTS_FILE, [] as ReadingAttemptSnapshot[], (stored) =>
+      sortAttempts([clone(attempt), ...stored.filter((item) => item.attemptId !== attempt.attemptId)]),
+    );
     return updated.slice(0, limit).map((item) => clone(item));
   }
 

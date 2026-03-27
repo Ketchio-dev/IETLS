@@ -39,9 +39,11 @@ export function createSpeakingAssessmentRepository(
   }
 
   async function saveSession(session: SpeakingSessionSnapshot, limit = 12) {
-    const stored = await readStoredSessions();
-    const updated = sortSessions([clone(session), ...stored.filter((item) => item.sessionId !== session.sessionId)]);
-    await storage.writeJsonFile(SPEAKING_SESSIONS_FILE, updated);
+    const updated = await storage.updateJsonFile(
+      SPEAKING_SESSIONS_FILE,
+      sortSessions(clone(seedSessions)),
+      (stored) => sortSessions([clone(session), ...stored.filter((item) => item.sessionId !== session.sessionId)]),
+    );
     return updated.slice(0, limit).map((item) => clone(item));
   }
 

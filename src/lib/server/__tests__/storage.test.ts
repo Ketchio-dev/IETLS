@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -65,5 +65,42 @@ describe('file storage port', () => {
       expect.stringContaining('[storage] Failed to read '),
       expect.objectContaining({ code: 'EISDIR' }),
     );
+  });
+
+  it('fails closed on corrupted JSON during update operations', async () => {
+    const runtimeDir = await mkdtemp(path.join(os.tmpdir(), 'storage-update-corrupt-'));
+    const filePath = path.join(runtimeDir, 'writing-prompts.json');
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { StorageUpdateError, createFileStoragePort } = await importStorageModule();
+    const storage = createFileStoragePort({ getDataDir: () => runtimeDir });
+    const fallback = [{ id: 'prompt-1' }];
+
+    await writeFile(filePath, '{"broken": ');
+
+    await expect(
+      storage.updateJsonFile('prompts', fallback, (prompts) => [...prompts, { id: 'prompt-2' }]),
+    ).rejects.toThrow(StorageUpdateError);
+    await expect(readFile(filePath, 'utf8')).resolves.toBe('{"broken": ');
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('serializes concurrent updates to avoid lost writes and cleans up temp files', async () => {
+    const runtimeDir = await mkdtemp(path.join(os.tmpdir(), 'storage-serialized-'));
+    const { createFileStoragePort } = await importStorageModule();
+    const storage = createFileStoragePort({ getDataDir: () => runtimeDir });
+
+    const first = storage.updateJsonFile('assessments', [] as string[], async (items) => {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      return [...items, 'first'];
+    });
+    const second = storage.updateJsonFile('assessments', [] as string[], async (items) => [...items, 'second']);
+
+    const [, secondResult] = await Promise.all([first, second]);
+    const persisted = await storage.readJsonFile('assessments', [] as string[]);
+    const runtimeFiles = await readdir(runtimeDir);
+
+    expect(secondResult).toEqual(['first', 'second']);
+    expect(persisted).toEqual(['first', 'second']);
+    expect(runtimeFiles.filter((file) => file.endsWith('.tmp'))).toEqual([]);
   });
 });

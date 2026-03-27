@@ -93,12 +93,13 @@ export function createWritingAssessmentRepository(
   }
 
   const seedPrompt = async (prompt: WritingPrompt) => {
-    const prompts = await storage.readJsonFile<WritingPrompt[]>(PROMPTS_FILE, []);
-    if (prompts.some((item) => item.id === prompt.id)) {
-      return prompt;
-    }
+    await storage.updateJsonFile(PROMPTS_FILE, [] as WritingPrompt[], (prompts) => {
+      if (prompts.some((item) => item.id === prompt.id)) {
+        return prompts;
+      }
 
-    await storage.writeJsonFile(PROMPTS_FILE, [...prompts, prompt]);
+      return [...prompts, prompt];
+    });
     return prompt;
   };
 
@@ -137,27 +138,25 @@ export function createWritingAssessmentRepository(
     prompts: WritingPrompt[],
     savedAssessments: SavedAssessmentSnapshot[],
   ): Promise<StudyPlanSnapshot> => {
-    const storedPlan = await storage.readJsonFile<StudyPlanSnapshot | null>(STUDY_PLAN_FILE, null);
     const latestSubmissionId = savedAssessments[0]?.submissionId ?? null;
-
-    if (
-      storedPlan &&
-      storedPlan.version === STUDY_PLAN_VERSION &&
-      storedPlan.basedOnSubmissionId === latestSubmissionId &&
-      storedPlan.attemptsConsidered === savedAssessments.length
-    ) {
-      return storedPlan;
-    }
-
     const nextPlan = buildStudyPlan(savedAssessments, prompts);
-    await storage.writeJsonFile(STUDY_PLAN_FILE, nextPlan);
-    return nextPlan;
+
+    return storage.updateJsonFile(STUDY_PLAN_FILE, nextPlan, (storedPlan) => {
+      if (
+        storedPlan.version === STUDY_PLAN_VERSION &&
+        storedPlan.basedOnSubmissionId === latestSubmissionId &&
+        storedPlan.attemptsConsidered === savedAssessments.length
+      ) {
+        return storedPlan;
+      }
+
+      return nextPlan;
+    });
   };
 
   const saveAssessmentResult = async (
     result: Omit<AssessmentPipelineResult, 'recentAttempts'>,
   ): Promise<PersistedAssessmentResult> => {
-    const records = await readStoredAssessments();
     const stored: StoredAssessmentRecord = {
       submission: result.submission,
       report: {
@@ -167,8 +166,10 @@ export function createWritingAssessmentRepository(
       },
     };
 
-    const updated = [stored, ...records];
-    await storage.writeJsonFile(ASSESSMENTS_FILE, updated);
+    const updated = await storage.updateJsonFile(ASSESSMENTS_FILE, [] as StoredAssessmentRecord[], (records) => [
+      stored,
+      ...records,
+    ]);
 
     return {
       ...stored,
