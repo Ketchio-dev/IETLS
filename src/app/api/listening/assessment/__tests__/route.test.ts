@@ -18,6 +18,27 @@ afterEach(() => {
 });
 
 describe('POST /api/listening/assessment', () => {
+  it('returns 400 for malformed JSON body', async () => {
+    const response = await POST(new Request('http://localhost/api/listening/assessment', {
+      method: 'POST',
+      body: '{invalid-json',
+      headers: { 'Content-Type': 'application/json' },
+    }));
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid JSON body.' });
+    expect(mocks.submitAssessmentForModule).not.toHaveBeenCalled();
+  });
+
+  it('returns 422 for non-object body', async () => {
+    const req = { json: async () => null } as unknown as Request;
+    const response = await POST(req);
+
+    expect(response.status).toBe(422);
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid request payload.' });
+    expect(mocks.submitAssessmentForModule).not.toHaveBeenCalled();
+  });
+
   it('returns the placeholder 501 payload', async () => {
     const result: SubmitPlaceholderAssessmentResult = {
       ok: false,

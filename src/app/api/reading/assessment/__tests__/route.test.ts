@@ -17,6 +17,27 @@ afterEach(() => {
 });
 
 describe('POST /api/reading/assessment', () => {
+  it('returns 400 for malformed JSON body', async () => {
+    const response = await POST(new Request('http://localhost/api/reading/assessment', {
+      method: 'POST',
+      body: '{invalid-json',
+      headers: { 'Content-Type': 'application/json' },
+    }));
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid JSON body.' });
+    expect(mocks.submitAssessmentForModule).not.toHaveBeenCalled();
+  });
+
+  it('returns 422 for non-object body', async () => {
+    const req = { json: async () => null } as unknown as Request;
+    const response = await POST(req);
+
+    expect(response.status).toBe(422);
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid request payload.' });
+    expect(mocks.submitAssessmentForModule).not.toHaveBeenCalled();
+  });
+
   it('returns a deterministic reading report payload', async () => {
     const payload = { report: { rawScore: 5 }, savedAttempts: [], recentAttempts: [], attempt: { attemptId: 'attempt-1' } };
     mocks.submitAssessmentForModule.mockResolvedValue({ ok: true, payload });

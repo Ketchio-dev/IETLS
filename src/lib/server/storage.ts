@@ -46,10 +46,22 @@ export function createFileStoragePort({
       const dir = await ensureStorageDir(resolveDataDir);
       const filePath = resolveStorageFilePath(dir, file);
 
+      let raw: string;
+
       try {
-        const raw = await readFile(filePath, 'utf8');
+        raw = await readFile(filePath, 'utf8');
+      } catch (error: unknown) {
+        if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+          return fallback;
+        }
+        console.error(`[storage] Failed to read ${filePath}:`, error);
+        return fallback;
+      }
+
+      try {
         return JSON.parse(raw) as T;
-      } catch {
+      } catch (parseError) {
+        console.error(`[storage] Corrupted JSON in ${filePath}, returning fallback.`, parseError);
         return fallback;
       }
     },

@@ -192,7 +192,7 @@ function createMockScorecard(prompt: WritingPrompt, evidence: EvidenceSignal[], 
   );
   const overallBandRange = deriveOverallBandRange(criterionScores);
   const { confidence, reasons } = deriveOverallConfidence(criterionScores, evidence);
-  const usedMockFallback = options.configuredProvider !== 'mock' || Boolean(options.fallbackReason);
+  const usedMockFallback = Boolean(options.fallbackReason) || (options.configuredProvider !== null && options.configuredProvider !== 'mock');
 
   return {
     schemaVersion: WRITING_RUBRIC_SCHEMA_VERSION,
@@ -356,10 +356,17 @@ function normalizeProviderRubricResponse(
     return null;
   }
 
+  const criterionAverage = criterionScores.reduce((sum, s) => sum + s.band, 0) / criterionScores.length;
+  const overallBand = value.overallBand as number;
+
+  if (Math.abs(overallBand - criterionAverage) > 1.5) {
+    return null;
+  }
+
   return {
     schemaVersion: value.schemaVersion,
     criterionScores,
-    overallBand: value.overallBand,
+    overallBand,
     overallBandRange: value.overallBandRange,
     confidence: value.confidence,
     confidenceReasons: value.confidenceReasons,
@@ -519,7 +526,8 @@ async function requestOpenRouterScore(input: WritingScorerAdapterInput, config: 
         evidenceFingerprint: buildEvidenceFingerprint(input.evidence),
         scoredAt: new Date().toISOString(),
         notes: [
-          'OpenRouter returned a structured rubric scorecard.',
+          'OpenRouter returned a structured rubric scorecard. Criterion scores and overall band were produced by the provider model, not local heuristics.',
+          'The criterionTrace below reflects local evidence signals only; it does not describe how the provider arrived at its scores.',
           ...(responseId ? [`OpenRouter response id: ${responseId}.`] : []),
           ...(totalTokens !== null ? [`OpenRouter total tokens: ${totalTokens}.`] : []),
         ],
