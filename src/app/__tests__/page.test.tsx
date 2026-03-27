@@ -30,6 +30,151 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+function buildWritingPageData(overrides?: Partial<WritingDashboardSummary>): WritingDashboardPageData {
+  const summary: WritingDashboardSummary = {
+    totalAttempts: 12,
+    taskCounts: { 'task-1': 4, 'task-2': 8 },
+    latestRange: { lower: 6.5, upper: 7 },
+    bestBand: 7,
+    averageBand: 6.6,
+    averageWordCount: 254,
+    totalPracticeMinutes: 318,
+    activeDays: 7,
+    latestAttemptAt: '2026-03-26T17:00:00.000Z',
+    providerBreakdown: [],
+    criterionSummaries: [],
+    strongestCriterion: null,
+    weakestCriterion: null,
+    ...overrides,
+  };
+  return {
+    prompts: writingPromptBank,
+    recentSavedAttempts: [],
+    summary,
+    progress: {
+      direction: 'improving',
+      label: 'Improving',
+      detail: 'Recent attempts are trending upward.',
+      delta: 0.4,
+      latestRange: { lower: 6.5, upper: 7 },
+      attemptsConsidered: 4,
+      averageWordCount: 268,
+    },
+    studyPlan: {
+      version: 2,
+      generatedAt: '2026-03-26T17:10:00.000Z',
+      basedOnSubmissionId: null,
+      attemptsConsidered: 12,
+      headline: 'Keep writing momentum steady',
+      focus: 'Resume the strongest recent prompt first.',
+      horizonLabel: 'Next 3 blocks',
+      recommendedSessionLabel: 'Task 2 first',
+      steps: [],
+      carryForward: [],
+    },
+  };
+}
+
+function buildReadingPageData(overrides?: Partial<ReadingDashboardPageData['dashboardSummary']>): ReadingDashboardPageData {
+  return {
+    moduleId: 'reading',
+    moduleLabel: 'IELTS Academic Reading',
+    summary: 'Reading summary',
+    routeBase: '/reading',
+    importSummary: {
+      sourceDir: 'data/private-reading-imports',
+      importCommand: 'npm run reading:import-private',
+      detectedSourceFiles: ['set-a.json'],
+      compiledSourceFiles: ['set-a.json'],
+      importedSetCount: 9,
+      latestImportedAt: '2026-03-26T17:30:00.000Z',
+      compiledOutputLabel: 'data/runtime/reading-private-imports.json',
+      sets: [],
+      warnings: [],
+    },
+    availableSets: Array.from({ length: 9 }, (_, index) => ({
+      id: `set-${index + 1}`,
+      title: `Set ${index + 1}`,
+      sourceLabel: 'Private import',
+      sourceFile: `set-${index + 1}.json`,
+      importedAt: '2026-03-26T17:30:00.000Z',
+      questionCount: 12,
+      passageWordCount: 720,
+      types: ['true_false_not_given'],
+    })),
+    recentAttempts: [],
+    dashboardSummary: {
+      totalAttempts: 5,
+      averagePercentage: 71,
+      bestScoreLabel: '9/12',
+      latestAttemptAt: '2026-03-26T18:00:00.000Z',
+      averageTimeSpentSeconds: 948,
+      strongestType: null,
+      weakestType: null,
+      ...overrides,
+    },
+    studyFocus: ['Redo one evidence-based question.'],
+  };
+}
+
+function buildSpeakingPageData(): SpeakingDashboardPageData {
+  return {
+    prompts: speakingPromptBank,
+    recentSessions: sampleSpeakingSavedSessions,
+    summary: {
+      totalSessions: 4,
+      averageBand: 6.4,
+      bestBand: 6.5,
+      latestRange: { lower: 6, upper: 6.5 },
+      averageDurationSeconds: 94,
+      latestAttemptAt: sampleSpeakingSavedSessions[0]!.createdAt,
+      lowConfidenceCount: 1,
+      sessionsWithAudio: 2,
+      partBreakdown: { 'part-1': 2, 'part-2': 1, 'part-3': 1 },
+    },
+    studyFocus: ['Repeat the latest cue card with one clearer example.'],
+  };
+}
+
+function buildListeningPageData(): PlaceholderAssessmentDashboardPageData {
+  return {
+    moduleId: 'listening',
+    moduleLabel: 'IELTS Academic Listening Placeholder',
+    statusLabel: 'Placeholder',
+    summary: 'Listening summary',
+    dashboardTitle: 'Listening dashboard placeholder',
+    dashboardDescription: 'Listening is not production-ready yet.',
+    routeBase: '/listening',
+    statusCards: [
+      { label: 'Scripts', value: 'Not started', detail: 'No scripts yet.' },
+      { label: 'Audio', value: 'Not started', detail: 'No audio yet.' },
+      { label: 'Validation', value: 'Planned', detail: 'Validation later.' },
+    ],
+    nextSteps: ['Create script contracts first.'],
+  };
+}
+
+function setupMocks(
+  writingData?: WritingDashboardPageData,
+  readingData?: ReadingDashboardPageData,
+  speakingData?: SpeakingDashboardPageData,
+  listeningData?: PlaceholderAssessmentDashboardPageData,
+) {
+  mocks.loadDefaultAssessmentDashboardPageData.mockResolvedValue(writingData ?? buildWritingPageData());
+  mocks.loadAssessmentDashboardPageData.mockImplementation(async (moduleId: string) => {
+    switch (moduleId) {
+      case READING_ASSESSMENT_MODULE_ID:
+        return readingData ?? buildReadingPageData();
+      case SPEAKING_ASSESSMENT_MODULE_ID:
+        return speakingData ?? buildSpeakingPageData();
+      case LISTENING_ASSESSMENT_MODULE_ID:
+        return listeningData ?? buildListeningPageData();
+      default:
+        throw new Error(`Unexpected module id: ${moduleId}`);
+    }
+  });
+}
+
 describe('HomePage', () => {
   it('prioritizes reading and writing while keeping speaking and listening secondary', async () => {
     const writingSummary: WritingDashboardSummary = {
