@@ -165,13 +165,13 @@ describe('HomePage', () => {
     expect(mocks.loadAssessmentDashboardPageData).toHaveBeenCalledWith(READING_ASSESSMENT_MODULE_ID);
     expect(mocks.loadAssessmentDashboardPageData).toHaveBeenCalledWith(SPEAKING_ASSESSMENT_MODULE_ID);
     expect(mocks.loadAssessmentDashboardPageData).toHaveBeenCalledWith(LISTENING_ASSESSMENT_MODULE_ID);
-    expect(screen.getByRole('heading', { name: /choose the right practice track from one shared hub/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /your learning starts here/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Writing' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Reading' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Speaking' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Listening' })).toBeInTheDocument();
     expect(screen.getAllByText('Full')).toHaveLength(2);
-    expect(screen.getAllByText('Alpha')).toHaveLength(2);
+    expect(screen.getAllByText('Alpha')).toHaveLength(1);
     expect(screen.getByText('Placeholder')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /start writing/i })).toHaveAttribute('href', '/writing');
     expect(screen.getAllByRole('link', { name: /view dashboard/i })).toHaveLength(3);
