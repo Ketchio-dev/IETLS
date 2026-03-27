@@ -168,7 +168,7 @@ describe('HomePage', () => {
     expect(screen.getByRole('heading', { name: /start with reading and writing/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /reading and writing stay at the center of the app/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /speaking and listening remain available, but secondary/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /start reading practice/i })).toHaveAttribute('href', '/reading');
+    expect(screen.getAllByRole('link', { name: /start reading practice/i })[0]).toHaveAttribute('href', '/reading');
     expect(screen.getByRole('link', { name: /open writing practice/i })).toHaveAttribute('href', '/writing');
     expect(screen.getByRole('link', { name: /open alpha/i })).toHaveAttribute('href', '/speaking');
     expect(screen.getByRole('link', { name: /open placeholder/i })).toHaveAttribute('href', '/listening');
