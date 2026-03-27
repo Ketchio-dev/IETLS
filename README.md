@@ -153,7 +153,7 @@ IELTS_DATA_DIR=/custom/path npm run dev
 
 Persisted data now powers both the practice shell and the dashboard, so saved attempts can be re-opened in the shell while the dashboard reuses the same local-first storage for criterion trends, saved-attempt comparison, and study-plan guidance.
 
-The default runtime persistence adapter remains file-backed (`src/lib/server/storage.ts`), but the repository now reads and writes through a small storage port so the persistence boundary can be swapped in tests or future adapters without changing route/page callers.
+The default runtime persistence adapter now uses SQLite with cookie-scoped user isolation for assessments, attempts, study plans, and speaking sessions, while licensed/local Reading import banks remain file-backed (`src/lib/server/storage.ts`). The repository still reads and writes through a small storage port so the persistence boundary can be swapped in tests or future adapters without changing route/page callers.
 
 A follow-on refactor keeps route/page wiring thin by moving practice-shell and dashboard data loading behind narrow server-side application-service boundaries, then registering each slice behind a shared assessment-workspace registry. Reading and Writing now lead the learner-facing IA, while Speaking and Listening still resolve through the same shared registry/workspace seam with alpha or placeholder readiness.
 

@@ -194,7 +194,7 @@ export function WritingDashboard({ prompts, recentSavedAttempts, summary, progre
         <div className="workspace-column left-column">
           <DashboardMetricGrid
             title="Aggregated writing metrics"
-            description="Your saved Task 1 and Task 2 attempts condensed into one snapshot."
+            description="Saved Task 1 and Task 2 reports condensed into one snapshot. Overall estimates reflect calibrated overall bands, while criterion trend cards stay on direct scorer outputs."
             metrics={dashboardMetrics}
             aside={<span className="band-chip">{formatTaskCoverage(summary.taskCounts)}</span>}
           />
