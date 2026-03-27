@@ -18,11 +18,13 @@ describe('RootLayout', () => {
     expect(html).toContain('IELTS Reading + Writing');
     expect(html).toContain('Reading');
     expect(html).toContain('Writing');
-    expect(html).toContain('Speaking alpha');
-    expect(html).toContain('Listening placeholder');
+    expect(html).toContain('Speaking');
+    expect(html).toContain('Listening');
+    expect(html).toContain('Alpha');
+    expect(html).toContain('Soon');
     expect(html.indexOf('Reading')).toBeLessThan(html.indexOf('Writing'));
-    expect(html.indexOf('Writing')).toBeLessThan(html.indexOf('Speaking alpha'));
-    expect(html.indexOf('Speaking alpha')).toBeLessThan(html.indexOf('Listening placeholder'));
+    expect(html.indexOf('Writing')).toBeLessThan(html.indexOf('Speaking'));
+    expect(html.indexOf('Speaking')).toBeLessThan(html.indexOf('Listening'));
   });
 
   it('renders nav dots with module-specific color classes', () => {
@@ -37,10 +39,12 @@ describe('RootLayout', () => {
   it('labels speaking and listening as secondary in navigation text', () => {
     const html = renderToStaticMarkup(RootLayout({ children: React.createElement('main', null, 'Child') }));
 
-    // Speaking is labeled as alpha
-    expect(html).toContain('Speaking alpha');
-    // Listening is labeled as placeholder
-    expect(html).toContain('Listening placeholder');
+    // Speaking is labeled with alpha badge
+    expect(html).toContain('Speaking');
+    expect(html).toContain('site-nav-exp-badge">Alpha</span>');
+    // Listening is labeled with soon badge
+    expect(html).toContain('Listening');
+    expect(html).toContain('site-nav-exp-badge">Soon</span>');
     // Reading and Writing have no qualifier suffix — their link text is just the skill name
     expect(html).toContain('>Reading<');
     expect(html).toContain('>Writing<');

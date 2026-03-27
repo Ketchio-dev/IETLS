@@ -546,23 +546,23 @@ describe('HomePage', () => {
     const signals = focusGrid!.querySelectorAll('.focus-signal-card');
     expect(signals).toHaveLength(3);
 
-    // First signal: reading momentum
+    // First signal: reading
     const readingSignal = focusGrid!.querySelector('[data-signal="reading"]');
     expect(readingSignal).not.toBeNull();
-    expect(readingSignal!.textContent).toContain('Reading momentum');
-    expect(readingSignal!.textContent).toContain('71%');
+    expect(readingSignal!.textContent).toContain('Reading');
+    expect(readingSignal!.textContent).toContain('passages');
 
-    // Second signal: writing band
+    // Second signal: writing
     const writingSignal = focusGrid!.querySelector('[data-signal="writing"]');
     expect(writingSignal).not.toBeNull();
-    expect(writingSignal!.textContent).toContain('Writing band');
-    expect(writingSignal!.textContent).toContain('Band 6.6');
+    expect(writingSignal!.textContent).toContain('Writing');
+    expect(writingSignal!.textContent).toContain('prompts');
 
-    // Third signal: secondary routes kept live
+    // Third signal: more modules available
     const listeningSignal = focusGrid!.querySelector('[data-signal="listening"]');
     expect(listeningSignal).not.toBeNull();
-    expect(listeningSignal!.textContent).toContain('Secondary routes');
-    expect(listeningSignal!.textContent).toContain('Kept live');
+    expect(listeningSignal!.textContent).toContain('More modules');
+    expect(listeningSignal!.textContent).toContain('Available');
   });
 
   it('renders hero metric row with primary track counts', async () => {
@@ -575,16 +575,14 @@ describe('HomePage', () => {
     const metricCards = metricRow!.querySelectorAll('.metric-card');
     expect(metricCards).toHaveLength(3);
 
-    // Primary tracks metric
-    expect(metricCards[0]!.textContent).toContain('Primary tracks');
-    expect(metricCards[0]!.textContent).toContain('2 core routes');
+    // Reading accuracy metric
+    expect(metricCards[0]!.textContent).toContain('Reading accuracy');
 
-    // Reading passages count
-    expect(metricCards[1]!.textContent).toContain('Reading passages');
-    expect(metricCards[1]!.textContent).toContain('9');
+    // Writing band metric
+    expect(metricCards[1]!.textContent).toContain('Writing band');
 
-    // Writing prompts count
-    expect(metricCards[2]!.textContent).toContain('Writing prompts');
+    // Total sessions metric
+    expect(metricCards[2]!.textContent).toContain('Total sessions');
   });
 
   it('renders reading before writing in the primary module card order', async () => {
