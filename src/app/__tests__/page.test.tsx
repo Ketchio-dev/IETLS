@@ -310,9 +310,9 @@ describe('HomePage', () => {
     expect(mocks.loadAssessmentDashboardPageData).toHaveBeenCalledWith(READING_ASSESSMENT_MODULE_ID);
     expect(mocks.loadAssessmentDashboardPageData).toHaveBeenCalledWith(SPEAKING_ASSESSMENT_MODULE_ID);
     expect(mocks.loadAssessmentDashboardPageData).toHaveBeenCalledWith(LISTENING_ASSESSMENT_MODULE_ID);
-    expect(screen.getByRole('heading', { name: /start with reading and writing/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /reading and writing stay at the center of the app/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /speaking and listening remain available, but secondary/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /your reading .* writing command center/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /reading and writing .* your daily practice tracks/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /speaking and listening .* available when you are ready/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /open writing practice/i })).toHaveAttribute('href', '/writing');
     expect(screen.getAllByRole('link', { name: /start reading practice/i })[0]).toHaveAttribute('href', '/reading');
     expect(screen.getByRole('link', { name: /open alpha/i })).toHaveAttribute('href', '/speaking');
@@ -323,7 +323,7 @@ describe('HomePage', () => {
     expect(screen.getAllByText('Full')).toHaveLength(2);
     expect(screen.getAllByText('Alpha')).toHaveLength(1);
     expect(screen.getByText('Placeholder')).toBeInTheDocument();
-    expect(screen.getByText('2 core routes')).toBeInTheDocument();
+    expect(screen.getByText(/total sessions/i)).toBeInTheDocument();
     expect(screen.getAllByText('9').length).toBeGreaterThan(0);
     expect(screen.getByText(/band 6\.5/i)).toBeInTheDocument();
     expect(screen.getByText('Planned')).toBeInTheDocument();
@@ -488,8 +488,8 @@ describe('HomePage', () => {
     expect(heroHrefs).not.toContain('/speaking');
     expect(heroHrefs).not.toContain('/listening');
 
-    // Hero eyebrow mentions Reading + Writing
-    expect(screen.getByText('IELTS Academic Reading + Writing')).toBeInTheDocument();
+    // Hero eyebrow mentions IELTS Academic Prep
+    expect(screen.getByText('IELTS Academic Prep')).toBeInTheDocument();
 
     // Each module card renders an icon container
     const moduleIcons = container.querySelectorAll('.module-icon');
@@ -546,23 +546,23 @@ describe('HomePage', () => {
     const signals = focusGrid!.querySelectorAll('.focus-signal-card');
     expect(signals).toHaveLength(3);
 
-    // First signal: reading momentum
+    // First signal: reading
     const readingSignal = focusGrid!.querySelector('[data-signal="reading"]');
     expect(readingSignal).not.toBeNull();
-    expect(readingSignal!.textContent).toContain('Reading momentum');
-    expect(readingSignal!.textContent).toContain('71%');
+    expect(readingSignal!.textContent).toContain('Reading');
+    expect(readingSignal!.textContent).toContain('passages');
 
-    // Second signal: writing band
+    // Second signal: writing
     const writingSignal = focusGrid!.querySelector('[data-signal="writing"]');
     expect(writingSignal).not.toBeNull();
-    expect(writingSignal!.textContent).toContain('Writing band');
-    expect(writingSignal!.textContent).toContain('Band 6.6');
+    expect(writingSignal!.textContent).toContain('Writing');
+    expect(writingSignal!.textContent).toContain('prompts');
 
-    // Third signal: secondary routes kept live
+    // Third signal: more modules available
     const listeningSignal = focusGrid!.querySelector('[data-signal="listening"]');
     expect(listeningSignal).not.toBeNull();
-    expect(listeningSignal!.textContent).toContain('Secondary routes');
-    expect(listeningSignal!.textContent).toContain('Kept live');
+    expect(listeningSignal!.textContent).toContain('More modules');
+    expect(listeningSignal!.textContent).toContain('Available');
   });
 
   it('renders hero metric row with primary track counts', async () => {
@@ -575,16 +575,14 @@ describe('HomePage', () => {
     const metricCards = metricRow!.querySelectorAll('.metric-card');
     expect(metricCards).toHaveLength(3);
 
-    // Primary tracks metric
-    expect(metricCards[0]!.textContent).toContain('Primary tracks');
-    expect(metricCards[0]!.textContent).toContain('2 core routes');
+    // Reading accuracy metric
+    expect(metricCards[0]!.textContent).toContain('Reading accuracy');
 
-    // Reading passages count
-    expect(metricCards[1]!.textContent).toContain('Reading passages');
-    expect(metricCards[1]!.textContent).toContain('9');
+    // Writing band metric
+    expect(metricCards[1]!.textContent).toContain('Writing band');
 
-    // Writing prompts count
-    expect(metricCards[2]!.textContent).toContain('Writing prompts');
+    // Total sessions metric
+    expect(metricCards[2]!.textContent).toContain('Total sessions');
   });
 
   it('renders reading before writing in the primary module card order', async () => {
@@ -625,20 +623,20 @@ describe('HomePage', () => {
     render(await HomePage());
 
     // Primary IA heading
-    const primaryHeading = screen.getByRole('heading', { name: /reading and writing stay at the center/i });
+    const primaryHeading = screen.getByRole('heading', { name: /reading and writing .* your daily practice tracks/i });
     expect(primaryHeading).toBeInTheDocument();
 
     // Secondary IA heading
-    const secondaryHeading = screen.getByRole('heading', { name: /speaking and listening remain available, but secondary/i });
+    const secondaryHeading = screen.getByRole('heading', { name: /speaking and listening .* available when you are ready/i });
     expect(secondaryHeading).toBeInTheDocument();
 
     // Section tag rows describe the focus
-    expect(screen.getByText('Reading leads with imported passage drills')).toBeInTheDocument();
-    expect(screen.getByText('Writing keeps the scoring and report loop')).toBeInTheDocument();
+    expect(screen.getByText('Passage drills with deterministic scoring')).toBeInTheDocument();
+    expect(screen.getByText('Timed essays with band tracking')).toBeInTheDocument();
 
     // Secondary tags are muted
-    expect(screen.getByText('Speaking is still an alpha practice lane')).toBeInTheDocument();
-    expect(screen.getByText('Listening keeps the placeholder seam visible')).toBeInTheDocument();
+    expect(screen.getByText('Speaking alpha with transcript support')).toBeInTheDocument();
+    expect(screen.getByText('Listening placeholder for future content')).toBeInTheDocument();
   });
 
   it('renders primary module cards with "Primary practice track" eyebrow and secondary with distinct eyebrows', async () => {
