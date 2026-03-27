@@ -140,6 +140,28 @@ input {
   background: var(--listening-color);
 }
 
+/* Experimental nav links */
+
+.site-nav-link--experimental {
+  opacity: 0.55;
+}
+
+.site-nav-link--experimental:hover {
+  opacity: 0.85;
+}
+
+.site-nav-exp-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.07);
+  color: var(--muted);
+  line-height: 1;
+}
+
 /* ------ Panel (card) ------ */
 
 .panel {
