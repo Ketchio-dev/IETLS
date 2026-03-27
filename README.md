@@ -1,6 +1,6 @@
-# IELTS Academic Platform
+# IELTS Reading & Writing Hub
 
-A Next.js platform for IELTS Academic practice with a strong Writing experience, a full Reading module, a Speaking alpha, and a Listening placeholder:
+A Next.js platform for IELTS Academic practice that now puts Reading and Writing at the center of the primary information architecture, while keeping Speaking alpha and Listening placeholder routes available as secondary modules:
 
 - Task-aware prompt bank for **Writing Task 1 Academic** and **Writing Task 2**
 - Structured Task 1 visual briefs plus the existing Task 2 essay prompts
@@ -21,7 +21,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000` for the module hub, `http://localhost:3000/writing` for Writing, `http://localhost:3000/dashboard` for the Writing dashboard, `/speaking` for Speaking alpha, `/reading` for the Reading module, and `/listening` for the Listening placeholder.
+Open `http://localhost:3000` for the Reading + Writing hub, `http://localhost:3000/reading` for Reading, `http://localhost:3000/writing` for Writing, `http://localhost:3000/dashboard` for the Writing dashboard, `/speaking` for the Speaking alpha, and `/listening` for the Listening placeholder.
 
 ## Verification
 
@@ -34,7 +34,7 @@ npm run build
 
 ## Routes
 
-- `/` → module hub linking Writing, Reading, Speaking, and Listening workspaces
+- `/` → primary hub for Reading and Writing, with secondary links into Speaking alpha and Listening placeholder routes
 - `/writing` → writing practice shell with task switching, timed drafting, saved-attempt inspection, and assessment submission
 - `/dashboard` → persisted summary of recent saved attempts, criterion trends, compare support, scorer usage, and study-plan guidance
 - `/speaking` + `/speaking/dashboard` → Speaking alpha transcript-first practice and dashboard
@@ -54,7 +54,7 @@ IELTS_SCORER_MODEL=google/gemini-3-flash
 # optional
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 OPENROUTER_HTTP_REFERER=http://localhost:3000
-OPENROUTER_APP_TITLE=IELTS Academic Platform
+OPENROUTER_APP_TITLE=IELTS Reading & Writing Hub
 OPENROUTER_TIMEOUT_MS=15000
 ```
 
@@ -95,7 +95,7 @@ Persisted data now powers both the practice shell and the dashboard, so saved at
 
 The default runtime persistence adapter remains file-backed (`src/lib/server/storage.ts`), but the repository now reads and writes through a small storage port so the persistence boundary can be swapped in tests or future adapters without changing route/page callers.
 
-A follow-on refactor keeps route/page wiring thin by moving practice-shell and dashboard data loading behind narrow server-side application-service boundaries, then registering each slice behind a shared assessment-workspace registry. Writing remains the most complete workspace today, while speaking, reading, and listening now resolve through the same shared registry/workspace seam with alpha or placeholder readiness.
+A follow-on refactor keeps route/page wiring thin by moving practice-shell and dashboard data loading behind narrow server-side application-service boundaries, then registering each slice behind a shared assessment-workspace registry. Reading and Writing now lead the learner-facing IA, while Speaking and Listening still resolve through the same shared registry/workspace seam with alpha or placeholder readiness.
 
 The current foundation also routes practice-shell, dashboard, and assessment URLs through a shared assessment-module registry/workspace boundary (`src/lib/assessment-modules/`) so new modules can plug into the app without re-hardcoding workspace paths across pages, routes, and components.
 
