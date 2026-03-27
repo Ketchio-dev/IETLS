@@ -508,4 +508,179 @@ describe('HomePage', () => {
     expect(writingCard!.textContent).toContain('Prompt bank');
     expect(writingCard!.textContent).toContain('Average band');
   });
+
+  it('renders route pills with Core status for reading/writing and secondary status for others', async () => {
+    setupMocks();
+    const { container } = render(await HomePage());
+
+    const routePillRow = container.querySelector('[aria-label="Route status summary"]');
+    expect(routePillRow).not.toBeNull();
+
+    const pills = routePillRow!.querySelectorAll('.route-pill');
+    expect(pills).toHaveLength(4);
+
+    // Verify route pill order: reading, writing, speaking, listening
+    const pillRouteIds = Array.from(pills).map((el) => el.getAttribute('data-route'));
+    expect(pillRouteIds).toEqual(['reading', 'writing', 'speaking', 'listening']);
+
+    // Reading and Writing are "Core"
+    const readingPill = routePillRow!.querySelector('[data-route="reading"]');
+    const writingPill = routePillRow!.querySelector('[data-route="writing"]');
+    expect(readingPill!.textContent).toContain('Core');
+    expect(writingPill!.textContent).toContain('Core');
+
+    // Speaking is "Explore", Listening is "Seam"
+    const speakingPill = routePillRow!.querySelector('[data-route="speaking"]');
+    const listeningPill = routePillRow!.querySelector('[data-route="listening"]');
+    expect(speakingPill!.textContent).toContain('Explore');
+    expect(listeningPill!.textContent).toContain('Seam');
+  });
+
+  it('renders focus signal cards for reading momentum, writing band, and secondary routes', async () => {
+    setupMocks();
+    const { container } = render(await HomePage());
+
+    const focusGrid = container.querySelector('[aria-label="Reading and writing focus signals"]');
+    expect(focusGrid).not.toBeNull();
+
+    const signals = focusGrid!.querySelectorAll('.focus-signal-card');
+    expect(signals).toHaveLength(3);
+
+    // First signal: reading momentum
+    const readingSignal = focusGrid!.querySelector('[data-signal="reading"]');
+    expect(readingSignal).not.toBeNull();
+    expect(readingSignal!.textContent).toContain('Reading momentum');
+    expect(readingSignal!.textContent).toContain('71%');
+
+    // Second signal: writing band
+    const writingSignal = focusGrid!.querySelector('[data-signal="writing"]');
+    expect(writingSignal).not.toBeNull();
+    expect(writingSignal!.textContent).toContain('Writing band');
+    expect(writingSignal!.textContent).toContain('Band 6.6');
+
+    // Third signal: secondary routes kept live
+    const listeningSignal = focusGrid!.querySelector('[data-signal="listening"]');
+    expect(listeningSignal).not.toBeNull();
+    expect(listeningSignal!.textContent).toContain('Secondary routes');
+    expect(listeningSignal!.textContent).toContain('Kept live');
+  });
+
+  it('renders hero metric row with primary track counts', async () => {
+    setupMocks();
+    const { container } = render(await HomePage());
+
+    const metricRow = container.querySelector('.home-metric-row');
+    expect(metricRow).not.toBeNull();
+
+    const metricCards = metricRow!.querySelectorAll('.metric-card');
+    expect(metricCards).toHaveLength(3);
+
+    // Primary tracks metric
+    expect(metricCards[0]!.textContent).toContain('Primary tracks');
+    expect(metricCards[0]!.textContent).toContain('2 core routes');
+
+    // Reading passages count
+    expect(metricCards[1]!.textContent).toContain('Reading passages');
+    expect(metricCards[1]!.textContent).toContain('9');
+
+    // Writing prompts count
+    expect(metricCards[2]!.textContent).toContain('Writing prompts');
+  });
+
+  it('renders reading before writing in the primary module card order', async () => {
+    setupMocks();
+    const { container } = render(await HomePage());
+
+    const primaryGrid = container.querySelector('[aria-label="Primary IELTS practice modules"]');
+    expect(primaryGrid).not.toBeNull();
+
+    const primaryModules = primaryGrid!.querySelectorAll('[data-module]');
+    const ids = Array.from(primaryModules).map((el) => el.getAttribute('data-module'));
+    expect(ids[0]).toBe('reading');
+    expect(ids[1]).toBe('writing');
+  });
+
+  it('gives primary module cards primary CTA buttons and secondary cards do not have primary CTAs for speaking/listening main routes', async () => {
+    setupMocks();
+    const { container } = render(await HomePage());
+
+    // Reading card has a primary button
+    const readingCard = container.querySelector('[data-module="reading"]');
+    expect(readingCard!.querySelector('.primary-button')).not.toBeNull();
+    expect(readingCard!.querySelector('.primary-button')!.textContent).toBe('Start reading practice');
+
+    // Writing card has a primary button
+    const writingCard = container.querySelector('[data-module="writing"]');
+    expect(writingCard!.querySelector('.primary-button')).not.toBeNull();
+    expect(writingCard!.querySelector('.primary-button')!.textContent).toBe('Start writing practice');
+
+    // Listening card has no primary button — only secondary
+    const listeningCard = container.querySelector('[data-module="listening"]');
+    expect(listeningCard!.querySelector('.primary-button')).toBeNull();
+    expect(listeningCard!.querySelector('.secondary-link-button')).not.toBeNull();
+  });
+
+  it('renders section headings that reinforce the reading/writing-first hierarchy', async () => {
+    setupMocks();
+    render(await HomePage());
+
+    // Primary IA heading
+    const primaryHeading = screen.getByRole('heading', { name: /reading and writing stay at the center/i });
+    expect(primaryHeading).toBeInTheDocument();
+
+    // Secondary IA heading
+    const secondaryHeading = screen.getByRole('heading', { name: /speaking and listening remain available, but secondary/i });
+    expect(secondaryHeading).toBeInTheDocument();
+
+    // Section tag rows describe the focus
+    expect(screen.getByText('Reading leads with imported passage drills')).toBeInTheDocument();
+    expect(screen.getByText('Writing keeps the scoring and report loop')).toBeInTheDocument();
+
+    // Secondary tags are muted
+    expect(screen.getByText('Speaking is still an alpha practice lane')).toBeInTheDocument();
+    expect(screen.getByText('Listening keeps the placeholder seam visible')).toBeInTheDocument();
+  });
+
+  it('renders primary module cards with "Primary practice track" eyebrow and secondary with distinct eyebrows', async () => {
+    setupMocks();
+    const { container } = render(await HomePage());
+
+    const readingCard = container.querySelector('[data-module="reading"]');
+    const writingCard = container.querySelector('[data-module="writing"]');
+    const speakingCard = container.querySelector('[data-module="speaking"]');
+    const listeningCard = container.querySelector('[data-module="listening"]');
+
+    expect(readingCard!.querySelector('.eyebrow')!.textContent).toBe('Primary practice track');
+    expect(writingCard!.querySelector('.eyebrow')!.textContent).toBe('Primary practice track');
+    expect(speakingCard!.querySelector('.eyebrow')!.textContent).toBe('Experimental module');
+    expect(listeningCard!.querySelector('.eyebrow')!.textContent).toBe('Secondary placeholder');
+  });
+
+  it('renders status badges: Full for primary modules, Alpha/Placeholder for secondary', async () => {
+    setupMocks();
+    const { container } = render(await HomePage());
+
+    const readingBadge = container.querySelector('[data-module="reading"] .status-badge');
+    const writingBadge = container.querySelector('[data-module="writing"] .status-badge');
+    const speakingBadge = container.querySelector('[data-module="speaking"] .status-badge');
+    const listeningBadge = container.querySelector('[data-module="listening"] .status-badge');
+
+    expect(readingBadge!.getAttribute('data-status')).toBe('Full');
+    expect(writingBadge!.getAttribute('data-status')).toBe('Full');
+    expect(speakingBadge!.getAttribute('data-status')).toBe('Alpha');
+    expect(listeningBadge!.getAttribute('data-status')).toBe('Placeholder');
+  });
+
+  it('renders all four module icons in the card headers', async () => {
+    setupMocks();
+    const { container } = render(await HomePage());
+
+    const icons = container.querySelectorAll('.module-icon');
+    expect(icons).toHaveLength(4);
+
+    // Each icon contains an SVG
+    icons.forEach((icon) => {
+      expect(icon.querySelector('svg')).not.toBeNull();
+    });
+  });
 });
