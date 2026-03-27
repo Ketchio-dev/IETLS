@@ -64,6 +64,17 @@ function nonEmpty(value: string | undefined) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function getFirstNonEmpty(row: Record<string, string>, headers: string[]) {
+  for (const header of headers) {
+    const value = nonEmpty(row[header]);
+    if (value) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
 function toBand(value: string | undefined) {
   const trimmed = nonEmpty(value);
   if (!trimmed) {
@@ -76,6 +87,34 @@ function toBand(value: string | undefined) {
   }
 
   return parsed;
+}
+
+function getBandFromHeaders(row: Record<string, string>, headers: string[]) {
+  for (const header of headers) {
+    const value = toBand(row[header]);
+    if (value !== null) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function getTaskType(row: Record<string, string>) {
+  const raw = getFirstNonEmpty(row, ['Task_Type', 'Task Type', 'taskType', 'task_type', 'Task']);
+  if (!raw) {
+    return null;
+  }
+
+  const normalized = raw.trim().toLowerCase();
+  if (normalized === '1' || normalized === 'task 1' || normalized === 'task-1' || normalized === 'task1') {
+    return 'task-1' as const;
+  }
+  if (normalized === '2' || normalized === 'task 2' || normalized === 'task-2' || normalized === 'task2') {
+    return 'task-2' as const;
+  }
+
+  return null;
 }
 
 function buildPromptId(taskType: 'task-1' | 'task-2', question: string) {
@@ -105,31 +144,47 @@ async function main() {
   const rows = parseCsv(csvContent);
 
   const essays = rows.map((row, index) => {
-    const taskTypeRaw = nonEmpty(row.Task_Type);
-    const taskType = taskTypeRaw === '1' ? 'task-1' : taskTypeRaw === '2' ? 'task-2' : null;
+    const taskType = getTaskType(row);
     if (!taskType) {
-      throw new Error(`Row ${index + 2} has unsupported Task_Type: ${row.Task_Type}`);
+      throw new Error(`Row ${index + 2} has unsupported task type.`);
     }
 
-    const question = nonEmpty(row.Question);
-    const essay = nonEmpty(row.Essay);
-    const overallBand = toBand(row.Overall);
+    const question = getFirstNonEmpty(row, ['Question', 'Prompt', 'prompt', 'Task_Prompt', 'Task Prompt']);
+    const essay = getFirstNonEmpty(row, ['Essay', 'Response', 'Essay_Text', 'Essay Text', 'response']);
+    const overallBand = getBandFromHeaders(row, ['Overall', 'Overall_Band', 'Overall Band', 'Band', 'Score']);
     if (!question || !essay || overallBand === null) {
       throw new Error(`Row ${index + 2} is missing Question, Essay, or Overall.`);
     }
 
     const criterionScores = Object.fromEntries(
       [
-        ['Task_Response', taskType === 'task-2' ? 'Task Response' : 'Task Achievement'],
-        ['Coherence_Cohesion', 'Coherence & Cohesion'],
-        ['Lexical_Resource', 'Lexical Resource'],
-        ['Range_Accuracy', 'Grammatical Range & Accuracy'],
+        [
+          ['Task_Response', 'Task Response', 'TaskResponse', 'Task Achievement', 'Task_Achievement', 'TaskAchievement'],
+          taskType === 'task-2' ? 'Task Response' : 'Task Achievement',
+        ],
+        [
+          ['Coherence_Cohesion', 'Coherence & Cohesion', 'Coherence_Cohesion_Score', 'CC'],
+          'Coherence & Cohesion',
+        ],
+        [['Lexical_Resource', 'Lexical Resource', 'LexicalResource', 'LR'], 'Lexical Resource'],
+        [
+          ['Range_Accuracy', 'Grammatical Range & Accuracy', 'Grammar_Range_Accuracy', 'GRA', 'GrammaticalRangeAccuracy'],
+          'Grammatical Range & Accuracy',
+        ],
       ]
-        .map(([csvKey, criterionName]) => [criterionName, toBand(row[csvKey])])
+        .map(([headers, criterionName]) => [criterionName, getBandFromHeaders(row, headers)])
         .filter(([, value]) => value !== null),
     );
 
-    const examinerComment = nonEmpty(row.Examiner_Commen);
+    const examinerComment = getFirstNonEmpty(row, [
+      'Examiner_Commen',
+      'Examiner_Comment',
+      'Examiner Comment',
+      'Comment',
+      'Comments',
+      'Feedback',
+      'Notes',
+    ]);
 
     return {
       id: `kaggle-mazlumi-${String(index + 1).padStart(4, '0')}`,

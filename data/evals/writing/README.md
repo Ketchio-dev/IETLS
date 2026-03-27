@@ -82,6 +82,25 @@ npm run writing:import-eval-csv -- --input /path/to/ielts_writing_dataset.csv
 
 This writes `data/evals/writing/kaggle-mazlumi-overall.json` by default and preserves any non-empty examiner comments.
 
+The importer also accepts richer human-rated CSV aliases when the source file uses friendlier column names. Supported header families include:
+
+- task type: `Task_Type`, `Task Type`, `taskType`
+- prompt text: `Question`, `Prompt`, `Task Prompt`
+- response text: `Essay`, `Response`, `Essay Text`
+- overall band: `Overall`, `Overall Band`, `Overall_Band`, `Band`, `Score`
+- criterion bands:
+  - Task 1 / Task 2 coverage via `Task_Response`, `Task Response`, `Task Achievement`, `Task_Achievement`
+  - `Coherence_Cohesion`, `Coherence & Cohesion`, `CC`
+  - `Lexical_Resource`, `Lexical Resource`, `LR`
+  - `Range_Accuracy`, `Grammatical Range & Accuracy`, `GRA`
+- comments: `Examiner_Commen`, `Examiner_Comment`, `Comment`, `Comments`, `Feedback`, `Notes`
+
+Example human-rated CSV header row:
+
+```csv
+Task Type,Prompt,Response,Overall Band,Task Achievement,Coherence & Cohesion,Lexical Resource,Grammatical Range & Accuracy,Comments
+```
+
 ## Running the evaluator
 
 ```bash

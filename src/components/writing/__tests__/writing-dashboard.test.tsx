@@ -197,7 +197,14 @@ describe('WritingDashboard', () => {
     expect(screen.getByRole('heading', { name: /track writing momentum across every saved assessment/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /aggregated writing metrics/i })).toBeInTheDocument();
     expect(screen.getByText(/task weighting/i)).toBeInTheDocument();
-    expect(screen.getByText(/latest task 1 6\.5 \+ task 2 7\.0 combined with ielts-style 1:2 weighting/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /built from the latest saved task 1 6\.5 and task 2 7\.0 overall estimates with ielts-style 1:2 weighting/i,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/public calibration currently adjusts overall bands only, not criterion bands/i),
+    ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /inspect and resume from the dashboard/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /criterion trend summaries/i })).toBeInTheDocument();
     expect(screen.getAllByText(/improving/i).length).toBeGreaterThan(0);

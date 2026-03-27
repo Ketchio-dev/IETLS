@@ -52,8 +52,8 @@ function buildDashboardMetrics(summary: WritingDashboardSummary, progress: Progr
       value: summary.latestFullTestEstimateBand?.toFixed(1) ?? 'Need Task 1 + Task 2',
       detail:
         summary.latestFullTestEstimateBand == null
-          ? 'Save one Task 1 and one Task 2 attempt to unlock an IELTS-style 1:2 weighted writing estimate.'
-          : `Latest Task 1 ${summary.latestFullTestTask1Band?.toFixed(1)} + Task 2 ${summary.latestFullTestTask2Band?.toFixed(1)} combined with IELTS-style 1:2 weighting.`,
+          ? 'Save your latest Task 1 and Task 2 reports to unlock an IELTS-style 1:2 weighted full-test estimate built from overall bands.'
+          : `Built from the latest saved Task 1 ${summary.latestFullTestTask1Band?.toFixed(1)} and Task 2 ${summary.latestFullTestTask2Band?.toFixed(1)} overall estimates with IELTS-style 1:2 weighting. Public calibration currently adjusts overall bands only, not criterion bands.`,
       eyebrow: 'Task weighting',
     },
     {

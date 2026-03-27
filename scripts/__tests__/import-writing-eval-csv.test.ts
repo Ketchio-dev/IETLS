@@ -56,4 +56,56 @@ describe('writing eval csv importer', () => {
     });
     expect(imported.essays[0].criterionScores).toBeUndefined();
   });
+
+  it('accepts richer human-rated CSV aliases including criterion scores and comments', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'writing-eval-csv-rich-'));
+    const inputPath = path.join(tempDir, 'human-rated.csv');
+    const outputPath = path.join(tempDir, 'dataset.json');
+
+    await writeFile(
+      inputPath,
+      [
+        'Task Type,Prompt,Response,Overall Band,Task Achievement,Coherence & Cohesion,Lexical Resource,Grammatical Range & Accuracy,Comments',
+        'Task 1,"The chart below shows...","Candidate response.",6.0,6.0,6.5,6.0,5.5,"Human-rated note"',
+      ].join('\n'),
+    );
+
+    const { stdout } = await execFileAsync(
+      'node',
+      [
+        '--disable-warning=MODULE_TYPELESS_PACKAGE_JSON',
+        '--import',
+        './scripts/register-ts-path-loader.mjs',
+        '--experimental-strip-types',
+        'scripts/import-writing-eval-csv.mts',
+        '--input',
+        inputPath,
+        '--output',
+        outputPath,
+      ],
+      { cwd: process.cwd() },
+    );
+
+    const summary = JSON.parse(stdout);
+    expect(summary).toMatchObject({
+      ok: true,
+      essays: 1,
+      task1Count: 1,
+      criterionLabeled: 1,
+      examinerCommentCount: 1,
+    });
+
+    const imported = JSON.parse(await readFile(outputPath, 'utf8'));
+    expect(imported.essays[0]).toMatchObject({
+      taskType: 'task-1',
+      overallBand: 6.0,
+      notes: ['Human-rated note'],
+      criterionScores: {
+        'Task Achievement': 6.0,
+        'Coherence & Cohesion': 6.5,
+        'Lexical Resource': 6.0,
+        'Grammatical Range & Accuracy': 5.5,
+      },
+    });
+  });
 });

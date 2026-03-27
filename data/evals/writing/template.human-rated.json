@@ -1,6 +1,9 @@
 {
   "version": 1,
   "source": "replace-with-dataset-name",
+  "notes": [
+    "If your source arrives as CSV, the importer now accepts aliases like Task Type / Prompt / Response / Overall Band / Task Achievement / Comments before converting to this JSON shape."
+  ],
   "essays": [
     {
       "id": "task1-001",
