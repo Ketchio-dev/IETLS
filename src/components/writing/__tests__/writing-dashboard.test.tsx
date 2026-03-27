@@ -196,6 +196,9 @@ describe('WritingDashboard', () => {
 
     expect(screen.getByRole('heading', { name: /track writing momentum across every saved assessment/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /aggregated writing metrics/i })).toBeInTheDocument();
+    expect(
+      screen.getByText(/saved task 1 and task 2 reports condensed into one snapshot/i),
+    ).toBeInTheDocument();
     expect(screen.getByText(/task weighting/i)).toBeInTheDocument();
     expect(
       screen.getByText(
