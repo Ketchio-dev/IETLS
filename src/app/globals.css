@@ -1699,6 +1699,138 @@ input[type='file'] {
   font-weight: 600;
 }
 
+.page-breadcrumb--reading .breadcrumb-current {
+  color: var(--reading-color);
+}
+
+.page-breadcrumb--writing .breadcrumb-current {
+  color: var(--writing-color);
+}
+
+/* ============================================================
+   Practice page headers
+   ============================================================ */
+
+.practice-page-header,
+.dashboard-header-section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.2rem;
+  margin-bottom: 1.35rem;
+  border-radius: 16px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.04);
+}
+
+.practice-page-header--reading {
+  border-top: 3px solid var(--reading-color);
+}
+
+.practice-page-header--writing,
+.dashboard-header-section {
+  border-top: 3px solid var(--writing-color);
+}
+
+.practice-page-header-text,
+.dashboard-header-text {
+  display: grid;
+  gap: 0.35rem;
+  min-width: min(100%, 28rem);
+}
+
+.practice-page-eyebrow {
+  margin: 0;
+}
+
+.practice-page-header--reading .practice-page-eyebrow {
+  color: var(--reading-color);
+}
+
+.practice-page-header--writing .practice-page-eyebrow,
+.dashboard-header-section .eyebrow {
+  color: var(--writing-color);
+}
+
+.practice-page-title,
+.dashboard-header-title {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: -0.025em;
+}
+
+.practice-page-subtitle,
+.dashboard-header-subtitle {
+  margin: 0;
+  color: var(--muted);
+  max-width: 56ch;
+}
+
+.practice-page-meta,
+.dashboard-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.practice-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.practice-meta-chip strong {
+  color: var(--text);
+}
+
+.practice-meta-chip[data-module='reading'] {
+  background: rgba(20, 191, 150, 0.1);
+  border-color: rgba(20, 191, 150, 0.18);
+}
+
+.practice-meta-chip[data-module='reading'] strong,
+.practice-meta-link[data-module='reading'] {
+  color: var(--reading-color);
+}
+
+.practice-meta-chip[data-module='writing'] {
+  background: rgba(24, 101, 242, 0.09);
+  border-color: rgba(24, 101, 242, 0.16);
+}
+
+.practice-meta-chip[data-module='writing'] strong,
+.practice-meta-link[data-module='writing'] {
+  color: var(--writing-color);
+}
+
+.practice-meta-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  text-decoration: none;
+  border: 1px solid currentColor;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: background 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+}
+
+.practice-meta-link:hover {
+  background: rgba(15, 23, 42, 0.04);
+  transform: translateY(-1px);
+}
+
 /* ============================================================
    Dashboard tab bar
    ============================================================ */
@@ -1736,6 +1868,14 @@ input[type='file'] {
   color: var(--accent);
   background: rgba(24, 101, 242, 0.06);
   border-color: rgba(24, 101, 242, 0.15);
+}
+
+.dashboard-resume-cta {
+  background: var(--writing-color);
+}
+
+.dashboard-resume-cta:hover {
+  background: #1252cc;
 }
 
 /* ============================================================
@@ -1781,6 +1921,16 @@ html {
 @media (max-width: 599px) {
   .page-breadcrumb {
     font-size: 0.78rem;
+  }
+
+  .practice-page-header,
+  .dashboard-header-section {
+    padding: 0.95rem 1rem;
+  }
+
+  .practice-page-title,
+  .dashboard-header-title {
+    font-size: 1.25rem;
   }
 
   .dashboard-tab-bar {
