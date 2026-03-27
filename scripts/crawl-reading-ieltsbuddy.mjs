@@ -14,6 +14,14 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import {
+  sleep,
+  fetchPage,
+  clean,
+  buildOptions,
+  buildVariants,
+  inferTypeFromAnswer,
+} from './lib/crawl-utils.mjs';
 
 const OUTPUT_DIR = process.env.IELTS_PRIVATE_READING_IMPORTS_DIR ?? path.join('data', 'private-reading-imports');
 const DELAY_MS = 2000;
@@ -28,62 +36,6 @@ const TEST_PAGES = [
   { url: 'https://www.ieltsbuddy.com/ielts-reading-academic-practice-test.html', title: "Baby's Gender" },
   { url: 'https://www.ieltsbuddy.com/ielts-reading-mock-test-academic.html', title: 'Bees & Ecosystems' },
 ];
-
-// ---------------------------------------------------------------------------
-// Fetch
-// ---------------------------------------------------------------------------
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function fetchPage(url, retries = 3) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const res = await fetch(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) IELTS-Practice-Importer/1.0',
-          Accept: 'text/html',
-        },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.text();
-    } catch (err) {
-      if (i === retries - 1) throw err;
-      await sleep(1000 * (i + 1));
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Text helpers
-// ---------------------------------------------------------------------------
-
-function stripTags(html) {
-  return html.replace(/<[^>]+>/g, '');
-}
-
-function decodeEntities(text) {
-  return text
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&ldquo;/g, '\u201C')
-    .replace(/&rdquo;/g, '\u201D')
-    .replace(/&lsquo;/g, '\u2018')
-    .replace(/&rsquo;/g, '\u2019')
-    .replace(/&mdash;/g, '\u2014')
-    .replace(/&ndash;/g, '\u2013')
-    .replace(/&#xa0;/g, ' ')
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
-}
-
-function clean(html) {
-  return decodeEntities(stripTags(html)).replace(/\s+/g, ' ').trim();
-}
 
 // ---------------------------------------------------------------------------
 // Extract passage
@@ -266,7 +218,7 @@ function extractJSQuizAnswers(html) {
 
   for (const item of items) {
     const answer = item[0] || '';
-    const type = inferTypeFromAnswerText(answer);
+    const type = inferTypeFromAnswer(answer);
     answers.push({
       answer,
       type,
@@ -275,14 +227,6 @@ function extractJSQuizAnswers(html) {
   }
 
   return answers;
-}
-
-function inferTypeFromAnswerText(answer) {
-  const u = answer.toUpperCase().trim();
-  if (['TRUE', 'FALSE', 'NOT GIVEN'].includes(u)) return 'true_false_not_given';
-  if (['YES', 'NO', 'NOT GIVEN'].includes(u)) return 'yes_no_not_given';
-  if (/^[A-H]$/i.test(u)) return 'multiple_choice';
-  return 'sentence_completion';
 }
 
 function parseAnswerP(raw) {
@@ -364,30 +308,6 @@ function extractExplanation(raw) {
 // Build questions from prompts + answers
 // ---------------------------------------------------------------------------
 
-function buildVariants(answer, type) {
-  const v = [];
-  const u = answer.toUpperCase().trim();
-
-  if (u === 'TRUE') v.push('T', 'true', 'True');
-  else if (u === 'FALSE') v.push('F', 'false', 'False');
-  else if (u === 'NOT GIVEN') v.push('NG', 'ng', 'not given', 'Not given');
-  else if (u === 'YES') v.push('Y', 'yes', 'Yes');
-  else if (u === 'NO') v.push('N', 'no', 'No');
-  else if (/^[A-H]$/i.test(answer)) v.push(answer.toUpperCase(), answer.toLowerCase(), `${answer.toUpperCase()}.`);
-  else if (/^[ivxlc]+$/i.test(answer)) v.push(answer.toLowerCase(), answer.toUpperCase());
-  else {
-    if (answer !== answer.toLowerCase()) v.push(answer.toLowerCase());
-  }
-
-  return v;
-}
-
-function buildOptions(type) {
-  if (type === 'true_false_not_given') return ['TRUE', 'FALSE', 'NOT GIVEN'];
-  if (type === 'yes_no_not_given') return ['YES', 'NO', 'NOT GIVEN'];
-  return [];
-}
-
 function buildQuestions(questionPrompts, answerList) {
   const questions = [];
 
@@ -397,7 +317,7 @@ function buildQuestions(questionPrompts, answerList) {
     const promptData = questionPrompts.get(qNum);
 
     const prompt = promptData?.prompt || `Question ${qNum}`;
-    const type = ans.type !== 'unknown' ? ans.type : (promptData?.type !== 'unknown' ? (promptData?.type || 'sentence_completion') : 'sentence_completion');
+    const type = [ans.type, promptData?.type].find((value) => value && value !== 'unknown') || 'sentence_completion';
 
     if (!ans.answer) continue;
 

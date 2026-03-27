@@ -124,6 +124,22 @@ input {
   flex-shrink: 0;
 }
 
+.site-nav-dot--writing {
+  background: var(--writing-color);
+}
+
+.site-nav-dot--reading {
+  background: var(--reading-color);
+}
+
+.site-nav-dot--speaking {
+  background: var(--speaking-color);
+}
+
+.site-nav-dot--listening {
+  background: var(--listening-color);
+}
+
 /* ------ Panel (card) ------ */
 
 .panel {
@@ -907,6 +923,12 @@ input[type='file'] {
 
 .module-card[data-module='listening'] .module-card-actions .primary-button:hover {
   background: #6b2dc7;
+}
+
+.module-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .module-card[data-module='writing'] .module-stat-card strong { color: var(--writing-color); }

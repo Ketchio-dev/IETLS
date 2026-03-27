@@ -36,13 +36,7 @@ const WRITING_CRITERIA_BY_TASK_TYPE: Record<WritingTaskType, CriterionName[]> = 
     'Grammatical Range & Accuracy',
   ],
 };
-const ALL_WRITING_CRITERIA: CriterionName[] = [
-  'Task Achievement',
-  'Task Response',
-  'Coherence & Cohesion',
-  'Lexical Resource',
-  'Grammatical Range & Accuracy',
-];
+const ALL_WRITING_CRITERIA: CriterionName[] = [...new Set(Object.values(WRITING_CRITERIA_BY_TASK_TYPE).flat())];
 const RUBRIC_VERSION_BY_TASK_TYPE = {
   'task-1': 'ielts-academic-writing-task-1/v1',
   'task-2': 'ielts-academic-writing-task-2/v1',
@@ -98,21 +92,6 @@ const providerRubricResponseSchema = {
     confidenceReasons: {
       type: 'array',
       items: { type: 'string' },
-    },
-  },
-} as const;
-
-export const writingRubricOutputSchema = {
-  $schema: 'https://json-schema.org/draft/2020-12/schema',
-  title: 'WritingRubricScorecard',
-  type: 'object',
-  additionalProperties: false,
-  required: ['schemaVersion', 'criterionScores', 'overallBand', 'overallBandRange', 'confidence', 'confidenceReasons', 'evaluationTrace'],
-  properties: {
-    ...providerRubricResponseSchema.properties,
-    evaluationTrace: {
-      type: 'object',
-      required: ['schemaVersion', 'scorerProvider', 'scorerModel', 'usedMockFallback', 'rubricVersion', 'calibrationVersion', 'evidenceSignalCount', 'criterionTrace'],
     },
   },
 } as const;

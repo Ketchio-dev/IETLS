@@ -21,19 +21,19 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
             </Link>
             <div className="site-nav-links">
               <Link href="/writing" className="site-nav-link">
-                <span className="site-nav-dot" style={{ backgroundColor: '#1865f2' }} aria-hidden="true" />
+                <span className="site-nav-dot site-nav-dot--writing" aria-hidden="true" />
                 Writing
               </Link>
               <Link href="/reading" className="site-nav-link">
-                <span className="site-nav-dot" style={{ backgroundColor: '#14bf96' }} aria-hidden="true" />
+                <span className="site-nav-dot site-nav-dot--reading" aria-hidden="true" />
                 Reading
               </Link>
               <Link href="/speaking" className="site-nav-link">
-                <span className="site-nav-dot" style={{ backgroundColor: '#ff914d' }} aria-hidden="true" />
+                <span className="site-nav-dot site-nav-dot--speaking" aria-hidden="true" />
                 Speaking
               </Link>
               <Link href="/listening" className="site-nav-link">
-                <span className="site-nav-dot" style={{ backgroundColor: '#7c3aed' }} aria-hidden="true" />
+                <span className="site-nav-dot site-nav-dot--listening" aria-hidden="true" />
                 Listening
               </Link>
             </div>

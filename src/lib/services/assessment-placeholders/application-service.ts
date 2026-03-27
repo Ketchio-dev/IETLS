@@ -26,10 +26,6 @@ interface PlaceholderAssessmentDefinition {
   nextSteps: string[];
 }
 
-function clone<T>(value: T): T {
-  return structuredClone(value);
-}
-
 export function createPlaceholderAssessmentApplicationService(definition: PlaceholderAssessmentDefinition) {
   async function loadPracticePageData(): Promise<PlaceholderAssessmentPracticePageData> {
     return {
@@ -40,8 +36,8 @@ export function createPlaceholderAssessmentApplicationService(definition: Placeh
       practiceTitle: definition.practiceTitle,
       practiceDescription: definition.practiceDescription,
       routeBase: definition.routeBase,
-      plannedMilestones: clone(definition.plannedMilestones),
-      currentGuardrails: clone(definition.currentGuardrails),
+      plannedMilestones: structuredClone(definition.plannedMilestones),
+      currentGuardrails: structuredClone(definition.currentGuardrails),
     };
   }
 
@@ -54,8 +50,8 @@ export function createPlaceholderAssessmentApplicationService(definition: Placeh
       dashboardTitle: definition.dashboardTitle,
       dashboardDescription: definition.dashboardDescription,
       routeBase: definition.routeBase,
-      statusCards: clone(definition.statusCards),
-      nextSteps: clone(definition.nextSteps),
+      statusCards: structuredClone(definition.statusCards),
+      nextSteps: structuredClone(definition.nextSteps),
     };
   }
 
@@ -64,7 +60,7 @@ export function createPlaceholderAssessmentApplicationService(definition: Placeh
       moduleId: definition.moduleId,
       title: definition.practiceTitle,
       description: definition.practiceDescription,
-      plannedMilestones: clone(definition.plannedMilestones),
+      plannedMilestones: structuredClone(definition.plannedMilestones),
     };
   }
 

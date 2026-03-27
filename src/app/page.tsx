@@ -196,7 +196,7 @@ export default async function HomePage() {
           return (
             <article className="panel module-card" data-module={moduleCard.id} key={moduleCard.id}>
               <div className="module-card-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div className="module-card-heading">
                   {IconComponent ? (
                     <div className="module-icon" aria-hidden="true">
                       <IconComponent />

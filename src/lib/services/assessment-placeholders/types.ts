@@ -1,4 +1,4 @@
-export type PlaceholderAssessmentModuleId = 'listening' | 'reading';
+export type PlaceholderAssessmentModuleId = 'listening';
 
 export interface PrivateImportSetSummary {
   id: string;
