@@ -11,42 +11,13 @@ function formatType(type: string) {
 }
 
 export function ReadingDashboard({
-  summary,
   dashboardSummary,
   recentAttempts,
-  availableSets,
   studyFocus,
   importSummary,
 }: ReadingDashboardPageData) {
   return (
-    <main className="app-shell">
-      <section className="hero panel dashboard-hero">
-        <div>
-          <p className="eyebrow">IELTS Academic Reading</p>
-          <h1>Track score movement, pacing, and question-type accuracy</h1>
-          <p className="hero-copy">{summary}</p>
-          <div className="dashboard-actions">
-            <Link className="primary-button dashboard-link-button" href="/reading">
-              Return to reading practice
-            </Link>
-          </div>
-        </div>
-        <div className="hero-metrics">
-          <div className="metric-card">
-            <span>Imported sets</span>
-            <strong>{availableSets.length}</strong>
-          </div>
-          <div className="metric-card">
-            <span>Total attempts</span>
-            <strong>{dashboardSummary.totalAttempts}</strong>
-          </div>
-          <div className="metric-card">
-            <span>Latest import</span>
-            <strong>{importSummary.latestImportedAt ? 'Ready' : 'Missing'}</strong>
-          </div>
-        </div>
-      </section>
-
+    <>
       <section className="workspace-grid dashboard-grid">
         <div className="workspace-column left-column">
           <DashboardMetricGrid
@@ -179,6 +150,6 @@ export function ReadingDashboard({
           </article>
         </div>
       </section>
-    </main>
+    </>
   );
 }

@@ -1878,6 +1878,28 @@ input[type='file'] {
   background: #1252cc;
 }
 
+.dashboard-resume-cta--reading {
+  background: var(--reading-color);
+}
+
+.dashboard-resume-cta--reading:hover {
+  background: #0fa882;
+}
+
+.dashboard-header-section--reading {
+  border-top: 3px solid var(--reading-color);
+}
+
+.dashboard-header-section--reading .eyebrow {
+  color: var(--reading-color);
+}
+
+.dashboard-tab--active-reading {
+  color: var(--reading-color);
+  background: rgba(20, 191, 150, 0.08);
+  border-color: rgba(20, 191, 150, 0.18);
+}
+
 /* ============================================================
    Smooth scroll and selection
    ============================================================ */
