@@ -4,8 +4,8 @@ import type { ReactNode } from 'react';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'IELTS Writing MVP',
-  description: 'Writing-first IELTS Academic practice environment with mock score prediction.',
+  title: 'IELTS Academic Platform',
+  description: 'Multi-module IELTS Academic practice hub for writing, reading, speaking, and listening.',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

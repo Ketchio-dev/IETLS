@@ -26,7 +26,7 @@ export const writingAssessmentWorkspace: AssessmentWorkspace = {
   moduleId: 'writing',
   moduleLabel: 'IELTS Academic Writing',
   moduleSummary: 'Timed writing practice with persisted reports, dashboard trends, and Gemini 3 Flash scoring by default.',
-  practicePath: '/',
+  practicePath: '/writing',
   dashboardPath: '/dashboard',
   taskApiPath: '/api/writing/task',
   assessmentApiPath: '/api/writing/assessment',

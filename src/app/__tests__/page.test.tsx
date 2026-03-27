@@ -1,23 +1,27 @@
+import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render } from '@testing-library/react';
 
-import { sampleAssessmentReport, samplePrompt, sampleTask1Prompt, writingPromptBank } from '@/lib/fixtures/writing';
-import type { WritingPracticePageData } from '@/lib/services/writing/application-service';
+import {
+  LISTENING_ASSESSMENT_MODULE_ID,
+  READING_ASSESSMENT_MODULE_ID,
+  SPEAKING_ASSESSMENT_MODULE_ID,
+} from '@/lib/assessment-modules/registry';
+import type { PlaceholderAssessmentDashboardPageData } from '@/lib/services/assessment-placeholders/application-service';
+import type { ReadingDashboardPageData } from '@/lib/services/reading/types';
+import { sampleSpeakingSavedSessions, speakingPromptBank } from '@/lib/fixtures/speaking';
+import type { SpeakingDashboardPageData } from '@/lib/services/speaking/types';
+import type { ProgressSummary, StudyPlanSnapshot, WritingDashboardSummary } from '@/lib/domain';
+import { writingPromptBank } from '@/lib/fixtures/writing';
+import type { WritingDashboardPageData } from '@/lib/services/writing/application-service';
 
 const mocks = vi.hoisted(() => ({
-  loadDefaultAssessmentPracticePageData: vi.fn(),
-  shellSpy: vi.fn(),
+  loadDefaultAssessmentDashboardPageData: vi.fn(),
+  loadAssessmentDashboardPageData: vi.fn(),
 }));
 
 vi.mock('@/lib/server/assessment-workspace', () => ({
-  loadDefaultAssessmentPracticePageData: mocks.loadDefaultAssessmentPracticePageData,
-}));
-
-vi.mock('@/components/writing/writing-practice-shell', () => ({
-  WritingPracticeShell: (props: unknown) => {
-    mocks.shellSpy(props);
-    return null;
-  },
+  loadDefaultAssessmentDashboardPageData: mocks.loadDefaultAssessmentDashboardPageData,
+  loadAssessmentDashboardPageData: mocks.loadAssessmentDashboardPageData,
 }));
 
 import HomePage from '../page';
@@ -27,91 +31,158 @@ afterEach(() => {
 });
 
 describe('HomePage', () => {
-  it('hydrates the dashboard resume selection from the shared assessment workspace', async () => {
-    const recentAttempts = [
-      {
-        submissionId: 'attempt-task-1',
-        promptId: sampleTask1Prompt.id,
-        taskType: sampleTask1Prompt.taskType,
-        overallBand: 6.5,
-        overallBandRange: { lower: 6, upper: 6.5 },
-        confidence: 'medium' as const,
-        estimatedWordCount: 181,
-        summary: 'Resume target report summary',
-        createdAt: '2026-03-26T15:00:00.000Z',
-      },
-    ];
-    const savedAssessments = [
-      {
-        submissionId: 'attempt-task-1',
-        promptId: sampleTask1Prompt.id,
-        taskType: sampleTask1Prompt.taskType,
-        createdAt: '2026-03-26T15:00:00.000Z',
-        timeSpentMinutes: 19,
-        wordCount: 181,
-        report: {
-          ...sampleAssessmentReport,
-          promptId: sampleTask1Prompt.id,
-          taskType: sampleTask1Prompt.taskType,
-          summary: 'Resume target report summary',
-        },
-      },
-    ];
-    const pageData: WritingPracticePageData = {
+  it('renders the module hub with writing, reading, speaking, and listening routes', async () => {
+    const writingSummary: WritingDashboardSummary = {
+      totalAttempts: 12,
+      taskCounts: { 'task-1': 4, 'task-2': 8 },
+      latestRange: { lower: 6.5, upper: 7 },
+      bestBand: 7,
+      averageBand: 6.6,
+      averageWordCount: 254,
+      totalPracticeMinutes: 318,
+      activeDays: 7,
+      latestAttemptAt: '2026-03-26T17:00:00.000Z',
+      providerBreakdown: [],
+      criterionSummaries: [],
+      strongestCriterion: null,
+      weakestCriterion: null,
+    };
+    const writingProgress: ProgressSummary = {
+      direction: 'improving',
+      label: 'Improving',
+      detail: 'Recent attempts are trending upward.',
+      delta: 0.4,
+      latestRange: { lower: 6.5, upper: 7 },
+      attemptsConsidered: 4,
+      averageWordCount: 268,
+    };
+    const writingStudyPlan: StudyPlanSnapshot = {
+      version: 2,
+      generatedAt: '2026-03-26T17:10:00.000Z',
+      basedOnSubmissionId: null,
+      attemptsConsidered: 12,
+      headline: 'Keep writing momentum steady',
+      focus: 'Resume the strongest recent prompt first.',
+      horizonLabel: 'Next 3 blocks',
+      recommendedSessionLabel: 'Task 2 first',
+      steps: [],
+      carryForward: [],
+    };
+    const writingPageData: WritingDashboardPageData = {
       prompts: writingPromptBank,
-      prompt: samplePrompt,
-      initialHistory: recentAttempts,
-      initialSavedAssessments: savedAssessments,
-      initialAttemptId: 'attempt-task-1',
-      initialPromptId: sampleTask1Prompt.id,
-      initialReport: savedAssessments[0]!.report,
-      fallbackReports: {},
+      recentSavedAttempts: [],
+      summary: writingSummary,
+      progress: writingProgress,
+      studyPlan: writingStudyPlan,
+    };
+    const readingPageData: ReadingDashboardPageData = {
+      moduleId: 'reading',
+      moduleLabel: 'IELTS Academic Reading',
+      summary: 'Reading summary',
+      routeBase: '/reading',
+      importSummary: {
+        sourceDir: 'data/private-reading-imports',
+        importCommand: 'npm run reading:import-private',
+        detectedSourceFiles: ['set-a.json'],
+        compiledSourceFiles: ['set-a.json'],
+        importedSetCount: 9,
+        latestImportedAt: '2026-03-26T17:30:00.000Z',
+        compiledOutputLabel: 'data/runtime/reading-private-imports.json',
+        sets: [],
+        warnings: [],
+      },
+      availableSets: Array.from({ length: 9 }, (_, index) => ({
+        id: `set-${index + 1}`,
+        title: `Set ${index + 1}`,
+        sourceLabel: 'Private import',
+        sourceFile: `set-${index + 1}.json`,
+        importedAt: '2026-03-26T17:30:00.000Z',
+        questionCount: 12,
+        passageWordCount: 720,
+        types: ['true_false_not_given'],
+      })),
+      recentAttempts: [],
+      dashboardSummary: {
+        totalAttempts: 5,
+        averagePercentage: 71,
+        bestScoreLabel: '9/12',
+        latestAttemptAt: '2026-03-26T18:00:00.000Z',
+        averageTimeSpentSeconds: 948,
+        strongestType: null,
+        weakestType: null,
+      },
+      studyFocus: ['Redo one evidence-based question.'],
+    };
+    const speakingPageData: SpeakingDashboardPageData = {
+      prompts: speakingPromptBank,
+      recentSessions: sampleSpeakingSavedSessions,
+      summary: {
+        totalSessions: 4,
+        averageBand: 6.4,
+        bestBand: 6.5,
+        latestRange: { lower: 6, upper: 6.5 },
+        averageDurationSeconds: 94,
+        latestAttemptAt: sampleSpeakingSavedSessions[0]!.createdAt,
+        lowConfidenceCount: 1,
+        sessionsWithAudio: 2,
+        partBreakdown: { 'part-1': 2, 'part-2': 1, 'part-3': 1 },
+      },
+      studyFocus: ['Repeat the latest cue card with one clearer example.'],
+    };
+    const listeningPageData: PlaceholderAssessmentDashboardPageData = {
+      moduleId: 'listening',
+      moduleLabel: 'IELTS Academic Listening Placeholder',
+      statusLabel: 'Placeholder',
+      summary: 'Listening summary',
+      dashboardTitle: 'Listening dashboard placeholder',
+      dashboardDescription: 'Listening is not production-ready yet.',
+      routeBase: '/listening',
+      statusCards: [
+        { label: 'Scripts', value: 'Not started', detail: 'No scripts yet.' },
+        { label: 'Audio', value: 'Not started', detail: 'No audio yet.' },
+        { label: 'Validation', value: 'Planned', detail: 'Validation later.' },
+      ],
+      nextSteps: ['Create script contracts first.'],
     };
 
-    mocks.loadDefaultAssessmentPracticePageData.mockResolvedValue(pageData);
-
-    render(
-      await HomePage({
-        searchParams: Promise.resolve({
-          promptId: 'missing-prompt-id',
-          attemptId: 'attempt-task-1',
-        }),
-      }),
-    );
-
-    expect(mocks.loadDefaultAssessmentPracticePageData).toHaveBeenCalledWith({
-      promptId: 'missing-prompt-id',
-      attemptId: 'attempt-task-1',
+    mocks.loadDefaultAssessmentDashboardPageData.mockResolvedValue(writingPageData);
+    mocks.loadAssessmentDashboardPageData.mockImplementation(async (moduleId: string) => {
+      switch (moduleId) {
+        case READING_ASSESSMENT_MODULE_ID:
+          return readingPageData;
+        case SPEAKING_ASSESSMENT_MODULE_ID:
+          return speakingPageData;
+        case LISTENING_ASSESSMENT_MODULE_ID:
+          return listeningPageData;
+        default:
+          throw new Error(`Unexpected module id: ${moduleId}`);
+      }
     });
-    expect(mocks.shellSpy).toHaveBeenCalledTimes(1);
-    expect(mocks.shellSpy).toHaveBeenCalledWith(pageData);
-  });
 
-  it('passes through an explicitly requested prompt when it exists', async () => {
-    const pageData: WritingPracticePageData = {
-      prompts: writingPromptBank,
-      prompt: samplePrompt,
-      initialHistory: [],
-      initialSavedAssessments: [],
-      initialAttemptId: undefined,
-      initialPromptId: sampleTask1Prompt.id,
-      initialReport: sampleAssessmentReport,
-      fallbackReports: {},
-    };
-    mocks.loadDefaultAssessmentPracticePageData.mockResolvedValue(pageData);
+    render(await HomePage());
 
-    render(
-      await HomePage({
-        searchParams: {
-          promptId: sampleTask1Prompt.id,
-        },
-      }),
-    );
-
-    expect(mocks.loadDefaultAssessmentPracticePageData).toHaveBeenCalledWith({
-      promptId: sampleTask1Prompt.id,
-      attemptId: undefined,
-    });
-    expect(mocks.shellSpy).toHaveBeenCalledWith(pageData);
+    expect(mocks.loadDefaultAssessmentDashboardPageData).toHaveBeenCalledWith();
+    expect(mocks.loadAssessmentDashboardPageData).toHaveBeenCalledWith(READING_ASSESSMENT_MODULE_ID);
+    expect(mocks.loadAssessmentDashboardPageData).toHaveBeenCalledWith(SPEAKING_ASSESSMENT_MODULE_ID);
+    expect(mocks.loadAssessmentDashboardPageData).toHaveBeenCalledWith(LISTENING_ASSESSMENT_MODULE_ID);
+    expect(screen.getByRole('heading', { name: /choose the right practice track from one shared hub/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Writing' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Reading' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Speaking' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Listening' })).toBeInTheDocument();
+    expect(screen.getAllByText('Full')).toHaveLength(2);
+    expect(screen.getAllByText('Alpha')).toHaveLength(2);
+    expect(screen.getByText('Placeholder')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /start writing/i })).toHaveAttribute('href', '/writing');
+    expect(screen.getAllByRole('link', { name: /view dashboard/i })).toHaveLength(3);
+    expect(screen.getAllByRole('link', { name: /open practice/i }).map((link) => link.getAttribute('href'))).toEqual([
+      '/writing',
+      '/reading',
+    ]);
+    expect(screen.getByRole('link', { name: /open placeholder/i })).toHaveAttribute('href', '/listening');
+    expect(screen.getAllByText('12').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('9').length).toBeGreaterThan(0);
+    expect(screen.getByText(/band 6\.5/i)).toBeInTheDocument();
+    expect(screen.getByText('Planned')).toBeInTheDocument();
   });
 });

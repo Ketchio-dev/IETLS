@@ -206,20 +206,20 @@ describe('WritingDashboard', () => {
     expect(screen.getByText(/38 min from latest attempt/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /resume latest report/i })).toHaveAttribute(
       'href',
-      `/?promptId=${writingPromptBank[3]!.id}&attemptId=attempt-4`,
+      `/writing?promptId=${writingPromptBank[3]!.id}&attemptId=attempt-4`,
     );
     expect(screen.getByRole('link', { name: /open task 1 prompt/i })).toHaveAttribute(
       'href',
-      `/?promptId=${sampleTask1Prompt.id}`,
+      `/writing?promptId=${sampleTask1Prompt.id}`,
     );
-    expect(screen.getByRole('link', { name: /return to practice shell/i })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: /return to practice shell/i })).toHaveAttribute('href', '/writing');
 
     fireEvent.click(screen.getByRole('button', { name: /inspect here/i }));
 
     expect(screen.getAllByText(/task 1 inspection summary/i).length).toBeGreaterThan(0);
     expect(screen.getByRole('link', { name: /resume this attempt/i })).toHaveAttribute(
       'href',
-      `/?promptId=${sampleTask1Prompt.id}&attemptId=attempt-3`,
+      `/writing?promptId=${sampleTask1Prompt.id}&attemptId=attempt-3`,
     );
 
     fireEvent.click(screen.getByRole('button', { name: /compare to inspected/i }));

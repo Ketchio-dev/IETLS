@@ -72,7 +72,7 @@ describe('assessment workspace registry', () => {
       summary:
         'Timed writing practice with persisted reports, dashboard trends, and Gemini 3 Flash scoring by default.',
       routes: {
-        practice: '/',
+        practice: '/writing',
         dashboard: '/dashboard',
         taskApi: '/api/writing/task',
         assessmentApi: '/api/writing/assessment',
