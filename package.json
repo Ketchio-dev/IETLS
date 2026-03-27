@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "reading:import-private": "node scripts/import-reading-private.mjs"
+    "reading:import-private": "node scripts/import-reading-private.mjs",
+    "reading:crawl": "node scripts/crawl-reading-ielts-up.mjs"
   },
   "dependencies": {
     "next": "16.2.1",
