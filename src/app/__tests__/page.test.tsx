@@ -720,7 +720,7 @@ describe('HomePage', () => {
 
     const label = divider!.querySelector('.section-divider-label');
     expect(label).not.toBeNull();
-    expect(label!.textContent).toBe('Secondary modules');
+    expect(label!.textContent).toBe('More modules');
 
     // Divider sits between primary and secondary sections in DOM order
     const appShell = container.querySelector('.app-shell');
@@ -734,19 +734,20 @@ describe('HomePage', () => {
     expect(dividerIndex).toBeLessThan(secondaryIndex);
   });
 
-  it('gracefully renders "No data yet" when bands and accuracy are null', async () => {
+  it('gracefully keeps the writing focus signal stable when band data is null', async () => {
     const writingData = buildWritingPageData({ averageBand: null, bestBand: null });
     const readingData = buildReadingPageData({ averagePercentage: null as unknown as number, totalAttempts: 0 });
     setupMocks(writingData, readingData);
 
     const { container } = render(await HomePage());
 
-    // Writing band shows "No data yet" in the focus signal
+    // The focus signal stays action-oriented even when band data is absent
     const writingSignal = container.querySelector('[data-signal="writing"]');
     expect(writingSignal).not.toBeNull();
-    expect(writingSignal!.textContent).toContain('No data yet');
+    expect(writingSignal!.textContent).toContain('5 prompts');
+    expect(writingSignal!.textContent).toContain('Keep writing momentum steady');
 
-    // Writing module card also shows "No data yet" for average band
+    // The writing module card still exposes the null-safe band fallback
     const writingCard = container.querySelector('[data-module="writing"]');
     expect(writingCard).not.toBeNull();
     expect(writingCard!.textContent).toContain('No data yet');

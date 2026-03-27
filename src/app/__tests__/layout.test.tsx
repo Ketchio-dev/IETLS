@@ -88,7 +88,8 @@ describe('RootLayout', () => {
 
     expect(html).toContain('site-nav-link--dashboard');
     expect(html).toContain('href="/reading/dashboard"');
-    expect(html).toContain('Dashboards');
+    expect(html).toContain('Reading stats');
+    expect(html).toContain('Writing stats');
   });
 
   it('renders the IELTS Academic kicker above the brand name', () => {
