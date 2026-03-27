@@ -60,6 +60,9 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
                 </Link>
               ))}
             </div>
+            <Link href="/reading/dashboard" className="site-nav-link site-nav-link--dashboard">
+              Dashboards
+            </Link>
           </div>
         </nav>
         {children}
