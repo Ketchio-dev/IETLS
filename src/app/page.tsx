@@ -248,10 +248,10 @@ export default async function HomePage() {
             broader assessment seam evolves.
           </p>
           <div className="hero-actions">
-            <Link className="primary-button dashboard-link-button" href="/reading">
+            <Link className="primary-button dashboard-link-button hero-cta-reading" href="/reading">
               Start reading practice
             </Link>
-            <Link className="secondary-link-button" href="/writing">
+            <Link className="secondary-link-button hero-cta-writing" href="/writing">
               Open writing practice
             </Link>
           </div>
@@ -295,8 +295,39 @@ export default async function HomePage() {
         </aside>
       </section>
 
+      <nav className="quick-actions-strip" aria-label="Quick practice actions">
+        <Link className="quick-action-card" href="/reading" data-quick="reading">
+          <div className="quick-action-icon" aria-hidden="true"><ReadingIcon /></div>
+          <div className="quick-action-text">
+            <strong>Reading practice</strong>
+            <span>{readingDashboard.availableSets.length} passages available</span>
+          </div>
+        </Link>
+        <Link className="quick-action-card" href="/writing" data-module="writing">
+          <div className="quick-action-icon" aria-hidden="true"><WritingIcon /></div>
+          <div className="quick-action-text">
+            <strong>Writing practice</strong>
+            <span>{writingDashboard.prompts.length} prompts ready</span>
+          </div>
+        </Link>
+        <Link className="quick-action-card" href="/reading/dashboard" data-quick="reading">
+          <div className="quick-action-icon" aria-hidden="true"><ReadingIcon /></div>
+          <div className="quick-action-text">
+            <strong>Reading dashboard</strong>
+            <span>{readingDashboard.dashboardSummary.totalAttempts} attempts tracked</span>
+          </div>
+        </Link>
+        <Link className="quick-action-card" href="/dashboard" data-module="writing">
+          <div className="quick-action-icon" aria-hidden="true"><WritingIcon /></div>
+          <div className="quick-action-text">
+            <strong>Writing dashboard</strong>
+            <span>{formatBand(writingDashboard.summary.averageBand)}</span>
+          </div>
+        </Link>
+      </nav>
+
       <section className="workspace-column" aria-labelledby="primary-ia-heading">
-        <div className="panel">
+        <div className="panel primary-section-header">
           <p className="eyebrow">Primary information architecture</p>
           <h2 id="primary-ia-heading">Reading and Writing stay at the center of the app.</h2>
           <p className="summary-copy">
@@ -313,8 +344,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="workspace-column" aria-labelledby="secondary-ia-heading">
-        <div className="panel">
+      <div className="section-divider" role="separator" aria-hidden="true">
+        <span className="section-divider-label">Secondary modules</span>
+      </div>
+
+      <section className="workspace-column secondary-section" aria-labelledby="secondary-ia-heading">
+        <div className="panel secondary-section-header">
           <p className="eyebrow">Secondary modules</p>
           <h2 id="secondary-ia-heading">Speaking and Listening remain available, but secondary.</h2>
           <p className="summary-copy">
