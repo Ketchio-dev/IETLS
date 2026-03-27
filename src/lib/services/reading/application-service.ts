@@ -9,6 +9,7 @@ import {
   type ReadingPrivateImportRepository,
 } from '@/lib/server/reading-private-import-repository';
 import type { ImportedReadingQuestion, ImportedReadingSet } from '@/lib/services/reading-imports/types';
+import { isReadingAnswerCorrect } from '@/lib/services/reading/grading';
 
 import type {
   ReadingAccuracyByType,
@@ -37,10 +38,6 @@ function clone<T>(value: T): T {
 
 function getSingleSearchParam(value: SearchParamValue) {
   return Array.isArray(value) ? value[0] : value;
-}
-
-function normalizeAnswer(value: string) {
-  return value.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
 function summarizeAttempt(attempt: ReadingAttemptSnapshot): ReadingAttemptSummary {
@@ -80,9 +77,7 @@ function buildTypeAccuracy(reviews: ReadingAssessmentReport['questionReviews']):
 }
 
 function scoreQuestion(question: ImportedReadingQuestion, submittedAnswer: string) {
-  const normalizedSubmitted = normalizeAnswer(submittedAnswer);
-  const accepted = [...question.acceptedAnswers, ...question.acceptedVariants].map(normalizeAnswer);
-  const isCorrect = normalizedSubmitted.length > 0 && accepted.includes(normalizedSubmitted);
+  const isCorrect = isReadingAnswerCorrect(question, submittedAnswer);
 
   return {
     questionId: question.id,
@@ -251,8 +246,8 @@ export function createReadingApplicationService({
       moduleLabel: 'IELTS Academic Reading',
       statusLabel: activeSet ? 'Private drill ready' : 'Awaiting import',
       summary: activeSet
-        ? 'One-passage private Reading drills are now available from your local import bank.'
-        : 'Import your own local Reading materials to unlock the first passage-centered drill.',
+        ? 'One-passage private Reading drills are now available from your local import bank. This route does not yet simulate the full 60-minute three-passage test.'
+        : 'Import your own local Reading materials to unlock the first passage-centred drill.',
       routeBase: '/reading',
       importedSets: clone(importedBank.sets),
       availableSets: importedBank.sets.map((set) => ({
@@ -288,8 +283,8 @@ export function createReadingApplicationService({
       moduleId: 'reading',
       moduleLabel: 'IELTS Academic Reading',
       summary: importedBank.sets.length > 0
-        ? 'Review private Reading drill performance by imported set, timing, and question type.'
-        : 'Import one local Reading set to unlock the first real Reading dashboard.',
+        ? 'Review private Reading drill performance by imported set, timing, and question type. This dashboard tracks drills, not a full three-passage mock.'
+        : 'Import one local Reading set to unlock the first real Reading drill dashboard.',
       routeBase: '/reading',
       importSummary,
       availableSets: importedBank.sets.map((set) => ({

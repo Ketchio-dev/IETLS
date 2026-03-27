@@ -164,35 +164,41 @@ Overall, the station is busiest during the morning rush hour, and there is a sec
 
 At 6:00, only about 100 people use the station, but this figure rises rapidly to around 200 at 7:00 and then reaches a peak of roughly 400 at 8:00. After that, the number falls steadily to approximately 180 by 10:00 before recovering slightly to about 200 at midday.
 
-In the afternoon, passenger numbers remain fairly moderate, fluctuating between about 220 and 300. They then climb again to nearly 380 at 18:00, which is the second highest point on the graph, before dropping sharply to around 120 by 22:00.`,
+In the afternoon, passenger numbers remain fairly moderate, fluctuating between about 220 and 300. They then climb again to nearly 380 at 18:00, which is the second highest point on the graph, before dropping sharply to around 120 by 22:00. Overall, the most noticeable features are the dramatic morning surge, the smaller evening rebound, and the relatively quiet periods at both ends of the day.`,
   'task-1-australia-water-use': `The table compares the amount of water used in Australia by households, industry and agriculture in 2004 and 2014.
 
 Overall, agriculture was by far the largest consumer of water in both years. Household consumption increased over the period, whereas industrial use declined slightly.
 
 In 2004, agriculture used 58 billion litres of water, compared with 12 billion litres for households and 9 billion litres for industry. Ten years later, agricultural consumption had risen modestly to 61 billion litres.
 
-By contrast, household use climbed by 4 billion litres, from 12 to 16 billion litres, making it the sector with the most noticeable increase. Industrial demand moved in the opposite direction, slipping from 9 to 8 billion litres, which was the lowest figure shown in 2014.`,
-  'task-2-public-transport': `In my opinion, governments should prioritise public transport, although road upgrades still matter in specific regions.
+By contrast, household use climbed by 4 billion litres, from 12 to 16 billion litres, making it the sector with the most noticeable increase. Industrial demand moved in the opposite direction, slipping from 9 to 8 billion litres, which was the lowest figure shown in 2014. This means agriculture remained dominant throughout, while the clearest change was the growth in household demand.`,
+  'task-2-public-transport': `In my opinion, governments should prioritise public transport because buses, rail systems, and metro networks can move large numbers of people more efficiently than private cars, although targeted road upgrades still matter in some places.
 
-On the one hand, supporters of new roads argue that drivers and delivery services need faster routes because economic activity slows when congestion becomes severe. However, expanding roads alone often creates extra demand from private cars, which means traffic soon returns.
+On the one hand, supporters of new roads argue that drivers, freight operators, and emergency services need faster routes because economic activity slows when congestion becomes severe. This point is partly convincing in regions where outdated highways are unsafe or where growing suburbs have very limited connections. Better roads can also reduce delays for goods moving between ports, warehouses, and shops, which helps the wider economy.
 
-On the other hand, investment in rail, bus, and metro systems can move more commuters at lower environmental cost. For example, when a city subsidises reliable buses and protected station access, workers are more willing to leave their cars at home and employers face fewer delays.
+However, expanding road capacity alone rarely solves congestion for long because additional space quickly attracts more vehicles. In large cities, this means traffic often returns to previous levels after a short period, while pollution, noise, and land use pressures continue to rise. As a result, road building can become an expensive short-term response rather than a durable solution.
 
-Overall, I believe transport budgets should focus mainly on public systems while reserving targeted road spending for safety bottlenecks.`,
+On the other hand, investment in rail, bus, and metro systems can move more commuters at lower environmental cost. For example, when a city subsidises reliable buses, protects station access, and integrates ticketing across different modes, workers are more willing to leave their cars at home. Employers also benefit because staff can arrive more predictably, and low-income households gain better access to jobs, schools, and healthcare.
+
+Overall, I believe transport budgets should focus mainly on public systems while reserving targeted road spending for safety bottlenecks, freight corridors, and remote communities. This balance produces broader economic and environmental benefits over time than simply building more roads.`,
   'task-2-online-education': `Although online education has improved rapidly, I do not believe it is a complete replacement for classroom learning.
 
-The main strength of online learning is access. Students in remote areas can watch recorded lessons, join virtual discussions, and learn from teachers they would never meet locally. This flexibility also helps working adults continue their education without leaving their jobs.
+The main strength of online learning is access. Students in remote areas can watch recorded lessons, join virtual discussions, and learn from teachers they would never meet locally. This flexibility also helps working adults continue their education without leaving their jobs, and it often reduces transport and accommodation costs. In addition, online platforms can store lectures, quizzes, and feedback in one place, allowing learners to revisit difficult topics at their own pace.
 
-However, classrooms still offer advantages that digital platforms struggle to match. In face-to-face lessons, teachers can adjust explanations immediately, monitor whether students are confused, and build discipline through direct interaction. Younger learners in particular often need structure, peer contact, and quick feedback to stay motivated.
+However, classrooms still offer advantages that digital platforms struggle to match. In face-to-face lessons, teachers can adjust explanations immediately, notice confusion, and build discipline through direct interaction. Younger learners in particular often need structure, peer contact, and quick encouragement to stay motivated. Group work, laboratory tasks, and spontaneous discussion are also easier to manage in person, which means some important social and practical skills are developed more naturally in a classroom setting.
 
-Overall, I partly agree that online education is a powerful alternative, but I disagree that it is generally better. In most cases, it works best as a supplement rather than a total substitute for classroom teaching.`,
+Another weakness of online education is inequality in home learning conditions. Not every student has a quiet place to study, a stable internet connection, or suitable devices. Even when technology is available, long periods in front of a screen can reduce concentration and make learners feel isolated from teachers and classmates.
+
+Overall, I partly agree that online education is a powerful alternative, but I disagree that it is generally better. In most cases, it works best as a supplement rather than a total substitute for classroom teaching because convenience alone does not guarantee deeper learning.`,
   'task-2-young-people-abroad': `In my view, the advantages of young people going abroad for study or work generally outweigh the disadvantages, although the trend can create social costs.
 
-The biggest benefit is personal and professional development. Students who study overseas often gain better language ability, wider cultural awareness, and access to stronger academic institutions. Similarly, young employees working abroad can earn higher salaries, build international networks, and develop skills that may later benefit their home countries.
+The biggest benefit is personal and professional development. Students who study overseas often gain better language ability, wider cultural awareness, and access to stronger academic institutions. Similarly, young employees working abroad can earn higher salaries, build international networks, and develop skills that may later benefit their home countries. Exposure to different working cultures can also increase independence, adaptability, and confidence, all of which are valuable in modern labour markets.
 
-On the negative side, migration can cause family separation and brain drain. When many talented graduates leave poorer countries, local industries and public services may struggle to retain qualified staff. In addition, some young people face loneliness or financial pressure when adapting to unfamiliar societies.
+There are wider economic benefits as well. People who study or work abroad often send money home, support relatives financially, or return with experience that can improve local businesses and public services. Even those who stay overseas may create business links between countries or help others from their community find educational and professional opportunities.
 
-Despite these problems, I believe the long-term gains are greater. Individuals usually return with broader experience, and even those who remain abroad often support relatives financially or contribute knowledge across borders.`,
+On the negative side, migration can cause family separation and brain drain. When many talented graduates leave poorer countries, local industries and public services may struggle to retain qualified staff. In addition, some young people face loneliness, discrimination, or financial pressure when adapting to unfamiliar societies. If they fail to integrate successfully, the experience can become stressful rather than rewarding.
+
+Despite these problems, I believe the long-term gains are greater. Individuals usually return with broader experience, and even those who remain abroad often contribute knowledge, investment, and international connections across borders. For these reasons, the advantages of the trend generally outweigh the disadvantages.`,
 };
 
 export const sampleResponse = sampleResponsesByPromptId[samplePrompt.id];

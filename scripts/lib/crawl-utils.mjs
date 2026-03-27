@@ -68,7 +68,7 @@ export function buildOptions(type) {
   return [];
 }
 
-export function buildVariants(answer, type) {
+export function buildVariants(answer) {
   const v = [];
   const t = answer.trim();
   const u = t.toUpperCase();

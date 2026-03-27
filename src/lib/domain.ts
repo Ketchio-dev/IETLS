@@ -103,7 +103,7 @@ export interface FeedbackAction {
 }
 
 export interface AssessmentWarning {
-  code: 'practice-estimate' | 'low-confidence' | 'under-length';
+  code: 'practice-estimate' | 'single-task-scope' | 'low-confidence' | 'under-length';
   message: string;
 }
 
@@ -233,6 +233,9 @@ export interface WritingDashboardSummary {
   totalAttempts: number;
   taskCounts: Record<WritingTaskType, number>;
   latestRange: BandRange | null;
+  latestFullTestEstimateBand?: number | null;
+  latestFullTestTask1Band?: number | null;
+  latestFullTestTask2Band?: number | null;
   bestBand: number | null;
   averageBand: number | null;
   averageWordCount: number;

@@ -35,7 +35,7 @@ describe('SpeakingPracticeShell', () => {
       />,
     );
 
-    expect(screen.getByRole('heading', { name: /run a timed speaking practice flow with transcript scoring and audio-ready evidence/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /run a timed transcript-first speaking practice flow with audio-ready evidence/i })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: /speaking transcript/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/audio file \(optional\)/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /inspect recent speaking attempts/i })).toBeInTheDocument();

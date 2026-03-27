@@ -1,6 +1,7 @@
 import { sampleSpeakingSavedSessions } from '@/lib/fixtures/speaking';
 import type { SpeakingSessionSnapshot } from '@/lib/services/speaking/types';
 
+import { areDemoSeedsEnabled } from './demo-seeds';
 import { getStoragePort, type JsonStoragePort, type StorageFile } from './storage';
 
 const SPEAKING_SESSIONS_FILE: StorageFile = 'speakingSessions';
@@ -21,11 +22,20 @@ function sortSessions(sessions: SpeakingSessionSnapshot[]) {
 export function createSpeakingAssessmentRepository(
   storage: JsonStoragePort = getStoragePort(),
   seedSessions: SpeakingSessionSnapshot[] = sampleSpeakingSavedSessions,
+  options: {
+    demoSeedsEnabled?: boolean;
+  } = {},
 ): SpeakingAssessmentRepository {
+  const demoSeedsEnabled = options.demoSeedsEnabled ?? areDemoSeedsEnabled();
+
   async function readStoredSessions() {
     const stored = await storage.readJsonFile<SpeakingSessionSnapshot[]>(SPEAKING_SESSIONS_FILE, []);
     if (stored.length > 0) {
       return sortSessions(stored);
+    }
+
+    if (!demoSeedsEnabled || seedSessions.length === 0) {
+      return [];
     }
 
     const seeded = sortSessions(clone(seedSessions));
@@ -41,7 +51,7 @@ export function createSpeakingAssessmentRepository(
   async function saveSession(session: SpeakingSessionSnapshot, limit = 12) {
     const updated = await storage.updateJsonFile(
       SPEAKING_SESSIONS_FILE,
-      sortSessions(clone(seedSessions)),
+      demoSeedsEnabled ? sortSessions(clone(seedSessions)) : ([] as SpeakingSessionSnapshot[]),
       (stored) => sortSessions([clone(session), ...stored.filter((item) => item.sessionId !== session.sessionId)]),
     );
     return updated.slice(0, limit).map((item) => clone(item));

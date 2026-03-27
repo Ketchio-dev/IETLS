@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { validateReadingAssessmentPayload } from '@/app/api/_shared/assessment-validation';
 import { READING_ASSESSMENT_MODULE_ID } from '@/lib/assessment-modules/registry';
 import { submitAssessmentForModule } from '@/lib/server/assessment-workspace';
 
@@ -12,15 +13,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
   }
 
-  if (!body || typeof body !== 'object') {
+  if (!validateReadingAssessmentPayload(body)) {
     return NextResponse.json({ error: 'Invalid request payload.' }, { status: 422 });
   }
 
-  const result = await submitAssessmentForModule(READING_ASSESSMENT_MODULE_ID, body);
+  try {
+    const result = await submitAssessmentForModule(READING_ASSESSMENT_MODULE_ID, body);
 
-  if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
+    }
+
+    return NextResponse.json(result.payload);
+  } catch {
+    return NextResponse.json({ error: 'Unable to score the Reading assessment right now.' }, { status: 500 });
   }
-
-  return NextResponse.json(result.payload);
 }

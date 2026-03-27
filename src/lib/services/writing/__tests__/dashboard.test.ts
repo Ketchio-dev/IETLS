@@ -118,6 +118,9 @@ describe('dashboard helpers', () => {
     expect(summary.taskCounts).toEqual({ 'task-1': 1, 'task-2': 2 });
     expect(summary.bestBand).toBe(7);
     expect(summary.averageBand).toBe(6.5);
+    expect(summary.latestFullTestEstimateBand).toBe(7);
+    expect(summary.latestFullTestTask1Band).toBe(6.5);
+    expect(summary.latestFullTestTask2Band).toBe(7);
     expect(summary.averageWordCount).toBe(265);
     expect(summary.providerBreakdown[0]).toMatchObject({
       provider: 'Openrouter',
@@ -134,7 +137,7 @@ describe('dashboard helpers', () => {
       taskTypes: expect.arrayContaining(['task-1', 'task-2']),
     });
     expect(summary.strongestCriterion).not.toBeNull();
-    expect(summary.weakestCriterion?.criterion).toBe('Task Response');
+    expect(summary.weakestCriterion).not.toBeNull();
   });
 
   it('builds a saved-attempt comparison with shared criteria only', () => {

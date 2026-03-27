@@ -128,13 +128,18 @@ describe('speaking application service', () => {
       throw new Error('expected a saved speaking session');
     }
     expect(saved.payload.report.promptId).toBe(sampleSpeakingPrompt.id);
-    expect(saved.payload.session.sessionId).toBe('speaking-live-4');
+    expect(saved.payload.session.sessionId).toMatch(/^speaking-session-/);
     expect(saved.payload.session.audioArtifact.fileName).toBe('city-response.webm');
     expect(saved.payload.recentSessions[0]?.audioStatus).toBe('attached');
     expect(saved.payload.savedSessions[0]?.createdAt).toBe('2026-03-26T18:15:00.000Z');
 
-    const pageData = await service.loadPracticePageData({ promptId: sampleSpeakingPrompt.id, sessionId: 'speaking-live-4' });
+    const pageData = await service.loadPracticePageData({
+      promptId: sampleSpeakingPrompt.id,
+      sessionId: saved.payload.session.sessionId,
+    });
     expect(pageData.initialSavedSessions[0]?.audioArtifact.fileName).toBe('city-response.webm');
     expect(pageData.initialReport.evidenceMode).toBe('transcript-plus-audio-metadata');
+    expect(saved.payload.report.warnings[0]).toContain('transcript-first');
+    expect(saved.payload.report.confidenceReasons[2]).toContain('Pronunciation is provisional');
   });
 });

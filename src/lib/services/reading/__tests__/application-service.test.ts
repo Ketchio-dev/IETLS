@@ -95,4 +95,71 @@ describe('reading application service', () => {
       status: 404,
     });
   });
+
+  it('applies question-type-aware normalization when grading submissions', async () => {
+    const customSet = {
+      ...sampleReadingSets[0]!,
+      id: 'custom-reading-set',
+      questions: [
+        {
+          ...sampleReadingSets[0]!.questions[0]!,
+          id: 'mcq-1',
+          type: 'multiple_choice',
+          options: ['A. First option', 'B. Best supported answer', 'C. Third option', 'D. Fourth option'],
+          acceptedAnswers: ['B'],
+          acceptedVariants: [],
+        },
+        {
+          ...sampleReadingSets[0]!.questions[1]!,
+          id: 'tfng-1',
+          type: 'true_false_not_given',
+          acceptedAnswers: ['NOT GIVEN'],
+          acceptedVariants: ['NG'],
+        },
+        {
+          ...sampleReadingSets[0]!.questions[3]!,
+          id: 'completion-1',
+          type: 'sentence_completion',
+          prompt: 'Choose NO MORE THAN TWO WORDS from the passage.',
+          acceptedAnswers: ['single system'],
+          acceptedVariants: ['system'],
+        },
+      ],
+    };
+    const attempts: ReadingAttemptSnapshot[] = [];
+    const repository = {
+      readImportedBank: async () => ({
+        version: 1,
+        importedAt: customSet.importedAt,
+        sourceDir: 'data/private-reading-imports',
+        sourceFiles: [customSet.sourceFile],
+        sets: [customSet],
+      }),
+      listSets: async () => [customSet],
+      getSet: async (setId: string) => (setId === customSet.id ? customSet : null),
+      listSavedAttempts: async () => attempts,
+      saveAttempt: async (attempt: ReadingAttemptSnapshot) => {
+        attempts.unshift(attempt);
+        return attempts;
+      },
+    };
+    const service = createReadingApplicationService({ repository: repository as never, now: () => '2026-03-26T12:00:00.000Z' });
+
+    const result = await service.submitAssessment({
+      setId: customSet.id,
+      timeSpentSeconds: 420,
+      answers: {
+        'mcq-1': 'B. Best supported answer',
+        'tfng-1': 'not-given',
+        'completion-1': 'a single system',
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error('expected success');
+    expect(result.payload.report.rawScore).toBe(2);
+    expect(result.payload.report.questionReviews[0]?.isCorrect).toBe(true);
+    expect(result.payload.report.questionReviews[1]?.isCorrect).toBe(true);
+    expect(result.payload.report.questionReviews[2]?.isCorrect).toBe(false);
+  });
 });

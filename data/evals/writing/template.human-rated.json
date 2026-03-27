@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "source": "replace-with-dataset-name",
+  "essays": [
+    {
+      "id": "task1-001",
+      "taskType": "task-1",
+      "prompt": {
+        "id": "external-task-1-sample",
+        "title": "Sample Task 1 prompt",
+        "taskType": "task-1",
+        "prompt": "The chart below shows ...",
+        "suggestedWordCount": 150
+      },
+      "response": "Write the full candidate response here.",
+      "overallBand": 6.0,
+      "criterionScores": {
+        "Task Achievement": 6.0,
+        "Coherence & Cohesion": 6.0,
+        "Lexical Resource": 6.0,
+        "Grammatical Range & Accuracy": 5.5
+      },
+      "notes": [
+        "Replace with rater comments if available."
+      ],
+      "raterId": "rater-a",
+      "secondRaterId": "rater-b",
+      "adjudicated": true
+    },
+    {
+      "id": "task2-001",
+      "taskType": "task-2",
+      "prompt": {
+        "id": "external-task-2-sample",
+        "title": "Sample Task 2 prompt",
+        "taskType": "task-2",
+        "prompt": "Some people believe ..."
+      },
+      "response": "Write the full candidate response here.",
+      "overallBand": 6.5,
+      "criterionScores": {
+        "Task Response": 6.5,
+        "Coherence & Cohesion": 6.0,
+        "Lexical Resource": 7.0,
+        "Grammatical Range & Accuracy": 6.0
+      },
+      "notes": [
+        "Replace with rater comments if available."
+      ],
+      "raterId": "rater-a",
+      "secondRaterId": "rater-b",
+      "adjudicated": true
+    }
+  ]
+}

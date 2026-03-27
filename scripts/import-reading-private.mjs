@@ -45,6 +45,16 @@ function normalizeQuestion(question, index, setId) {
     throw new Error(`Question ${index + 1} in ${setId} must include answer or answers.`);
   }
 
+  const explanation = typeof question.explanation === 'string' ? question.explanation.trim() : '';
+  if (!explanation) {
+    throw new Error(`Question ${index + 1} in ${setId} must include a non-empty explanation.`);
+  }
+
+  const evidenceHint = typeof question.evidenceHint === 'string' ? question.evidenceHint.trim() : '';
+  if (!evidenceHint) {
+    throw new Error(`Question ${index + 1} in ${setId} must include a non-empty evidenceHint.`);
+  }
+
   return {
     id: typeof question.id === 'string' && question.id.trim() ? question.id.trim() : `${setId}-q${index + 1}`,
     type,
@@ -52,8 +62,8 @@ function normalizeQuestion(question, index, setId) {
     options: normalizeStringArray(Array.isArray(question.options) ? question.options : []),
     acceptedAnswers,
     acceptedVariants: normalizeStringArray(Array.isArray(question.acceptedVariants) ? question.acceptedVariants : []),
-    explanation: typeof question.explanation === 'string' ? question.explanation.trim() : '',
-    evidenceHint: typeof question.evidenceHint === 'string' ? question.evidenceHint.trim() : '',
+    explanation,
+    evidenceHint,
   };
 }
 

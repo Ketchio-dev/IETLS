@@ -26,6 +26,8 @@ describe('private reading import script', () => {
           prompt: 'Which choice is correct?',
           answer: 'B',
           acceptedVariants: ['B.'],
+          explanation: 'Option B is supported by the owned material evidence.',
+          evidenceHint: 'Paragraph 1',
         },
       ],
     }));
@@ -54,6 +56,42 @@ describe('private reading import script', () => {
       type: 'multiple_choice',
       acceptedAnswers: ['B'],
       acceptedVariants: ['B.'],
+    });
+  });
+
+  it('fails fast when explanation or evidence hint is missing', async () => {
+    const baseDir = await mkdtemp(path.join(os.tmpdir(), 'reading-import-script-invalid-'));
+    const sourceDir = path.join(baseDir, 'imports');
+    const runtimeDir = path.join(baseDir, 'runtime');
+    await mkdir(sourceDir, { recursive: true });
+    await mkdir(runtimeDir, { recursive: true });
+
+    await writeFile(path.join(sourceDir, 'invalid-reading.json'), JSON.stringify({
+      title: 'Invalid Reading Set',
+      sourceLabel: 'Owned material',
+      passage: 'The passage text goes here.',
+      questions: [
+        {
+          type: 'sentence_completion',
+          prompt: 'Complete the sentence.',
+          answer: 'system',
+          explanation: '',
+          evidenceHint: '',
+        },
+      ],
+    }));
+
+    await expect(
+      execFileAsync('node', ['scripts/import-reading-private.mjs'], {
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          IELTS_PRIVATE_READING_IMPORTS_DIR: sourceDir,
+          IELTS_DATA_DIR: runtimeDir,
+        },
+      }),
+    ).rejects.toMatchObject({
+      stderr: expect.stringContaining('must include a non-empty explanation'),
     });
   });
 });

@@ -12,9 +12,12 @@
     "test:watch": "vitest",
     "reading:generate": "node scripts/generate-reading-ai.mjs",
     "reading:import-private": "node scripts/import-reading-private.mjs",
-    "reading:crawl": "node scripts/crawl-reading-ielts-up.mjs",
-    "reading:crawl:ieltsbuddy": "node scripts/crawl-reading-ieltsbuddy.mjs",
-    "reading:crawl:all": "node scripts/crawl-reading-ielts-up.mjs && node scripts/crawl-reading-ieltsbuddy.mjs"
+    "internal:reading:crawl:ielts-up": "node scripts/crawl-reading-ielts-up.mjs",
+    "internal:reading:crawl:ieltsbuddy": "node scripts/crawl-reading-ieltsbuddy.mjs",
+    "internal:reading:crawl:all": "node scripts/crawl-reading-ielts-up.mjs && node scripts/crawl-reading-ieltsbuddy.mjs",
+    "writing:eval": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-ts-path-loader.mjs --experimental-strip-types scripts/evaluate-writing.mts",
+    "writing:import-eval-csv": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-ts-path-loader.mjs --experimental-strip-types scripts/import-writing-eval-csv.mts",
+    "writing:fit-calibration": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-ts-path-loader.mjs --experimental-strip-types scripts/fit-writing-calibration.mts"
   },
   "dependencies": {
     "next": "16.2.1",

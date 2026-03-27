@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import type { ConfidenceLevel } from '@/lib/domain';
 import {
   getSampleSpeakingTranscript,
@@ -126,6 +128,10 @@ function buildEvidenceMode(audioArtifact: SpeakingAudioArtifact): SpeakingEviden
   return audioArtifact.status === 'attached' ? 'transcript-plus-audio-metadata' : 'transcript-only';
 }
 
+function createSpeakingSessionId() {
+  return `speaking-session-${randomUUID()}`;
+}
+
 function buildMockSpeakingReport(
   prompt: SpeakingPrompt,
   transcript: string,
@@ -144,11 +150,11 @@ function buildMockSpeakingReport(
   const confidenceReasons = [
     confidence === 'low'
       ? 'The response is shorter than a stable speaking estimate usually needs.'
-      : 'The response length is sufficient for a lightweight alpha estimate.',
+      : 'The response length is sufficient for a lightweight transcript-first alpha estimate.',
     evidenceMode === 'transcript-plus-audio-metadata'
-      ? 'Audio metadata is attached, so this session is ready for a future STT and audio-analysis pass.'
-      : 'No audio metadata is attached yet, so this remains a transcript-first estimate.',
-    'Pronunciation is inferred conservatively because audio analysis is not enabled in this local scaffold.',
+      ? 'Audio metadata is attached, so this session is queued for a future STT and audio-analysis pass once that pipeline exists.'
+      : 'No audio metadata is attached yet, so this remains a transcript-first alpha estimate.',
+    'Pronunciation is provisional because raw audio analysis is not enabled in this alpha scaffold.',
   ];
 
   const fluency = clampBand(5 + Math.min(wordCount / 55, 1.5) + (durationRatio >= 0.85 ? 0.5 : 0));
@@ -217,7 +223,7 @@ function buildMockSpeakingReport(
       },
     ],
     strengths: [
-      wordCount >= 70 ? 'The answer sustains enough detail to sound test-like.' : 'The answer remains relevant to the prompt.',
+      wordCount >= 70 ? 'The answer sustains enough detail to support a transcript-first alpha review.' : 'The answer remains relevant to the prompt.',
       keywordHits > 0 ? 'Topic-specific words support lexical relevance.' : 'The main idea is easy to follow.',
       durationRatio >= 0.85 ? 'Timing is close to the target speaking window.' : 'A timed second attempt could sound stronger quickly.',
       ...(audioArtifact.status === 'attached' ? ['Audio metadata is attached for future STT and audio-feature extraction.'] : []),
@@ -236,14 +242,14 @@ function buildMockSpeakingReport(
         : 'Attach an audio file next time so this session is ready for future STT work.',
     ],
     warnings: [
-      'Speaking alpha reports are local practice estimates, not official IELTS scores.',
+      'Speaking alpha reports are transcript-first practice estimates, not official IELTS scores.',
       ...(shortResponse ? ['A longer answer would produce a more stable speaking estimate.'] : []),
       ...(confidence !== 'high'
         ? ['Confidence is reduced because the current response is shorter or less sustained than the target timing.']
         : []),
       ...(audioArtifact.status === 'attached'
-        ? ['Only audio metadata is stored in this slice; raw audio bytes are not persisted yet.']
-        : ['No audio metadata is attached to this session yet.']),
+        ? ['Only audio metadata is stored in this alpha slice; raw audio bytes and pronunciation features are not persisted yet.']
+        : ['No audio metadata is attached to this session yet, so pronunciation remains especially provisional.']),
     ],
     providerLabel: 'Local mock scorer',
     scorerModel: 'gemini-3-flash-style-heuristic',
@@ -299,7 +305,7 @@ function buildStudyFocus(savedSessions: SpeakingSessionSnapshot[], prompts: Spea
     return [
       'Start with one Part 1 and one Part 2 response so the dashboard can compare short and long turns.',
       'Aim for one full timed response before worrying about detailed speaking criteria.',
-      'Attach one audio file once you are comfortable with the transcript-first flow.',
+      'Treat the current experience as transcript-first alpha until real STT and audio analysis land.',
     ];
   }
 
@@ -312,8 +318,8 @@ function buildStudyFocus(savedSessions: SpeakingSessionSnapshot[], prompts: Spea
       ? 'Stay closer to the recommended timing window to increase scoring confidence.'
       : 'Keep the same timing discipline and improve precision in one weaker criterion.',
     latest.audioArtifact.status === 'attached'
-      ? 'Keep attaching audio metadata so future STT and audio-feature analysis can use your real evidence.'
-      : 'Attach an audio file on the next attempt so the session is ready for future STT work.',
+      ? 'Keep attaching audio metadata so future STT and audio-feature analysis can use the same session evidence.'
+      : 'Attach an audio file on the next attempt only if you want this session ready for future STT work.',
   ];
 }
 
@@ -410,8 +416,7 @@ export function createSpeakingApplicationService({
         ? Math.max(15, Math.round(input.durationSeconds))
         : prompt.recommendedSeconds;
     const createdAt = now();
-    const storedSessions = await repository.listSavedSessions(999);
-    const sessionId = `speaking-live-${storedSessions.length + 1}`;
+    const sessionId = createSpeakingSessionId();
     const report = buildMockSpeakingReport(prompt, transcript, durationSeconds, sessionId, createdAt, audioArtifact);
     const session: SpeakingSessionSnapshot = {
       sessionId,

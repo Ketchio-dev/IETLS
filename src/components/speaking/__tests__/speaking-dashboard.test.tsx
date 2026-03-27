@@ -28,11 +28,11 @@ describe('SpeakingDashboard', () => {
     render(<SpeakingDashboard {...pageData} />);
 
     expect(
-      screen.getByRole('heading', { name: /track part coverage, confidence, and audio readiness/i }),
+      screen.getByRole('heading', { name: /track part coverage, confidence, and transcript-first audio readiness/i }),
     ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /speaking alpha metrics/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /latest practice snapshots/i })).toBeInTheDocument();
-    expect(screen.getByText(/metadata only for now; raw audio is not persisted yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/metadata only for now; raw audio and pronunciation features are not persisted yet/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /return to speaking practice/i })).toHaveAttribute('href', '/speaking');
     const resumeLinks = screen.getAllByRole('link', { name: /resume in practice shell/i });
     expect(resumeLinks[0]).toHaveAttribute(

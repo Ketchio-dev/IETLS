@@ -18,7 +18,7 @@ export function SpeakingDashboard({ prompts = [], recentSessions, summary, study
       id: 'total-sessions',
       label: 'Total sessions',
       value: String(summary.totalSessions),
-      detail: 'Persisted in the local alpha store.',
+      detail: 'Persisted in the local transcript-first alpha store.',
       eyebrow: 'Coverage',
     },
     {
@@ -41,7 +41,7 @@ export function SpeakingDashboard({ prompts = [], recentSessions, summary, study
       id: 'audio-sessions',
       label: 'Audio-backed sessions',
       value: String(summary.sessionsWithAudio),
-      detail: 'Metadata only for now; raw audio is not persisted yet.',
+      detail: 'Metadata only for now; raw audio and pronunciation features are not persisted yet.',
       eyebrow: 'STT readiness',
     },
     {
@@ -58,10 +58,10 @@ export function SpeakingDashboard({ prompts = [], recentSessions, summary, study
       <section className="hero panel dashboard-hero">
         <div>
           <p className="eyebrow">IELTS Academic • Speaking dashboard</p>
-          <h1>Track part coverage, confidence, and audio readiness</h1>
+          <h1>Track part coverage, confidence, and transcript-first audio readiness</h1>
           <p className="hero-copy">
             Use this alpha dashboard to see how often you practise each speaking part and whether your
-            recent sessions are ready for a future STT or audio-analysis pass.
+            recent sessions are ready for a future STT or audio-analysis pass, while remembering that pronunciation remains provisional.
           </p>
           <div className="dashboard-actions">
             <Link className="primary-button dashboard-link-button" href="/speaking">

@@ -3,12 +3,7 @@ import Link from 'next/link';
 import { DashboardMetricGrid } from '@/components/dashboard';
 import type { ReadingDashboardPageData } from '@/lib/services/reading/types';
 
-function formatType(type: string) {
-  return type
-    .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-}
+import { formatCompactDuration, formatQuestionType, formatSavedAt } from './reading-formatting';
 
 export function ReadingDashboard({
   dashboardSummary,
@@ -38,13 +33,13 @@ export function ReadingDashboard({
                 label: 'Best score',
                 value: dashboardSummary.bestScoreLabel ?? 'No attempts yet',
                 detail: dashboardSummary.latestAttemptAt
-                  ? `Latest attempt saved at ${dashboardSummary.latestAttemptAt}.`
+                  ? `Latest attempt saved at ${formatSavedAt(dashboardSummary.latestAttemptAt)}.`
                   : 'No attempt history yet.',
               },
               {
                 id: 'avg-time',
                 label: 'Average time',
-                value: `${dashboardSummary.averageTimeSpentSeconds}s`,
+                value: formatCompactDuration(dashboardSummary.averageTimeSpentSeconds),
                 detail: 'Use elapsed time as a pacing signal while you iterate on imported drills.',
               },
             ]}
@@ -75,14 +70,14 @@ export function ReadingDashboard({
               <ul className="plain-list compact-list">
                 {dashboardSummary.strongestType ? (
                   <li>
-                    <strong>Strongest:</strong> {formatType(dashboardSummary.strongestType.type)} —{' '}
+                    <strong>Strongest:</strong> {formatQuestionType(dashboardSummary.strongestType.type)} —{' '}
                     {dashboardSummary.strongestType.correct}/{dashboardSummary.strongestType.total} correct (
                     {dashboardSummary.strongestType.accuracy}%)
                   </li>
                 ) : null}
                 {dashboardSummary.weakestType ? (
                   <li>
-                    <strong>Weakest:</strong> {formatType(dashboardSummary.weakestType.type)} —{' '}
+                    <strong>Weakest:</strong> {formatQuestionType(dashboardSummary.weakestType.type)} —{' '}
                     {dashboardSummary.weakestType.correct}/{dashboardSummary.weakestType.total} correct (
                     {dashboardSummary.weakestType.accuracy}%)
                   </li>
@@ -113,8 +108,8 @@ export function ReadingDashboard({
                     <p>{attempt.report.summary}</p>
                     <div className="history-meta">
                       <span>{attempt.report.percentage}% accuracy</span>
-                      <span>{attempt.timeSpentSeconds}s</span>
-                      <span>{attempt.createdAt}</span>
+                      <span>{formatCompactDuration(attempt.timeSpentSeconds)}</span>
+                      <span>{formatSavedAt(attempt.createdAt)}</span>
                     </div>
                     <div className="hero-actions">
                       <Link

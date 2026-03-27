@@ -93,7 +93,8 @@ describe('assessment workspace registry', () => {
     expect(getAssessmentWorkspace(READING_ASSESSMENT_MODULE_ID)).toEqual({
       id: 'reading',
       label: 'IELTS Academic Reading',
-      summary: 'Passage-centred drill practice with deterministic scoring, evidence-backed review, and imported local bank support.',
+      summary:
+        'One-passage Reading drill practice with deterministic scoring, evidence-backed review, and imported local bank support. This is not a full three-passage mock yet.',
       routes: {
         practice: '/reading',
         dashboard: '/reading/dashboard',

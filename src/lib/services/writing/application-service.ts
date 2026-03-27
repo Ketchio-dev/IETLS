@@ -21,6 +21,7 @@ import {
 import { runAssessmentPipeline } from '@/lib/services/assessment';
 
 import { buildDashboardSummary } from './dashboard';
+import { countWords } from './metrics';
 import { buildProgressSummary } from './progress-summary';
 import { WritingScorerUnavailableError } from './scorer-adapter';
 
@@ -84,6 +85,10 @@ interface WritingApplicationServiceOptions {
 
 function getSingleSearchParam(value: SearchParamValue) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function getTaskLabel(taskType: WritingPrompt['taskType']) {
+  return taskType === 'task-1' ? 'Task 1' : 'Task 2';
 }
 
 export function createWritingApplicationService({
@@ -162,10 +167,10 @@ export function createWritingApplicationService({
     const response = getSingleSearchParam(input.response) ?? '';
     const timeSpentMinutes = typeof input.timeSpentMinutes === 'number' ? input.timeSpentMinutes : 0;
 
-    if (!promptId || response.trim().length < 50) {
+    if (!promptId || response.trim().length === 0) {
       return {
         ok: false,
-        error: 'Provide a promptId and at least 50 characters of writing.',
+        error: 'Provide a promptId and a non-empty writing response.',
         status: 400,
       };
     }
@@ -186,6 +191,15 @@ export function createWritingApplicationService({
         ok: false,
         error: 'Unknown writing prompt requested.',
         status: 404,
+      };
+    }
+
+    const wordCount = countWords(response);
+    if (wordCount < prompt.suggestedWordCount) {
+      return {
+        ok: false,
+        error: `Provide at least ${prompt.suggestedWordCount} words for ${getTaskLabel(prompt.taskType)} writing.`,
+        status: 400,
       };
     }
 

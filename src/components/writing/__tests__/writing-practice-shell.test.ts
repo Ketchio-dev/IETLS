@@ -96,6 +96,33 @@ describe('WritingPracticeShell', () => {
     expect(modelMatches.length).toBeGreaterThan(0);
   });
 
+  it('keeps scoring disabled until the active task reaches its minimum word target', () => {
+    render(createElement(WritingPracticeShell, {
+      fallbackReports: sampleAssessmentReportsByPromptId,
+      initialHistory: [],
+      initialReport: sampleAssessmentReport,
+      initialSavedAssessments: [],
+      prompt: samplePrompt,
+      prompts: writingPromptBank,
+    }));
+
+    const submitButton = screen.getByRole('button', { name: /generate practice estimate/i });
+    expect(submitButton).toBeEnabled();
+    expect(screen.getByText(/minimum reached/i)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole('textbox', { name: /essay response/i }), {
+      target: { value: 'Too short to score yet.' },
+    });
+
+    expect(screen.getByRole('button', { name: /generate practice estimate/i })).toBeDisabled();
+    expect(screen.getByText(/more to unlock scoring/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole('tab', { name: /writing task 1/i })[0]!);
+
+    expect(screen.getByRole('button', { name: /generate practice estimate/i })).toBeEnabled();
+    expect(screen.getByText(/minimum reached/i)).toBeInTheDocument();
+  });
+
   it('switches between prompts in the prompt bank', () => {
     render(createElement(WritingPracticeShell, {
       fallbackReports: sampleAssessmentReportsByPromptId,

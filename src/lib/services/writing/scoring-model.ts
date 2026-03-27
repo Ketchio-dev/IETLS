@@ -8,14 +8,14 @@ const criterionMapByTaskType: Record<WritingTaskType, Record<CriterionName, stri
     'Task Response': [],
     'Coherence & Cohesion': ['cohesion-paragraphing', 'task1-comparisons'],
     'Lexical Resource': ['task1-trend-language', 'lexical-generality'],
-    'Grammatical Range & Accuracy': ['grammar-variety', 'task1-time-reference'],
+    'Grammatical Range & Accuracy': ['grammar-variety', 'grammar-accuracy', 'spelling-control', 'task1-time-reference'],
   },
   'task-2': {
     'Task Achievement': [],
     'Task Response': ['coverage-word-count', 'coverage-relevance', 'response-position', 'grammar-support'],
     'Coherence & Cohesion': ['cohesion-paragraphing', 'cohesion-balance'],
     'Lexical Resource': ['lexical-topic-range', 'lexical-generality'],
-    'Grammatical Range & Accuracy': ['grammar-variety'],
+    'Grammatical Range & Accuracy': ['grammar-variety', 'grammar-accuracy', 'spelling-control'],
   },
 };
 

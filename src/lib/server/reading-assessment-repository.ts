@@ -2,6 +2,7 @@ import { readCompiledReadingPrivateBank } from '@/lib/server/reading-private-imp
 import type { ImportedReadingSet, PrivateReadingImportBankPayload } from '@/lib/services/reading-imports/types';
 import type { ReadingAttemptSnapshot } from '@/lib/services/reading/types';
 
+import { areDemoSeedsEnabled } from './demo-seeds';
 import { getStoragePort, type JsonStoragePort, type StorageFile } from './storage';
 import { sampleReadingSets } from '@/lib/fixtures/reading';
 
@@ -25,10 +26,15 @@ export interface ReadingAssessmentRepository {
 
 export function createReadingAssessmentRepository(
   storage: JsonStoragePort = getStoragePort(),
+  options: {
+    demoSeedsEnabled?: boolean;
+  } = {},
 ): ReadingAssessmentRepository {
+  const demoSeedsEnabled = options.demoSeedsEnabled ?? areDemoSeedsEnabled();
+
   async function readImportedBank() {
     const imported = await readCompiledReadingPrivateBank();
-    if (imported.sets.length > 0) {
+    if (imported.sets.length > 0 || !demoSeedsEnabled) {
       return clone(imported);
     }
 

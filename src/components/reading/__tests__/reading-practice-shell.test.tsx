@@ -14,53 +14,59 @@ vi.mock('next/navigation', () => ({
 
 import { ReadingPracticeShell } from '../reading-practice-shell';
 
+function buildPageData(): ReadingPracticePageData {
+  const set = sampleReadingSets[0]!;
+
+  return {
+    moduleId: 'reading',
+    moduleLabel: 'IELTS Academic Reading',
+    statusLabel: 'Private drill ready',
+    summary: 'One-passage private Reading drills are now available from your local import bank.',
+    routeBase: '/reading',
+    importedSets: [set],
+    availableSets: [
+      {
+        id: set.id,
+        title: set.title,
+        sourceLabel: set.sourceLabel,
+        sourceFile: set.sourceFile,
+        importedAt: set.importedAt,
+        questionCount: set.questions.length,
+        passageWordCount: set.passageWordCount,
+        types: Array.from(new Set(set.questions.map((question) => question.type))),
+      },
+    ],
+    activeSet: set,
+    importSummary: {
+      sourceDir: 'data/private-reading-imports',
+      importCommand: 'npm run reading:import-private',
+      detectedSourceFiles: ['sample.json'],
+      compiledSourceFiles: ['sample.json'],
+      importedSetCount: 1,
+      latestImportedAt: '2026-03-26T00:00:00.000Z',
+      compiledOutputLabel: 'data/runtime/reading-private-imports.json',
+      sets: [],
+      warnings: [],
+    },
+    initialReport: null,
+    initialAnswers: {},
+    initialTimeSpentSeconds: 0,
+    recentAttempts: [],
+    savedAttempts: [],
+    initialSetId: set.id,
+    initialAttemptId: null,
+  };
+}
+
 describe('ReadingPracticeShell', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.clearAllMocks();
   });
 
-  it('renders the passage, supported question types, and submitted report', async () => {
+  it('renders the passage, progress summary, and submitted report without creating a nested main landmark', async () => {
     const set = sampleReadingSets[0]!;
-    const pageData: ReadingPracticePageData = {
-      moduleId: 'reading',
-      moduleLabel: 'IELTS Academic Reading',
-      statusLabel: 'Private drill ready',
-      summary: 'One-passage private Reading drills are now available from your local import bank.',
-      routeBase: '/reading',
-      importedSets: [set],
-      availableSets: [
-        {
-          id: set.id,
-          title: set.title,
-          sourceLabel: set.sourceLabel,
-          sourceFile: set.sourceFile,
-          importedAt: set.importedAt,
-          questionCount: set.questions.length,
-          passageWordCount: set.passageWordCount,
-          types: Array.from(new Set(set.questions.map((question) => question.type))),
-        },
-      ],
-      activeSet: set,
-      importSummary: {
-        sourceDir: 'data/private-reading-imports',
-        importCommand: 'npm run reading:import-private',
-        detectedSourceFiles: ['sample.json'],
-        compiledSourceFiles: ['sample.json'],
-        importedSetCount: 1,
-        latestImportedAt: '2026-03-26T00:00:00.000Z',
-        compiledOutputLabel: 'data/runtime/reading-private-imports.json',
-        sets: [],
-        warnings: [],
-      },
-      initialReport: null,
-      initialAnswers: {},
-      initialTimeSpentSeconds: 0,
-      recentAttempts: [],
-      savedAttempts: [],
-      initialSetId: set.id,
-      initialAttemptId: null,
-    };
+    const pageData = buildPageData();
 
     vi.stubGlobal(
       'fetch',
@@ -125,25 +131,94 @@ describe('ReadingPracticeShell', () => {
               nextSteps: [],
               warnings: [],
               generatedAt: '2026-03-26T12:00:00.000Z',
-              questionReviews: [],
+              questionReviews: set.questions.map((question, index) => ({
+                questionId: question.id,
+                type: question.type,
+                prompt: question.prompt,
+                userAnswer: index === 0 ? 'C' : 'sample',
+                acceptedAnswers: question.acceptedAnswers,
+                isCorrect: index !== 2,
+                explanation: question.explanation,
+                evidenceHint: question.evidenceHint,
+              })),
             },
           },
           recentAttempts: [],
-          savedAttempts: [],
+          savedAttempts: [
+            {
+              attemptId: 'attempt-1',
+              setId: set.id,
+              setTitle: set.title,
+              createdAt: '2026-03-26T12:00:00.000Z',
+              timeSpentSeconds: 320,
+              answers: { [set.questions[0]!.id]: 'C' },
+              report: {
+                reportId: 'report-1',
+                attemptId: 'attempt-1',
+                setId: set.id,
+                setTitle: set.title,
+                rawScore: 5,
+                maxScore: set.questions.length,
+                percentage: 83,
+                scoreLabel: '5/6',
+                summary: 'Solid private drill pass with one weakness left to revisit.',
+                accuracyByQuestionType: [
+                  { type: 'multiple_choice', correct: 2, total: 2, accuracy: 100 },
+                  { type: 'true_false_not_given', correct: 1, total: 2, accuracy: 50 },
+                  { type: 'sentence_completion', correct: 2, total: 2, accuracy: 100 },
+                ],
+                strengths: [],
+                risks: [],
+                nextSteps: [],
+                warnings: [],
+                generatedAt: '2026-03-26T12:00:00.000Z',
+                questionReviews: set.questions.map((question, index) => ({
+                  questionId: question.id,
+                  type: question.type,
+                  prompt: question.prompt,
+                  userAnswer: index === 0 ? 'C' : 'sample',
+                  acceptedAnswers: question.acceptedAnswers,
+                  isCorrect: index !== 2,
+                  explanation: question.explanation,
+                  evidenceHint: question.evidenceHint,
+                })),
+              },
+            },
+          ],
         }),
       }),
     );
 
     render(<ReadingPracticeShell {...pageData} />);
 
+    expect(screen.queryByRole('main')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /passage-centred reading drill/i })).toBeInTheDocument();
     expect(screen.getAllByText(/urban bee corridors and rooftop planting/i)[0]).toBeInTheDocument();
     expect(screen.getAllByText(/true false not given/i)[0]).toBeInTheDocument();
+    expect(screen.getByText('0/6 answered · 6 left before your next score pass.')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(set.questions[3]!.prompt), { target: { value: 'water' } });
+
+    expect(screen.getByText('1/6 answered · 5 left before your next score pass.')).toBeInTheDocument();
+
     fireEvent.click(screen.getByRole('button', { name: /submit reading drill/i }));
 
-    await waitFor(() => expect(screen.getByText('5/6')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText('5/6').length).toBeGreaterThan(0));
     expect(screen.getAllByText(/accepted answers:/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/review needed/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/evidence hint:/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/reading drill scored: 5\/6, 83% accuracy\./i)).toBeInTheDocument();
+  });
+
+  it('renders question navigation and semantic question groups before scoring', () => {
+    const pageData = buildPageData();
+    const set = sampleReadingSets[0]!;
+
+    render(<ReadingPracticeShell {...pageData} />);
+
+    expect(screen.getByLabelText(/question navigation/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /jump to question 1, pending/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/choose the single best option from the list below/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole('radiogroup', { name: set.questions[0]!.prompt })).toBeInTheDocument();
   });
 });

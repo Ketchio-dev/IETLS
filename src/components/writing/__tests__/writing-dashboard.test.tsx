@@ -21,6 +21,9 @@ const summary: WritingDashboardSummary = {
   totalAttempts: 4,
   taskCounts: { 'task-1': 1, 'task-2': 3 },
   latestRange: { lower: 6.5, upper: 7 },
+  latestFullTestEstimateBand: 7,
+  latestFullTestTask1Band: 6.5,
+  latestFullTestTask2Band: 7,
   bestBand: 7,
   averageBand: 6.4,
   averageWordCount: 271,
@@ -193,6 +196,8 @@ describe('WritingDashboard', () => {
 
     expect(screen.getByRole('heading', { name: /track writing momentum across every saved assessment/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /aggregated writing metrics/i })).toBeInTheDocument();
+    expect(screen.getByText(/task weighting/i)).toBeInTheDocument();
+    expect(screen.getByText(/latest task 1 6\.5 \+ task 2 7\.0 combined with ielts-style 1:2 weighting/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /inspect and resume from the dashboard/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /criterion trend summaries/i })).toBeInTheDocument();
     expect(screen.getAllByText(/improving/i).length).toBeGreaterThan(0);

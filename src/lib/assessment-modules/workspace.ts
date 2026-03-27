@@ -46,7 +46,8 @@ export const speakingAssessmentWorkspace: AssessmentWorkspace = {
 export const readingAssessmentWorkspace: AssessmentWorkspace = {
   moduleId: 'reading',
   moduleLabel: 'IELTS Academic Reading',
-  moduleSummary: 'Passage-centred drill practice with deterministic scoring, evidence-backed review, and imported local bank support.',
+  moduleSummary:
+    'One-passage Reading drill practice with deterministic scoring, evidence-backed review, and imported local bank support. This is not a full three-passage mock yet.',
   practicePath: '/reading',
   dashboardPath: '/reading/dashboard',
   taskApiPath: '/api/reading/task',

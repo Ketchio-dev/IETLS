@@ -49,7 +49,9 @@ function createInMemoryStoragePort(): JsonStoragePort {
 
 describe('speaking assessment repository', () => {
   it('stores and lists saved speaking sessions in reverse chronological order', async () => {
-    const repository = createSpeakingAssessmentRepository(createInMemoryStoragePort());
+    const repository = createSpeakingAssessmentRepository(createInMemoryStoragePort(), sampleSpeakingSavedSessions, {
+      demoSeedsEnabled: true,
+    });
 
     await repository.saveSession(sampleSpeakingSavedSessions[2]!, 10);
     await repository.saveSession(sampleSpeakingSavedSessions[0]!, 10);
@@ -62,7 +64,9 @@ describe('speaking assessment repository', () => {
   });
 
   it('preserves concurrent session saves without dropping either result', async () => {
-    const repository = createSpeakingAssessmentRepository(createInMemoryStoragePort());
+    const repository = createSpeakingAssessmentRepository(createInMemoryStoragePort(), sampleSpeakingSavedSessions, {
+      demoSeedsEnabled: true,
+    });
 
     await Promise.all([
       repository.saveSession(sampleSpeakingSavedSessions[1]!, 10),
@@ -76,5 +80,15 @@ describe('speaking assessment repository', () => {
       sampleSpeakingSavedSessions[1]!.sessionId,
       sampleSpeakingSavedSessions[2]!.sessionId,
     ]);
+  });
+
+  it('does not auto-seed sample sessions when demo mode is disabled', async () => {
+    const repository = createSpeakingAssessmentRepository(createInMemoryStoragePort(), sampleSpeakingSavedSessions, {
+      demoSeedsEnabled: false,
+    });
+
+    const sessions = await repository.listSavedSessions(10);
+
+    expect(sessions).toEqual([]);
   });
 });

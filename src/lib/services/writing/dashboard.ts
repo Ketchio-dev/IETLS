@@ -44,6 +44,10 @@ function roundBand(value: number) {
   return Number(value.toFixed(1));
 }
 
+function roundWeightedBand(value: number) {
+  return Math.round(value * 2) / 2;
+}
+
 function buildCriterionTrend(delta: number | null): DashboardCriterionSummary['trend'] {
   if (delta === null) {
     return 'insufficient-data';
@@ -136,6 +140,9 @@ export function buildDashboardSummary(savedAssessments: SavedAssessmentSnapshot[
       totalAttempts: 0,
       taskCounts: { ...EMPTY_TASK_COUNTS },
       latestRange: null,
+      latestFullTestEstimateBand: null,
+      latestFullTestTask1Band: null,
+      latestFullTestTask2Band: null,
       bestBand: null,
       averageBand: null,
       averageWordCount: 0,
@@ -160,11 +167,20 @@ export function buildDashboardSummary(savedAssessments: SavedAssessmentSnapshot[
   );
   const criterionBands = summarizeCriterionBands(ordered);
   const averageBand = roundBand(ordered.reduce((sum, attempt) => sum + attempt.report.overallBand, 0) / ordered.length);
+  const latestTask1Attempt = ordered.find((attempt) => attempt.taskType === 'task-1') ?? null;
+  const latestTask2Attempt = ordered.find((attempt) => attempt.taskType === 'task-2') ?? null;
+  const latestFullTestEstimateBand =
+    latestTask1Attempt && latestTask2Attempt
+      ? roundWeightedBand((latestTask1Attempt.report.overallBand + latestTask2Attempt.report.overallBand * 2) / 3)
+      : null;
 
   return {
     totalAttempts: ordered.length,
     taskCounts,
     latestRange: latestAssessment.report.overallBandRange,
+    latestFullTestEstimateBand,
+    latestFullTestTask1Band: latestTask1Attempt?.report.overallBand ?? null,
+    latestFullTestTask2Band: latestTask2Attempt?.report.overallBand ?? null,
     bestBand: roundBand(Math.max(...ordered.map((attempt) => attempt.report.overallBand))),
     averageBand,
     averageWordCount: Math.round(

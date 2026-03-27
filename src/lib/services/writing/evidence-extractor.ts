@@ -13,6 +13,22 @@ const SENTENCE_VARIETY_TASK2_PATTERN = /,|;| which | that | although | because |
 const OPINION_PATTERN = /\b(I believe|I think|In my opinion|I would argue|Overall, I believe)\b/i;
 const BALANCED_DISCUSSION_PATTERN = /\b(on the one hand|on the other hand|however|while|whereas)\b/i;
 const EXAMPLE_PATTERN = /for example|for instance|such as/gi;
+const SENTENCE_SPLIT_PATTERN = /(?<=[.!?])\s+|\n+/;
+const LOWERCASE_SENTENCE_START_PATTERN = /^[a-z]/;
+const REPEATED_PUNCTUATION_PATTERN = /([,.;:!?])\1+/g;
+const COMMON_MISSPELLING_PATTERNS = [
+  /\bteh\b/gi,
+  /\brecieve\b/gi,
+  /\bseperate\b/gi,
+  /\bgoverment\b/gi,
+  /\benviroment\b/gi,
+  /\bdevelopement\b/gi,
+  /\bbecuase\b/gi,
+  /\barguement\b/gi,
+  /\bstuding\b/gi,
+  /\bnowdays\b/gi,
+  /\btransportion\b/gi,
+] as const;
 
 const buildSignal = (
   id: string,
@@ -22,6 +38,35 @@ const buildSignal = (
   detail: string,
   source: EvidenceSignal['source'],
 ): EvidenceSignal => ({ id, criterion, label, strength, detail, source });
+
+function summarizeGrammarAndSpelling(response: string) {
+  const sentences = response
+    .split(SENTENCE_SPLIT_PATTERN)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+  const lowercaseSentenceStarts = sentences.filter((sentence) => LOWERCASE_SENTENCE_START_PATTERN.test(sentence)).length;
+  const lowercasePronounI = countMatches(response, /\bi\b/g);
+  const repeatedPunctuation = countMatches(response, REPEATED_PUNCTUATION_PATTERN);
+  const missingTerminalPunctuation = response.trim().length > 0 && !/[.!?]$/.test(response.trim()) ? 1 : 0;
+  const grammarIssueCount =
+    lowercaseSentenceStarts
+    + lowercasePronounI
+    + repeatedPunctuation
+    + missingTerminalPunctuation;
+  const spellingIssueCount = COMMON_MISSPELLING_PATTERNS.reduce(
+    (sum, pattern) => sum + countMatches(response, pattern),
+    0,
+  );
+
+  return {
+    grammarIssueCount,
+    spellingIssueCount,
+    lowercaseSentenceStarts,
+    lowercasePronounI,
+    repeatedPunctuation,
+    missingTerminalPunctuation,
+  };
+}
 
 function extractTask1Evidence(prompt: WritingPrompt, submission: EssaySubmission): EvidenceSignal[] {
   const response = submission.response;
@@ -36,6 +81,7 @@ function extractTask1Evidence(prompt: WritingPrompt, submission: EssaySubmission
   const timeMarkers = countMatches(response, TASK1_TIME_PATTERN);
   const repeatedGeneralWords = countMatches(response, GENERAL_WORD_PATTERN);
   const sentenceVariety = countMatches(response, SENTENCE_VARIETY_TASK1_PATTERN);
+  const languageControl = summarizeGrammarAndSpelling(response);
 
   return [
     buildSignal(
@@ -105,6 +151,22 @@ function extractTask1Evidence(prompt: WritingPrompt, submission: EssaySubmission
       'rule-based',
     ),
     buildSignal(
+      'grammar-accuracy',
+      'Grammatical Range & Accuracy',
+      'Grammar accuracy control',
+      languageControl.grammarIssueCount === 0 ? 'strong' : languageControl.grammarIssueCount <= 2 ? 'developing' : 'weak',
+      `Detected ${languageControl.grammarIssueCount} grammar-control flag(s): lowercase starts ${languageControl.lowercaseSentenceStarts}, lowercase "i" ${languageControl.lowercasePronounI}, repeated punctuation ${languageControl.repeatedPunctuation}, missing final punctuation ${languageControl.missingTerminalPunctuation}.`,
+      'rule-based',
+    ),
+    buildSignal(
+      'spelling-control',
+      'Grammatical Range & Accuracy',
+      'Spelling control',
+      languageControl.spellingIssueCount === 0 ? 'strong' : languageControl.spellingIssueCount <= 2 ? 'developing' : 'weak',
+      `Detected ${languageControl.spellingIssueCount} likely spelling issue(s) from the built-in high-frequency error list.`,
+      'rule-based',
+    ),
+    buildSignal(
       'task1-time-reference',
       'Grammatical Range & Accuracy',
       'Time and data references',
@@ -126,6 +188,7 @@ function extractTask2Evidence(prompt: WritingPrompt, submission: EssaySubmission
   const hasBalancedDiscussion = BALANCED_DISCUSSION_PATTERN.test(response);
   const examples = countMatches(response, EXAMPLE_PATTERN);
   const repeatedGeneralWords = countMatches(response, GENERAL_WORD_PATTERN);
+  const languageControl = summarizeGrammarAndSpelling(response);
 
   return [
     buildSignal(
@@ -192,6 +255,22 @@ function extractTask2Evidence(prompt: WritingPrompt, submission: EssaySubmission
       'Sentence variety',
       sentenceVariety >= 6 ? 'strong' : sentenceVariety >= 3 ? 'developing' : 'weak',
       `Detected ${sentenceVariety} clause-complexity signals from punctuation and subordination cues.`,
+      'rule-based',
+    ),
+    buildSignal(
+      'grammar-accuracy',
+      'Grammatical Range & Accuracy',
+      'Grammar accuracy control',
+      languageControl.grammarIssueCount === 0 ? 'strong' : languageControl.grammarIssueCount <= 2 ? 'developing' : 'weak',
+      `Detected ${languageControl.grammarIssueCount} grammar-control flag(s): lowercase starts ${languageControl.lowercaseSentenceStarts}, lowercase "i" ${languageControl.lowercasePronounI}, repeated punctuation ${languageControl.repeatedPunctuation}, missing final punctuation ${languageControl.missingTerminalPunctuation}.`,
+      'rule-based',
+    ),
+    buildSignal(
+      'spelling-control',
+      'Grammatical Range & Accuracy',
+      'Spelling control',
+      languageControl.spellingIssueCount === 0 ? 'strong' : languageControl.spellingIssueCount <= 2 ? 'developing' : 'weak',
+      `Detected ${languageControl.spellingIssueCount} likely spelling issue(s) from the built-in high-frequency error list.`,
       'rule-based',
     ),
     buildSignal(

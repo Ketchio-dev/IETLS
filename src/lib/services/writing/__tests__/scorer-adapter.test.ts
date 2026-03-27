@@ -7,6 +7,7 @@ import {
   WRITING_RUBRIC_SCHEMA_VERSION,
   scoreWritingWithAdapter,
   scoreWritingWithMockAdapter,
+  setGeminiCliRunnerForTests,
   WritingScorerUnavailableError,
 } from '@/lib/services/writing/scorer-adapter';
 
@@ -57,24 +58,76 @@ function buildOpenRouterPayload() {
   };
 }
 
+function buildGeminiCliEnvelope(payload: unknown = buildOpenRouterPayload()) {
+  return JSON.stringify({
+    session_id: 'gemini-session-123',
+    response: JSON.stringify(payload),
+    stats: {},
+  });
+}
+
+function buildGeminiCliStringPayload() {
+  return {
+    schemaVersion: WRITING_RUBRIC_SCHEMA_VERSION,
+    overallBand: '7',
+    overallBandRange: {
+      lower: '6.5',
+      upper: '7.5',
+    },
+    confidence: 'medium' as const,
+    confidenceReasons: ['Clear position and supporting examples.', 'Sentence variety evidence is still mixed.'],
+    criterionScores: [
+      {
+        criterion: 'Task Response',
+        band: '7',
+        bandRange: { lower: '6.5', upper: '7.5' },
+        rationale: 'The essay maintains a clear position and addresses both views.',
+        confidence: 'high' as const,
+      },
+      {
+        criterion: 'Coherence & Cohesion',
+        band: '6.5',
+        bandRange: { lower: '6', upper: '7' },
+        rationale: 'Paragraphing is logical, but some transitions remain predictable.',
+        confidence: 'medium' as const,
+      },
+      {
+        criterion: 'Lexical Resource',
+        band: '7',
+        bandRange: { lower: '6.5', upper: '7.5' },
+        rationale: 'Topic vocabulary is precise and mostly natural.',
+        confidence: 'medium' as const,
+      },
+      {
+        criterion: 'Grammatical Range & Accuracy',
+        band: '6.5',
+        bandRange: { lower: '6', upper: '7' },
+        rationale: 'Complex forms appear, though control is uneven.',
+        confidence: 'medium' as const,
+      },
+    ],
+  };
+}
+
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   vi.useRealTimers();
+  setGeminiCliRunnerForTests(null);
 });
 
 describe('scoreWritingWithAdapter', () => {
   it('uses OpenRouter when configured and returns provider metadata', async () => {
     vi.stubEnv('IELTS_SCORER_PROVIDER', 'openrouter');
     vi.stubEnv('OPENROUTER_API_KEY', 'test-key');
-    vi.stubEnv('IELTS_SCORER_MODEL', 'google/gemini-3-flash');
+    vi.stubEnv('IELTS_SCORER_MODEL', 'google/gemini-3-flash-preview');
 
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         id: 'gen-123',
-        model: 'google/gemini-3-flash',
+        model: 'google/gemini-3-flash-preview',
         usage: { total_tokens: 321 },
         choices: [
           {
@@ -92,15 +145,47 @@ describe('scoreWritingWithAdapter', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(result.evaluationTrace.scorerProvider).toBe('openrouter');
-    expect(result.evaluationTrace.scorerModel).toBe('google/gemini-3-flash');
+    expect(result.evaluationTrace.scorerModel).toBe('google/gemini-3-flash-preview');
     expect(result.evaluationTrace.usedMockFallback).toBe(false);
     expect(result.evaluationTrace.configuredProvider).toBe('openrouter');
-    expect(result.overallBand).toBe(7);
+    expect(result.overallBand).toBe(7.5);
+    expect(result.overallBandRange).toEqual({ lower: 7, upper: 8 });
     expect(result.criterionScores).toHaveLength(4);
     expect(result.evaluationTrace.notes.join(' ')).toContain('OpenRouter');
+    expect(result.evaluationTrace.notes.join(' ')).toContain('Raw OpenRouter overall band before calibration: 7.0.');
   });
 
-  it('keeps Gemini 3 Flash as the default OpenRouter scorer model', async () => {
+  it('can disable OpenRouter overall calibration for raw benchmarking runs', async () => {
+    vi.stubEnv('IELTS_SCORER_PROVIDER', 'openrouter');
+    vi.stubEnv('OPENROUTER_API_KEY', 'test-key');
+    vi.stubEnv('IETLS_DISABLE_OPENROUTER_OVERALL_CALIBRATION', 'true');
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: 'gen-raw-123',
+        model: 'google/gemini-3-flash-preview',
+        usage: { total_tokens: 111 },
+        choices: [
+          {
+            message: {
+              content: JSON.stringify(buildOpenRouterPayload()),
+            },
+          },
+        ],
+      }),
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await scoreWritingWithAdapter(samplePrompt, buildEvidence(), sampleSubmission.response);
+
+    expect(result.overallBand).toBe(7);
+    expect(result.overallBandRange).toEqual({ lower: 6.5, upper: 7.5 });
+    expect(result.evaluationTrace.notes.join(' ')).toContain('calibration was explicitly disabled');
+  });
+
+  it('keeps Gemini 3 Flash Preview as the default OpenRouter scorer model', async () => {
     vi.stubEnv('IELTS_SCORER_PROVIDER', 'openrouter');
     vi.stubEnv('OPENROUTER_API_KEY', 'test-key');
 
@@ -108,7 +193,7 @@ describe('scoreWritingWithAdapter', () => {
       ok: true,
       json: async () => ({
         id: 'gen-456',
-        model: 'google/gemini-3-flash',
+        model: 'google/gemini-3-flash-preview',
         usage: { total_tokens: 222 },
         choices: [
           {
@@ -128,7 +213,7 @@ describe('scoreWritingWithAdapter', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
-        body: expect.stringContaining('"model":"google/gemini-3-flash"'),
+        body: expect.stringContaining('"model":"google/gemini-3-flash-preview"'),
       }),
     );
   });
@@ -141,7 +226,7 @@ describe('scoreWritingWithAdapter', () => {
       ok: true,
       json: async () => ({
         id: 'gen-789',
-        model: 'google/gemini-3-flash',
+        model: 'google/gemini-3-flash-preview',
         usage: { total_tokens: 180 },
         choices: [
           {
@@ -224,7 +309,7 @@ describe('scoreWritingWithAdapter', () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        model: 'google/gemini-3-flash',
+        model: 'google/gemini-3-flash-preview',
         choices: [
           {
             message: {
@@ -269,7 +354,7 @@ describe('scoreWritingWithAdapter', () => {
       ok: true,
       json: async () => ({
         id: 'gen-consistency-check',
-        model: 'google/gemini-3-flash',
+        model: 'google/gemini-3-flash-preview',
         usage: { total_tokens: 200 },
         choices: [
           {
@@ -343,7 +428,7 @@ describe('scoreWritingWithAdapter', () => {
       ok: true,
       json: async () => ({
         id: 'gen-notes-check',
-        model: 'google/gemini-3-flash',
+        model: 'google/gemini-3-flash-preview',
         usage: { total_tokens: 310 },
         choices: [
           {
@@ -391,5 +476,72 @@ describe('scoreWritingWithAdapter', () => {
     await vi.advanceTimersByTimeAsync(5);
 
     await rejectionExpectation;
+  });
+
+  it('uses Gemini CLI when configured and returns provider metadata', async () => {
+    vi.stubEnv('IELTS_SCORER_PROVIDER', 'gemini-cli');
+    vi.stubEnv('IELTS_SCORER_MODEL', 'gemini-3-flash');
+
+    const runner = vi.fn().mockResolvedValue({
+      stdout: buildGeminiCliEnvelope(buildGeminiCliStringPayload()),
+      stderr: 'Loaded cached credentials.\n',
+    });
+    setGeminiCliRunnerForTests(runner);
+
+    const result = await scoreWritingWithAdapter(samplePrompt, buildEvidence(), sampleSubmission.response);
+
+    expect(runner).toHaveBeenCalledTimes(1);
+    expect(result.evaluationTrace.scorerProvider).toBe('gemini-cli');
+    expect(result.evaluationTrace.scorerModel).toBe('gemini-3-flash-preview');
+    expect(result.evaluationTrace.usedMockFallback).toBe(false);
+    expect(result.evaluationTrace.configuredProvider).toBe('gemini-cli');
+    expect(result.overallBand).toBe(7);
+    expect(result.evaluationTrace.notes.join(' ')).toContain('Gemini CLI');
+  });
+
+  it('passes the preview model alias to Gemini CLI when gemini-3-flash is configured', async () => {
+    vi.stubEnv('IELTS_SCORER_PROVIDER', 'gemini-cli');
+    vi.stubEnv('IELTS_SCORER_MODEL', 'gemini-3-flash');
+
+    const runner = vi.fn().mockResolvedValue({
+      stdout: buildGeminiCliEnvelope(),
+      stderr: '',
+    });
+    setGeminiCliRunnerForTests(runner);
+
+    await scoreWritingWithAdapter(samplePrompt, buildEvidence(), sampleSubmission.response);
+
+    expect(runner).toHaveBeenCalledWith(
+      'gemini',
+      expect.arrayContaining(['-m', 'gemini-3-flash-preview']),
+      expect.any(Number),
+    );
+  });
+
+  it('fails closed when Gemini CLI returns invalid JSON', async () => {
+    vi.stubEnv('IELTS_SCORER_PROVIDER', 'gemini-cli');
+
+    setGeminiCliRunnerForTests(
+      vi.fn().mockResolvedValue({
+        stdout: JSON.stringify({ session_id: 'bad', response: '{"not":"valid"}' }),
+        stderr: '',
+      }),
+    );
+
+    await expect(scoreWritingWithAdapter(samplePrompt, buildEvidence(), sampleSubmission.response)).rejects.toThrow(
+      'Gemini CLI returned an invalid response. Please try again.',
+    );
+  });
+
+  it('fails closed when Gemini CLI is missing', async () => {
+    vi.stubEnv('IELTS_SCORER_PROVIDER', 'gemini-cli');
+
+    setGeminiCliRunnerForTests(
+      vi.fn().mockRejectedValue(Object.assign(new Error('spawn gemini ENOENT'), { code: 'ENOENT' })),
+    );
+
+    await expect(scoreWritingWithAdapter(samplePrompt, buildEvidence(), sampleSubmission.response)).rejects.toThrow(
+      'Gemini CLI is not installed on this server right now. Please try again later.',
+    );
   });
 });

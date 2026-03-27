@@ -9,6 +9,7 @@ import type {
 } from '@/lib/domain';
 
 import { clampBand } from './metrics';
+import { calibrateMockOverallBand, calibrateOpenRouterOverallBand } from './overall-calibration';
 import {
   deriveOverallBandRange,
   deriveOverallConfidence,
@@ -18,10 +19,12 @@ import {
 } from './scoring-model';
 
 export const WRITING_RUBRIC_SCHEMA_VERSION = 'writing-rubric-scorecard/v1';
-const CALIBRATION_VERSION = 'seed-v1';
+const CALIBRATION_VERSION = 'overall-calibration-v4-public-kaggle-mock-and-openrouter';
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
-const DEFAULT_OPENROUTER_MODEL = 'google/gemini-3-flash';
+const DEFAULT_OPENROUTER_MODEL = 'google/gemini-3-flash-preview';
 const OPENROUTER_TIMEOUT_MS = 15_000;
+const DEFAULT_GEMINI_CLI_MODEL = 'gemini-3-flash-preview';
+const GEMINI_CLI_TIMEOUT_MS = 45_000;
 const WRITING_CRITERIA_BY_TASK_TYPE: Record<WritingTaskType, CriterionName[]> = {
   'task-1': [
     'Task Achievement',
@@ -98,6 +101,7 @@ const providerRubricResponseSchema = {
 
 interface ProviderRubricResponse {
   schemaVersion: string;
+  providerSchemaVersion: string;
   criterionScores: CriterionScore[];
   overallBand: number;
   overallBandRange: StructuredRubricScorecard['overallBandRange'];
@@ -113,6 +117,14 @@ interface OpenRouterConfig {
   title: string | null;
   timeoutMs: number;
 }
+
+interface GeminiCliConfig {
+  binary: string;
+  model: string;
+  timeoutMs: number;
+}
+
+type GeminiCliRunner = (file: string, args: string[], timeoutMs: number) => Promise<{ stdout: string; stderr: string }>;
 
 interface MockScorecardOptions {
   configuredProvider: string | null;
@@ -173,10 +185,13 @@ function buildCriterionTrace(
 
 function createMockScorecard(prompt: WritingPrompt, evidence: EvidenceSignal[], options: MockScorecardOptions) {
   const criterionScores = predictCriterionScores(prompt, evidence);
-  const overallBand = clampBand(
+  const rawOverallBand = clampBand(
     criterionScores.reduce((sum, item) => sum + item.band, 0) / criterionScores.length,
   );
-  const overallBandRange = deriveOverallBandRange(criterionScores);
+  const rawOverallBandRange = deriveOverallBandRange(criterionScores);
+  const calibratedOverall = calibrateMockOverallBand(prompt.taskType, rawOverallBand, rawOverallBandRange);
+  const overallBand = calibratedOverall.calibratedOverallBand;
+  const overallBandRange = calibratedOverall.calibratedOverallBandRange;
   const { confidence, reasons } = deriveOverallConfidence(criterionScores, evidence);
   const usedMockFallback = Boolean(options.fallbackReason) || (options.configuredProvider !== null && options.configuredProvider !== 'mock');
 
@@ -186,7 +201,11 @@ function createMockScorecard(prompt: WritingPrompt, evidence: EvidenceSignal[], 
     overallBand,
     overallBandRange,
     confidence,
-    confidenceReasons: reasons,
+    confidenceReasons: [
+      ...reasons,
+      calibratedOverall.note,
+      'Criterion bands remain heuristic signals; the public calibration currently adjusts the mock overall band only.',
+    ],
     evaluationTrace: {
       schemaVersion: WRITING_RUBRIC_SCHEMA_VERSION,
       scorerProvider: 'mock-rule-based',
@@ -198,7 +217,7 @@ function createMockScorecard(prompt: WritingPrompt, evidence: EvidenceSignal[], 
       evidenceSignalCount: evidence.length,
       evidenceFingerprint: buildEvidenceFingerprint(evidence),
       scoredAt: new Date().toISOString(),
-      notes: buildMockNotes(options),
+      notes: [...buildMockNotes(options), calibratedOverall.note, `Raw heuristic overall band before calibration: ${calibratedOverall.rawOverallBand.toFixed(1)}.`],
       criterionTrace: criterionScores.map((score) => buildCriterionTrace(prompt, score.criterion, evidence)),
     },
   } satisfies StructuredRubricScorecard;
@@ -225,16 +244,60 @@ function getConfiguredProvider() {
   return configuredProvider || null;
 }
 
+function isTruthyEnvFlag(value: string | undefined) {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
+}
+
+function isOpenRouterOverallCalibrationDisabled() {
+  return isTruthyEnvFlag(process.env.IETLS_DISABLE_OPENROUTER_OVERALL_CALIBRATION);
+}
+
+function normalizeGeminiCliModel(model: string) {
+  const normalized = model.trim().toLowerCase();
+
+  if (normalized === 'gemini-3-flash') {
+    return DEFAULT_GEMINI_CLI_MODEL;
+  }
+
+  return model.trim();
+}
+
+function normalizeOpenRouterModel(model: string) {
+  const normalized = model.trim().toLowerCase();
+
+  if (normalized === 'google/gemini-3-flash') {
+    return DEFAULT_OPENROUTER_MODEL;
+  }
+
+  return model.trim();
+}
+
 function getOpenRouterConfig(): OpenRouterConfig {
   const timeoutMs = Number.parseInt(process.env.OPENROUTER_TIMEOUT_MS ?? '', 10);
 
   return {
     apiKey: process.env.OPENROUTER_API_KEY?.trim() || null,
     baseUrl: process.env.OPENROUTER_BASE_URL?.trim() || OPENROUTER_BASE_URL,
-    model: process.env.IELTS_SCORER_MODEL?.trim() || DEFAULT_OPENROUTER_MODEL,
+    model: normalizeOpenRouterModel(process.env.IELTS_SCORER_MODEL?.trim() || DEFAULT_OPENROUTER_MODEL),
     referer: process.env.OPENROUTER_HTTP_REFERER?.trim() || null,
     title: process.env.OPENROUTER_APP_TITLE?.trim() || null,
     timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : OPENROUTER_TIMEOUT_MS,
+  };
+}
+
+function getGeminiCliConfig(): GeminiCliConfig {
+  const timeoutMs = Number.parseInt(process.env.GEMINI_CLI_TIMEOUT_MS ?? '', 10);
+  const model = process.env.IELTS_SCORER_MODEL?.trim() || DEFAULT_GEMINI_CLI_MODEL;
+
+  return {
+    binary: process.env.GEMINI_CLI_PATH?.trim() || 'gemini',
+    model: normalizeGeminiCliModel(model),
+    timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : GEMINI_CLI_TIMEOUT_MS,
   };
 }
 
@@ -260,8 +323,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-function isBandValue(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 9 && Number.isInteger(value * 2);
+function normalizeBandValue(value: unknown): number | null {
+  const candidate = typeof value === 'string' && value.trim().length > 0
+    ? Number(value)
+    : value;
+
+  if (
+    typeof candidate !== 'number'
+    || !Number.isFinite(candidate)
+    || candidate < 0
+    || candidate > 9
+    || !Number.isInteger(candidate * 2)
+  ) {
+    return null;
+  }
+
+  return candidate;
 }
 
 function isConfidenceLevel(value: unknown): value is ConfidenceLevel {
@@ -279,13 +356,19 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string' && item.trim().length > 0);
 }
 
-function isBandRange(value: unknown): value is StructuredRubricScorecard['overallBandRange'] {
-  return (
-    isRecord(value)
-    && isBandValue(value.lower)
-    && isBandValue(value.upper)
-    && value.lower <= value.upper
-  );
+function normalizeBandRange(value: unknown): StructuredRubricScorecard['overallBandRange'] | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const lower = normalizeBandValue(value.lower);
+  const upper = normalizeBandValue(value.upper);
+
+  if (lower === null || upper === null || lower > upper) {
+    return null;
+  }
+
+  return { lower, upper };
 }
 
 function normalizeCriterionScores(
@@ -305,10 +388,13 @@ function normalizeCriterionScores(
       return null;
     }
 
+    const band = normalizeBandValue(item.band);
+    const bandRange = normalizeBandRange(item.bandRange);
+
     if (
       !isCriterionNameForTaskType(item.criterion, taskType)
-      || !isBandValue(item.band)
-      || !isBandRange(item.bandRange)
+      || band === null
+      || bandRange === null
       || typeof item.rationale !== 'string'
       || item.rationale.trim().length === 0
       || !isConfidenceLevel(item.confidence)
@@ -322,8 +408,8 @@ function normalizeCriterionScores(
 
     byCriterion.set(item.criterion, {
       criterion: item.criterion,
-      band: item.band,
-      bandRange: item.bandRange,
+      band,
+      bandRange,
       rationale: item.rationale.trim(),
       confidence: item.confidence,
     });
@@ -345,12 +431,17 @@ function normalizeProviderRubricResponse(
   }
 
   if (
-    value.schemaVersion !== WRITING_RUBRIC_SCHEMA_VERSION
-    || !isBandValue(value.overallBand)
-    || !isBandRange(value.overallBandRange)
+    typeof value.schemaVersion !== 'string'
+    || value.schemaVersion.trim().length === 0
     || !isConfidenceLevel(value.confidence)
     || !isStringArray(value.confidenceReasons)
   ) {
+    return null;
+  }
+
+  const overallBand = normalizeBandValue(value.overallBand);
+  const overallBandRange = normalizeBandRange(value.overallBandRange);
+  if (overallBand === null || overallBandRange === null) {
     return null;
   }
 
@@ -361,17 +452,17 @@ function normalizeProviderRubricResponse(
   }
 
   const criterionAverage = criterionScores.reduce((sum, s) => sum + s.band, 0) / criterionScores.length;
-  const overallBand = value.overallBand as number;
 
   if (Math.abs(overallBand - criterionAverage) > 1.5) {
     return null;
   }
 
   return {
-    schemaVersion: value.schemaVersion,
+    schemaVersion: WRITING_RUBRIC_SCHEMA_VERSION,
+    providerSchemaVersion: value.schemaVersion.trim(),
     criterionScores,
     overallBand,
-    overallBandRange: value.overallBandRange,
+    overallBandRange,
     confidence: value.confidence,
     confidenceReasons: value.confidenceReasons,
   };
@@ -439,6 +530,65 @@ function buildOpenRouterScoringPrompt(prompt: WritingPrompt, evidence: EvidenceS
     'Evidence signals:',
     JSON.stringify(evidence, null, 2),
   ].join('\n\n');
+}
+
+function buildGeminiCliScoringPrompt(prompt: WritingPrompt, evidence: EvidenceSignal[], responseText: string) {
+  return [
+    getSystemPrompt(prompt.taskType),
+    'Return exactly one JSON object matching this schema. Do not wrap the JSON in markdown fences.',
+    `Required schema: ${JSON.stringify(providerRubricResponseSchema)}`,
+    buildOpenRouterScoringPrompt(prompt, evidence, responseText),
+  ].join('\n\n');
+}
+
+function runExecFile(file: string, args: string[], timeoutMs: number) {
+  return import('node:child_process').then(
+    (childProcess) =>
+      new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
+        childProcess.execFile(
+          file,
+          args,
+          {
+            encoding: 'utf8',
+            timeout: timeoutMs,
+            maxBuffer: 4 * 1024 * 1024,
+          },
+          (error, stdout, stderr) => {
+            if (error) {
+              reject(Object.assign(error, { stdout, stderr }));
+              return;
+            }
+
+            resolve({ stdout, stderr });
+          },
+        );
+      }),
+  );
+}
+
+let geminiCliRunner: GeminiCliRunner = runExecFile;
+
+function parseGeminiCliEnvelope(stdout: string) {
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(stdout) as unknown;
+  } catch {
+    throw new WritingScorerUnavailableError('Gemini CLI returned an invalid response. Please try again.');
+  }
+
+  if (!isRecord(parsed) || typeof parsed.response !== 'string' || parsed.response.trim().length === 0) {
+    throw new WritingScorerUnavailableError('Gemini CLI returned an invalid response. Please try again.');
+  }
+
+  const sessionId = typeof parsed.session_id === 'string' && parsed.session_id.trim().length > 0
+    ? parsed.session_id
+    : null;
+
+  return {
+    responseText: parsed.response,
+    sessionId,
+  };
 }
 
 async function requestOpenRouterScore(input: WritingScorerAdapterInput, config: OpenRouterConfig) {
@@ -519,9 +669,15 @@ async function requestOpenRouterScore(input: WritingScorerAdapterInput, config: 
     const responseModel = typeof body.model === 'string' && body.model.trim().length > 0 ? body.model : config.model;
     const totalTokens = isRecord(body.usage) && typeof body.usage.total_tokens === 'number' ? body.usage.total_tokens : null;
     const responseId = typeof body.id === 'string' && body.id.trim().length > 0 ? body.id : null;
+    const calibrationDisabled = isOpenRouterOverallCalibrationDisabled();
+    const calibratedOverall = calibrationDisabled
+      ? null
+      : calibrateOpenRouterOverallBand(input.prompt.taskType, payload.overallBand, payload.overallBandRange);
 
     return {
       ...payload,
+      overallBand: calibratedOverall?.calibratedOverallBand ?? payload.overallBand,
+      overallBandRange: calibratedOverall?.calibratedOverallBandRange ?? payload.overallBandRange,
       evaluationTrace: {
         schemaVersion: WRITING_RUBRIC_SCHEMA_VERSION,
         scorerProvider: 'openrouter',
@@ -536,6 +692,15 @@ async function requestOpenRouterScore(input: WritingScorerAdapterInput, config: 
         notes: [
           'OpenRouter returned a structured rubric scorecard. Criterion scores and overall band were produced by the provider model, not local heuristics.',
           'The criterionTrace below reflects local evidence signals only; it does not describe how the provider arrived at its scores.',
+          ...(calibratedOverall
+            ? [
+                calibratedOverall.note,
+                `Raw OpenRouter overall band before calibration: ${calibratedOverall.rawOverallBand.toFixed(1)}.`,
+              ]
+            : ['OpenRouter overall-band calibration was explicitly disabled for this run.']),
+          ...(payload.providerSchemaVersion !== WRITING_RUBRIC_SCHEMA_VERSION
+            ? [`OpenRouter schemaVersion normalized from ${payload.providerSchemaVersion} to ${WRITING_RUBRIC_SCHEMA_VERSION}.`]
+            : []),
           ...(responseId ? [`OpenRouter response id: ${responseId}.`] : []),
           ...(totalTokens !== null ? [`OpenRouter total tokens: ${totalTokens}.`] : []),
         ],
@@ -556,6 +721,98 @@ async function requestOpenRouterScore(input: WritingScorerAdapterInput, config: 
     throw new WritingScorerUnavailableError();
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+async function requestGeminiCliScore(input: WritingScorerAdapterInput, config: GeminiCliConfig) {
+  try {
+    const { stdout, stderr } = await geminiCliRunner(
+      config.binary,
+      [
+        '-m',
+        config.model,
+        '--output-format',
+        'json',
+        '-p',
+        buildGeminiCliScoringPrompt(input.prompt, input.evidence, input.responseText),
+      ],
+      config.timeoutMs,
+    );
+
+    const envelope = parseGeminiCliEnvelope(stdout.trim());
+
+    let parsed: unknown;
+
+    try {
+      parsed = JSON.parse(extractJsonPayload(envelope.responseText)) as unknown;
+    } catch {
+      throw new WritingScorerUnavailableError('Gemini CLI returned an invalid response. Please try again.');
+    }
+
+    const payload = normalizeProviderRubricResponse(parsed, input.prompt.taskType);
+
+    if (!payload) {
+      throw new WritingScorerUnavailableError('Gemini CLI returned an invalid response. Please try again.');
+    }
+
+    const stderrNotes = stderr
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .filter((line) => !line.startsWith('Loaded cached credentials.'))
+      .slice(0, 3);
+
+    return {
+      ...payload,
+      evaluationTrace: {
+        schemaVersion: WRITING_RUBRIC_SCHEMA_VERSION,
+        scorerProvider: 'gemini-cli',
+        scorerModel: config.model,
+        configuredProvider: 'gemini-cli',
+        usedMockFallback: false,
+        rubricVersion: getRubricVersion(input.prompt),
+        calibrationVersion: CALIBRATION_VERSION,
+        evidenceSignalCount: input.evidence.length,
+        evidenceFingerprint: buildEvidenceFingerprint(input.evidence),
+        scoredAt: new Date().toISOString(),
+        notes: [
+          'Gemini CLI returned a structured rubric scorecard. Criterion scores and overall band were produced by the provider model, not local heuristics.',
+          'The criterionTrace below reflects local evidence signals only; it does not describe how the provider arrived at its scores.',
+          ...(payload.providerSchemaVersion !== WRITING_RUBRIC_SCHEMA_VERSION
+            ? [`Gemini CLI schemaVersion normalized from ${payload.providerSchemaVersion} to ${WRITING_RUBRIC_SCHEMA_VERSION}.`]
+            : []),
+          ...(envelope.sessionId ? [`Gemini CLI session id: ${envelope.sessionId}.`] : []),
+          ...stderrNotes.map((line) => `Gemini CLI stderr: ${line}`),
+        ],
+        criterionTrace: payload.criterionScores.map((score) =>
+          buildCriterionTrace(input.prompt, score.criterion, input.evidence),
+        ),
+      },
+    } satisfies StructuredRubricScorecard;
+  } catch (error) {
+    if (error instanceof WritingScorerUnavailableError) {
+      throw error;
+    }
+
+    if (error instanceof Error) {
+      const stderr = 'stderr' in error && typeof error.stderr === 'string' ? error.stderr : '';
+
+      if (error.message.includes('timed out') || error.message.includes('ETIMEDOUT')) {
+        throw new WritingScorerUnavailableError('Gemini CLI timed out. Please try again.');
+      }
+
+      if (error.message.includes('ENOENT')) {
+        throw new WritingScorerUnavailableError('Gemini CLI is not installed on this server right now. Please try again later.');
+      }
+
+      if (stderr.includes('ModelNotFoundError')) {
+        throw new WritingScorerUnavailableError('Gemini CLI model is not available right now. Please try again later.');
+      }
+
+      throw new WritingScorerUnavailableError('Gemini CLI request failed. Please try again.');
+    }
+
+    throw new WritingScorerUnavailableError();
   }
 }
 
@@ -585,6 +842,15 @@ const openRouterScorerAdapter: WritingScorerAdapter = {
   },
 };
 
+const geminiCliScorerAdapter: WritingScorerAdapter = {
+  provider: 'gemini-cli',
+  model: DEFAULT_GEMINI_CLI_MODEL,
+  schemaVersion: WRITING_RUBRIC_SCHEMA_VERSION,
+  async score(input) {
+    return requestGeminiCliScore(input, getGeminiCliConfig());
+  },
+};
+
 export function scoreWritingWithMockAdapter(
   prompt: WritingPrompt,
   evidence: EvidenceSignal[],
@@ -593,11 +859,19 @@ export function scoreWritingWithMockAdapter(
   return createMockScorecard(prompt, evidence, options);
 }
 
+export function setGeminiCliRunnerForTests(runner: GeminiCliRunner | null) {
+  geminiCliRunner = runner ?? runExecFile;
+}
+
 export function resolveWritingScorerAdapter(): WritingScorerAdapter {
   const configuredProvider = getConfiguredProvider();
 
   if (configuredProvider === 'openrouter') {
     return openRouterScorerAdapter;
+  }
+
+  if (configuredProvider === 'gemini-cli') {
+    return geminiCliScorerAdapter;
   }
 
   return mockScorerAdapter;

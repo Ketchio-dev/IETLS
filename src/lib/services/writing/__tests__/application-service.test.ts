@@ -93,6 +93,12 @@ function createPipelineResult(prompt: WritingPrompt, index: number): AssessmentP
   };
 }
 
+function buildValidResponse(prompt: WritingPrompt) {
+  return prompt.taskType === 'task-1'
+    ? 'The line graph illustrates how many passengers use a London Underground station at different times of the day. Overall, the station is busiest during the morning rush hour, while a slightly smaller peak appears in the early evening. By contrast, the lowest figures are recorded at the beginning and end of the day, so the pattern is clearly dominated by commuting behaviour. At 6:00, only around 100 people use the station, but the number then rises sharply to about 200 at 7:00 before reaching a high of roughly 400 at 8:00. After this point, usage falls steadily through the late morning and hits approximately 180 by 10:00, before recovering a little to around 200 at midday. In the afternoon, the figure remains moderate for several hours, generally fluctuating between 220 and 300 passengers. It then climbs again to nearly 380 at 18:00, which is the second highest point on the graph. Following this evening peak, the number drops rapidly and returns to a low level by 22:00. Overall, the main features are the dramatic morning rise, the more limited evening recovery, and the relatively quiet periods at both ends of the day.'
+    : 'Governments should prioritise public transport because buses, rail systems, and metro networks can move large numbers of people more efficiently than private cars. Better services also reduce congestion, lower emissions, and improve access for workers, students, and older residents who do not drive. Supporters of new roads often argue that road building is necessary for commerce, emergency access, and regional development. That point is partly valid, especially where freight traffic depends on safe highways and ring roads. However, expanding road capacity alone rarely solves urban congestion for long because additional space quickly attracts more vehicles. By contrast, reliable public transport changes behaviour at scale when it is affordable, frequent, and well connected to residential areas. For example, commuters are more willing to leave their cars at home if buses arrive on time, stations are safe, and ticketing is simple across different modes. Public investment in trains and buses can also support poorer households because it lowers transport costs and improves access to education, healthcare, and employment. In addition, dense cities simply cannot accommodate endless growth in car use without sacrificing public space, air quality, and productivity. While certain highway projects are justified for freight, safety, or remote communities, these cases are more limited than advocates sometimes suggest. In my view, governments should invest mainly in public transport while reserving targeted road spending for safety improvements, bottlenecks, and essential logistics corridors. This approach produces broader economic and environmental benefits over time, and it is more sustainable than responding to every transport problem by building more roads.';
+}
+
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
@@ -134,8 +140,7 @@ describe('writing application service', () => {
       const prompt = writingPromptBank[index % writingPromptBank.length] ?? samplePrompt;
       const submission = await service.submitAssessment({
         promptId: prompt.id,
-        response:
-          'This draft is comfortably longer than fifty characters so the application service can persist it.',
+        response: buildValidResponse(prompt),
         timeSpentMinutes: 30,
       });
 
@@ -166,32 +171,41 @@ describe('writing application service', () => {
     const service = createWritingApplicationService({ repository, runPipeline });
 
     const invalid = await service.submitAssessment({
-      promptId: samplePrompt.id,
+      promptId: sampleTask1Prompt.id,
       response: 'too short',
+      timeSpentMinutes: 12,
+    });
+    const underLengthTask2 = await service.submitAssessment({
+      promptId: samplePrompt.id,
+      response:
+        'This draft has enough words to look like an essay, but it still stays under the official task two minimum because it does not develop enough supporting detail for a stable estimate.',
       timeSpentMinutes: 12,
     });
     const invalidDuration = await service.submitAssessment({
       promptId: samplePrompt.id,
-      response:
-        'This response is comfortably longer than fifty characters, but the duration is invalid and should be rejected.',
+      response: buildValidResponse(samplePrompt),
       timeSpentMinutes: Number.NaN,
     });
     const missing = await service.submitAssessment({
       promptId: 'missing-prompt',
       response:
-        'This response is comfortably longer than the minimum so the error comes from the prompt lookup.',
+        'This response is comfortably longer than the minimum word target so the error comes from the prompt lookup rather than the task-aware length gate inside the writing service.',
       timeSpentMinutes: 12,
     });
     const saved = await service.submitAssessment({
       promptId: samplePrompt.id,
-      response:
-        'This response is comfortably longer than fifty characters so the service can persist the submission.',
+      response: buildValidResponse(samplePrompt),
       timeSpentMinutes: 28,
     });
 
     expect(invalid).toEqual({
       ok: false,
-      error: 'Provide a promptId and at least 50 characters of writing.',
+      error: 'Provide at least 150 words for Task 1 writing.',
+      status: 400,
+    });
+    expect(underLengthTask2).toEqual({
+      ok: false,
+      error: 'Provide at least 250 words for Task 2 writing.',
       status: 400,
     });
     expect(invalidDuration).toEqual({
@@ -222,8 +236,7 @@ describe('writing application service', () => {
 
     const result = await service.submitAssessment({
       promptId: samplePrompt.id,
-      response:
-        'This response is comfortably longer than fifty characters so the service can surface a scorer outage cleanly.',
+      response: buildValidResponse(samplePrompt),
       timeSpentMinutes: 21,
     });
 

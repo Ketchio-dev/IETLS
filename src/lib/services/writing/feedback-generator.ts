@@ -62,6 +62,13 @@ export function buildWarnings(
       code: 'practice-estimate',
       message: 'This is an AI-assisted practice estimate and should not be treated as an official IELTS score.',
     },
+    {
+      code: 'single-task-scope',
+      message:
+        taskType === 'task-1'
+          ? 'This estimate covers only Task 1. Official IELTS Writing combines Task 1 and Task 2, and Task 2 carries more weight.'
+          : 'This estimate covers only Task 2. Official IELTS Writing combines Task 1 and Task 2, even though Task 2 carries more weight.',
+    },
   ];
 
   if (wordCount < minWords) {

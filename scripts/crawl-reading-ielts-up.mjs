@@ -3,6 +3,7 @@
 /**
  * Crawls free IELTS Academic Reading practice tests from ielts-up.com
  * and outputs JSON files compatible with the private reading import pipeline.
+ * Internal-only developer tooling. Not part of the supported/public product workflow.
  *
  * Usage:
  *   node scripts/crawl-reading-ielts-up.mjs              # crawl all 11 tests
@@ -155,7 +156,7 @@ function extractQuestions(html, answerKey) {
         prompt,
         options: buildOptions(type),
         answer,
-        acceptedVariants: buildVariants(answer, type),
+        acceptedVariants: buildVariants(answer),
         explanation: '',
         evidenceHint: '',
       });
@@ -173,7 +174,7 @@ function extractQuestions(html, answerKey) {
         prompt: `Question ${i + 1}`,
         options: buildOptions(type),
         answer,
-        acceptedVariants: buildVariants(answer, type),
+        acceptedVariants: buildVariants(answer),
         explanation: '',
         evidenceHint: '',
       });

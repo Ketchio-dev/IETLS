@@ -38,6 +38,21 @@ describe('POST /api/reading/assessment', () => {
     expect(mocks.submitAssessmentForModule).not.toHaveBeenCalled();
   });
 
+  it('returns 422 when reading answers are not a string map', async () => {
+    const response = await POST(new Request('http://localhost/api/reading/assessment', {
+      method: 'POST',
+      body: JSON.stringify({
+        setId: 'urban-bee-corridors',
+        answers: { 'q-1': ['A'] },
+        timeSpentSeconds: 300,
+      }),
+    }));
+
+    expect(response.status).toBe(422);
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid request payload.' });
+    expect(mocks.submitAssessmentForModule).not.toHaveBeenCalled();
+  });
+
   it('returns a deterministic reading report payload', async () => {
     const payload = { report: { rawScore: 5 }, savedAttempts: [], recentAttempts: [], attempt: { attemptId: 'attempt-1' } };
     mocks.submitAssessmentForModule.mockResolvedValue({ ok: true, payload });
@@ -58,10 +73,22 @@ describe('POST /api/reading/assessment', () => {
 
     const response = await POST(new Request('http://localhost/api/reading/assessment', {
       method: 'POST',
-      body: JSON.stringify({ setId: 'urban-bee-corridors' }),
+      body: JSON.stringify({ setId: 'urban-bee-corridors', answers: {}, timeSpentSeconds: 120 }),
     }));
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ error: 'Bad request' });
+  });
+
+  it('fails closed when the reading workspace throws unexpectedly', async () => {
+    mocks.submitAssessmentForModule.mockRejectedValue(new Error('boom'));
+
+    const response = await POST(new Request('http://localhost/api/reading/assessment', {
+      method: 'POST',
+      body: JSON.stringify({ setId: 'urban-bee-corridors', answers: {}, timeSpentSeconds: 300 }),
+    }));
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({ error: 'Unable to score the Reading assessment right now.' });
   });
 });

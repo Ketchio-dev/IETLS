@@ -267,10 +267,10 @@ export function SpeakingPracticeShell({
       <section className="hero panel">
         <div>
           <p className="eyebrow">IELTS Academic • Speaking alpha</p>
-          <h1>Run a timed speaking practice flow with transcript scoring and audio-ready evidence</h1>
+          <h1>Run a timed transcript-first speaking practice flow with audio-ready evidence</h1>
           <p className="hero-copy">
-            Pick a prompt, attach audio metadata if you have it, keep your transcript aligned to the same session,
-            and build a local session history that is ready for a future STT pipeline.
+            Pick a prompt, keep the transcript aligned to the same session, and treat the report as a transcript-first
+            alpha estimate until real STT and pronunciation analysis are added.
           </p>
           <div className="hero-actions">
             <Link className="secondary-link-button" href="/speaking/dashboard">
@@ -294,7 +294,7 @@ export function SpeakingPracticeShell({
           </div>
           <div className="metric-card">
             <span>Audio</span>
-            <strong>{audioArtifact.status === 'attached' ? 'Attached' : 'Optional'}</strong>
+            <strong>{audioArtifact.status === 'attached' ? 'Metadata only' : 'Optional'}</strong>
           </div>
         </div>
       </section>

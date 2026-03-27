@@ -47,6 +47,16 @@ function buildDashboardMetrics(summary: WritingDashboardSummary, progress: Progr
       eyebrow: 'Momentum',
     },
     {
+      id: 'full-test-weighted-band',
+      label: 'Full-test estimate',
+      value: summary.latestFullTestEstimateBand?.toFixed(1) ?? 'Need Task 1 + Task 2',
+      detail:
+        summary.latestFullTestEstimateBand == null
+          ? 'Save one Task 1 and one Task 2 attempt to unlock an IELTS-style 1:2 weighted writing estimate.'
+          : `Latest Task 1 ${summary.latestFullTestTask1Band?.toFixed(1)} + Task 2 ${summary.latestFullTestTask2Band?.toFixed(1)} combined with IELTS-style 1:2 weighting.`,
+      eyebrow: 'Task weighting',
+    },
+    {
       id: 'average-band',
       label: 'Average band',
       value: summary.averageBand?.toFixed(1) ?? '—',

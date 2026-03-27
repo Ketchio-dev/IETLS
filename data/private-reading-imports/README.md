@@ -6,6 +6,7 @@ Put your personally sourced Reading materials here as `.json` files.
 - This folder is for **your own local/private materials**.
 - Do **not** commit proprietary content you do not want in version control.
 - The app does not fetch third-party banks for you; you paste your own material here and run the import command locally.
+- The default shipped Reading bundle intentionally excludes third-party crawled sources; only original, licensed, or user-supplied material should live here for product use.
 
 ## Import command
 
@@ -31,6 +32,7 @@ That command compiles all `.json` files in this folder into:
       "prompt": "The passage claims that...",
       "answer": "NOT GIVEN",
       "acceptedVariants": ["NG"],
+      "explanation": "The passage never states this claim directly.",
       "evidenceHint": "Paragraph 3"
     }
   ]
@@ -61,5 +63,5 @@ That command compiles all `.json` files in this folder into:
 - `answer` or `answers`: required
 - `acceptedVariants`: optional string array
 - `options`: optional string array
-- `explanation`: optional
-- `evidenceHint`: optional
+- `explanation`: required, non-empty
+- `evidenceHint`: required, non-empty

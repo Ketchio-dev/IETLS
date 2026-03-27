@@ -9,6 +9,7 @@ import {
   loadAssessmentDashboardPageData,
   loadDefaultAssessmentDashboardPageData,
 } from '@/lib/server/assessment-workspace';
+import { isSpeakingAlphaEnabled } from '@/lib/server/module-flags';
 
 interface ModuleCardAction {
   href: string;
@@ -140,10 +141,11 @@ function renderModuleCards(moduleCards: ModuleCard[]) {
 }
 
 export default async function HomePage() {
+  const speakingAlphaEnabled = isSpeakingAlphaEnabled();
   const [writingDashboard, readingDashboard, speakingDashboard, listeningDashboard] = await Promise.all([
     loadDefaultAssessmentDashboardPageData(),
     loadAssessmentDashboardPageData(READING_ASSESSMENT_MODULE_ID),
-    loadAssessmentDashboardPageData(SPEAKING_ASSESSMENT_MODULE_ID),
+    speakingAlphaEnabled ? loadAssessmentDashboardPageData(SPEAKING_ASSESSMENT_MODULE_ID) : Promise.resolve(null),
     loadAssessmentDashboardPageData(LISTENING_ASSESSMENT_MODULE_ID),
   ]);
 
@@ -185,24 +187,26 @@ export default async function HomePage() {
         { href: '/dashboard', label: 'View dashboard', variant: 'secondary' },
       ],
     },
-    {
-      id: 'speaking',
-      priority: 'secondary',
-      eyebrow: 'Experimental module',
-      name: 'Speaking',
-      status: 'Alpha',
-      description:
-        'Transcript-first speaking practice stays available as an experimental add-on while Reading and Writing lead the main flow.',
-      stats: [
-        { label: 'Sessions', value: String(speakingDashboard.summary.totalSessions) },
-        { label: 'Best band', value: formatBand(speakingDashboard.summary.bestBand) },
-        { label: 'Audio-backed', value: String(speakingDashboard.summary.sessionsWithAudio) },
-      ],
-      actions: [
-        { href: '/speaking', label: 'Open alpha', variant: 'primary' },
-        { href: '/speaking/dashboard', label: 'View dashboard', variant: 'secondary' },
-      ],
-    },
+    ...(speakingAlphaEnabled && speakingDashboard
+      ? [{
+          id: 'speaking',
+          priority: 'secondary' as const,
+          eyebrow: 'Experimental module',
+          name: 'Speaking',
+          status: 'Alpha' as const,
+          description:
+            'Transcript-first speaking practice stays available as an experimental add-on while Reading and Writing lead the main flow.',
+          stats: [
+            { label: 'Sessions', value: String(speakingDashboard.summary.totalSessions) },
+            { label: 'Best band', value: formatBand(speakingDashboard.summary.bestBand) },
+            { label: 'Audio-backed', value: String(speakingDashboard.summary.sessionsWithAudio) },
+          ],
+          actions: [
+            { href: '/speaking', label: 'Open alpha', variant: 'primary' as const },
+            { href: '/speaking/dashboard', label: 'View dashboard', variant: 'secondary' as const },
+          ],
+        }]
+      : []),
     {
       id: 'listening',
       priority: 'secondary',
@@ -224,7 +228,7 @@ export default async function HomePage() {
   const routePills = [
     { id: 'reading', label: 'Reading', status: 'Core' },
     { id: 'writing', label: 'Writing', status: 'Core' },
-    { id: 'speaking', label: 'Speaking', status: 'Explore' },
+    ...(speakingAlphaEnabled ? [{ id: 'speaking', label: 'Speaking', status: 'Explore' } as const] : []),
     { id: 'listening', label: 'Listening', status: 'Seam' },
   ] as const;
 
@@ -235,7 +239,7 @@ export default async function HomePage() {
           <p className="eyebrow">IELTS Academic Prep</p>
           <h1>Your Reading &amp; Writing command center.</h1>
           <p className="hero-copy">
-            Drill passages, practise timed essays, and track your band progress — all in one place.
+            Run one-passage Reading drills, practise timed essays, and track your band progress — all in one place.
             Speaking and Listening stay available when you need them.
           </p>
           <div className="hero-actions">
@@ -288,7 +292,7 @@ export default async function HomePage() {
             <article className="focus-signal-card" data-signal="listening">
               <span className="focus-signal-label">More modules</span>
               <strong>Available</strong>
-              <p>Speaking (alpha) and Listening (placeholder) ready to explore.</p>
+              <p>{speakingAlphaEnabled ? 'Speaking (alpha) and Listening (placeholder) ready to explore.' : 'Listening placeholder remains available while Speaking alpha stays production-gated.'}</p>
             </article>
           </div>
         </aside>
@@ -335,6 +339,7 @@ export default async function HomePage() {
           </p>
           <div className="section-tag-row" aria-label="Primary module highlights">
             <span className="section-tag">Passage drills with deterministic scoring</span>
+            <span className="section-tag">Reading stays one-passage until full mocks land</span>
             <span className="section-tag">Timed essays with band tracking</span>
           </div>
         </div>
@@ -356,7 +361,7 @@ export default async function HomePage() {
             crowding the primary flow.
           </p>
           <div className="section-tag-row" aria-label="Secondary module highlights">
-            <span className="section-tag section-tag--muted">Speaking alpha with transcript support</span>
+            {speakingAlphaEnabled ? <span className="section-tag section-tag--muted">Speaking alpha with transcript support</span> : null}
             <span className="section-tag section-tag--muted">Listening placeholder for future content</span>
           </div>
         </div>

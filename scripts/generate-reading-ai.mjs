@@ -3,7 +3,7 @@ import path from 'node:path';
 import process from 'node:process';
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
-const DEFAULT_OPENROUTER_MODEL = 'google/gemini-3-flash';
+const DEFAULT_OPENROUTER_MODEL = 'google/gemini-3-flash-preview';
 const OPENROUTER_TIMEOUT_MS = 15_000;
 const DEFAULT_OUTPUT_DIR = process.env.IELTS_PRIVATE_READING_IMPORTS_DIR ?? path.join('data', 'private-reading-imports');
 const OUTPUT_FILE_PREFIX = 'ai-generated';

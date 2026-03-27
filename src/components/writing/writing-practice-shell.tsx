@@ -137,6 +137,7 @@ export function WritingPracticeShell({
     [activeAttemptId, promptSavedAssessments],
   );
   const activeTaskLabel = getTaskLabel(activePrompt.taskType);
+  const wordsRemaining = Math.max(activePrompt.suggestedWordCount - wordCount, 0);
 
   async function handleSubmit() {
     setIsSubmitting(true);
@@ -205,7 +206,7 @@ export function WritingPracticeShell({
           <h1>Writing-first coach with a persistent assessment trail</h1>
           <p className="hero-copy">
             Practice under time pressure, review a structured score estimate, and keep a reusable
-            history of your latest mock attempts.
+            history of your latest saved attempts.
           </p>
           <div className="hero-actions">
             <Link className="secondary-link-button" href={writingAssessmentWorkspace.dashboardPath}>
@@ -333,7 +334,7 @@ export function WritingPracticeShell({
               </div>
               <button
                 className="primary-button"
-                disabled={isSubmitting || response.trim().length < 50}
+                disabled={isSubmitting || wordCount < activePrompt.suggestedWordCount}
                 onClick={handleSubmit}
                 type="button"
               >
@@ -349,7 +350,7 @@ export function WritingPracticeShell({
             />
             <div className="editor-footer">
               <span>
-                {wordCount} / {activePrompt.suggestedWordCount}+ words
+                {wordCount} words · {wordsRemaining > 0 ? `${wordsRemaining} more to unlock scoring` : 'minimum reached'}
               </span>
               <span>{timeSpentMinutes.toFixed(1)} min spent</span>
             </div>

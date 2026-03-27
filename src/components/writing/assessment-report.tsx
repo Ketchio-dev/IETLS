@@ -6,6 +6,8 @@ const impactStyles = {
   low: 'var(--impact-low)',
 } as const;
 
+type OverallEstimateMode = 'calibrated' | 'direct' | 'direct-provider-output';
+
 function formatProvider(value: string) {
   return value
     .split(/[-_]/)
@@ -14,18 +16,57 @@ function formatProvider(value: string) {
     .join(' ');
 }
 
+function getOverallEstimateMode(notes: string[]): OverallEstimateMode {
+  if (notes.some((note) => /applied .*overall-band calibration/i.test(note))) {
+    return 'calibrated';
+  }
+
+  if (notes.some((note) => /overall-band calibration was explicitly disabled/i.test(note))) {
+    return 'direct-provider-output';
+  }
+
+  return 'direct';
+}
+
+function getOverallEstimateCopy(mode: OverallEstimateMode) {
+  switch (mode) {
+    case 'calibrated':
+      return {
+        eyebrow: 'Calibrated overall estimate',
+        status: 'Calibrated',
+        description:
+          'Overall band is calibrated against public overall labels for this provider and task. Criterion bands below remain direct scorer outputs.',
+      };
+    case 'direct-provider-output':
+      return {
+        eyebrow: 'Practice estimate',
+        status: 'Direct provider output',
+        description:
+          'OpenRouter calibration was disabled for this run, so the overall band remains the direct provider output.',
+      };
+    default:
+      return {
+        eyebrow: 'Practice estimate',
+        status: 'Direct scorer output',
+        description:
+          'Overall and criterion bands are shown directly from the active scorer path for this run.',
+      };
+  }
+}
+
 export function AssessmentReportPanel({ report }: { report: AssessmentReport }) {
   const trace = report.evaluationTrace;
   const overallRange = `Band ${report.overallBandRange.lower.toFixed(1)}-${report.overallBandRange.upper.toFixed(1)}`;
   const fallbackStatus = trace.usedMockFallback ? 'Mock fallback used' : 'Primary scorer response used';
   const configuredProvider = trace.configuredProvider ? formatProvider(trace.configuredProvider) : 'Not configured';
+  const overallEstimate = getOverallEstimateCopy(getOverallEstimateMode(trace.notes));
 
   return (
     <section className="panel report-panel" aria-labelledby="report-title">
       <div className="report-header">
         <div>
-          <p className="eyebrow">Practice estimate</p>
-          <h2 id="report-title">Band {report.overallBand.toFixed(1)} predicted</h2>
+          <p className="eyebrow">{overallEstimate.eyebrow}</p>
+          <h2 id="report-title">Band {report.overallBand.toFixed(1)} estimated</h2>
         </div>
         <div className="band-chip">Range: {overallRange}</div>
       </div>
@@ -33,6 +74,13 @@ export function AssessmentReportPanel({ report }: { report: AssessmentReport }) 
       <p className="summary-copy">{report.summary}</p>
 
       <div className="report-grid">
+        <article className="score-card">
+          <div className="score-card-header">
+            <h3>Overall estimate</h3>
+            <span>{overallEstimate.status}</span>
+          </div>
+          <p>{overallEstimate.description}</p>
+        </article>
         <article className="score-card">
           <div className="score-card-header">
             <h3>Provider</h3>

@@ -1,22 +1,20 @@
 import type { ReadingAssessmentReport } from '@/lib/services/reading/types';
 
-function formatQuestionType(type: string) {
-  return type
-    .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-}
+import { formatQuestionType } from './reading-formatting';
 
 export function ReadingAssessmentReportPanel({ report }: { report: ReadingAssessmentReport }) {
   return (
-    <article className="panel history-panel">
-      <div className="section-heading">
+    <article className="panel history-panel" aria-labelledby="reading-report-heading">
+      <div className="section-heading reading-report-heading">
         <div>
           <p className="eyebrow">Deterministic report</p>
-          <h2>Reading drill review</h2>
+          <h2 id="reading-report-heading">Reading drill review</h2>
           <p className="summary-copy">{report.summary}</p>
         </div>
-        <span className="band-chip">{report.scoreLabel}</span>
+        <div className="reading-report-score">
+          <strong>{report.scoreLabel}</strong>
+          <span>{report.percentage}% accuracy</span>
+        </div>
       </div>
 
       <div className="hero-metrics">
@@ -49,7 +47,10 @@ export function ReadingAssessmentReportPanel({ report }: { report: ReadingAssess
         <h3 className="subsection-title">Answer review</h3>
         <div className="history-list">
           {report.questionReviews.map((review) => (
-            <article className={`history-card${review.isCorrect ? '' : ' is-active'}`} key={review.questionId}>
+            <article
+              className={`history-card reading-review-card ${review.isCorrect ? 'is-correct' : 'is-review-needed'}`}
+              key={review.questionId}
+            >
               <div className="history-card-header">
                 <strong>{review.prompt}</strong>
                 <span>{review.isCorrect ? 'Correct' : 'Review needed'}</span>

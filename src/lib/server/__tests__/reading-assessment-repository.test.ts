@@ -78,7 +78,7 @@ function createBankFixture() {
 function createRepositoryWithBundledFallback() {
   const { storage } = createMemoryStorage();
   mocks.readCompiledReadingPrivateBank.mockResolvedValue(createBankFixture());
-  return createReadingAssessmentRepository(storage as never);
+  return createReadingAssessmentRepository(storage as never, { demoSeedsEnabled: true });
 }
 
 function buildAttempt(id: string, createdAt: string, percentage: number, timeSpentSeconds: number): ReadingAttemptSnapshot {
@@ -126,6 +126,16 @@ describe('reading assessment repository', () => {
 
     expect(sets).toHaveLength(1);
     expect(sets[0]?.id).toBe(sampleReadingSets[0]?.id);
+  });
+
+  it('returns an empty bank in production-safe mode when no private import exists', async () => {
+    const { storage } = createMemoryStorage();
+    mocks.readCompiledReadingPrivateBank.mockResolvedValue(createBankFixture());
+    const repository = createReadingAssessmentRepository(storage as never, { demoSeedsEnabled: false });
+
+    const sets = await repository.listSets();
+
+    expect(sets).toEqual([]);
   });
 
   it('persists attempts in reverse chronological order', async () => {

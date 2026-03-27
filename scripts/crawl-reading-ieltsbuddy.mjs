@@ -3,6 +3,7 @@
 /**
  * Crawls free IELTS Academic Reading practice tests from ieltsbuddy.com
  * and outputs a JSON file compatible with the private reading import pipeline.
+ * Internal-only developer tooling. Not part of the supported/public product workflow.
  *
  * Usage:
  *   node scripts/crawl-reading-ieltsbuddy.mjs
@@ -326,7 +327,7 @@ function buildQuestions(questionPrompts, answerList) {
       prompt,
       options: buildOptions(type),
       answer: ans.answer,
-      acceptedVariants: buildVariants(ans.answer, type),
+      acceptedVariants: buildVariants(ans.answer),
       explanation: ans.explanation || '',
       evidenceHint: '',
     });

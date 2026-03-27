@@ -63,7 +63,7 @@ describe('POST /api/writing/assessment', () => {
   it('returns a 400 payload from the shared assessment workspace for short responses', async () => {
     const invalid: SubmitWritingAssessmentResult = {
       ok: false,
-      error: 'Provide a promptId and at least 50 characters of writing.',
+      error: 'Provide at least 250 words for Task 2 writing.',
       status: 400,
     };
     mocks.submitDefaultAssessment.mockResolvedValue(invalid);
@@ -79,7 +79,7 @@ describe('POST /api/writing/assessment', () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
-      error: 'Provide a promptId and at least 50 characters of writing.',
+      error: 'Provide at least 250 words for Task 2 writing.',
     });
     expect(mocks.submitDefaultAssessment).toHaveBeenCalledWith({
       promptId: samplePrompt.id,
@@ -100,7 +100,7 @@ describe('POST /api/writing/assessment', () => {
       method: 'POST',
       body: JSON.stringify({
         promptId: 'missing-prompt',
-        response: 'This response is long enough to pass the minimum length gate, but it targets no real prompt in the bank.',
+        response: 'This response is long enough to pass the minimum length gate because it contains substantially more than the required number of words for the current task, but it still targets no real prompt in the bank and should therefore return the missing prompt error from the shared workspace path.',
         timeSpentMinutes: 12,
       }),
     }));
@@ -109,7 +109,7 @@ describe('POST /api/writing/assessment', () => {
     await expect(response.json()).resolves.toEqual({ error: 'Unknown writing prompt requested.' });
     expect(mocks.submitDefaultAssessment).toHaveBeenCalledWith({
       promptId: 'missing-prompt',
-      response: 'This response is long enough to pass the minimum length gate, but it targets no real prompt in the bank.',
+      response: 'This response is long enough to pass the minimum length gate because it contains substantially more than the required number of words for the current task, but it still targets no real prompt in the bank and should therefore return the missing prompt error from the shared workspace path.',
       timeSpentMinutes: 12,
     });
   });
@@ -119,6 +119,9 @@ describe('POST /api/writing/assessment', () => {
     ['task 2', samplePrompt],
   ])('preserves the %s flow when returning a scored submission payload', async (_label, prompt) => {
     const responseText = `This is a sufficiently detailed ${prompt.taskType} response that clears the length gate while keeping the route test focused on assessment-workspace wiring and task-type handoff.`;
+    const longResponse = prompt.taskType === 'task-1'
+      ? `${responseText} Overall, the biggest change happens in the morning, while a smaller peak appears in the evening. Passenger numbers then fall again at night, and the report groups the main movements instead of listing every figure separately.`
+      : `${responseText} Governments should prioritise public transport because it reduces congestion, lowers emissions, and improves access for workers who cannot rely on private cars. New roads still matter for safety and freight, but targeted investment in buses, rail, and metro networks usually brings wider social benefits in the long term.`;
     const payload = {
       report: {
         ...sampleAssessmentReport,
@@ -130,7 +133,7 @@ describe('POST /api/writing/assessment', () => {
         submissionId: `submission-${prompt.id}`,
         promptId: prompt.id,
         taskType: prompt.taskType,
-        response: responseText,
+        response: longResponse,
         wordCount: 260,
         timeSpentMinutes: prompt.taskType === 'task-1' ? 20 : 40,
         createdAt: '2026-03-26T16:00:00.000Z',
