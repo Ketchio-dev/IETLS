@@ -303,7 +303,7 @@ export default async function HomePage() {
             <span>{readingDashboard.availableSets.length} passages available</span>
           </div>
         </Link>
-        <Link className="quick-action-card" href="/writing" data-module="writing">
+        <Link className="quick-action-card" href="/writing" data-quick="writing">
           <div className="quick-action-icon" aria-hidden="true"><WritingIcon /></div>
           <div className="quick-action-text">
             <strong>Writing practice</strong>
@@ -317,7 +317,7 @@ export default async function HomePage() {
             <span>{readingDashboard.dashboardSummary.totalAttempts} attempts tracked</span>
           </div>
         </Link>
-        <Link className="quick-action-card" href="/dashboard" data-module="writing">
+        <Link className="quick-action-card" href="/dashboard" data-quick="writing">
           <div className="quick-action-icon" aria-hidden="true"><WritingIcon /></div>
           <div className="quick-action-text">
             <strong>Writing dashboard</strong>

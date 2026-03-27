@@ -1438,11 +1438,11 @@ input[type='file'] {
   transform: translateY(-1px);
 }
 
-.quick-action-card[data-module='reading']:hover {
+.quick-action-card[data-quick='reading']:hover {
   border-color: rgba(20, 191, 150, 0.3);
 }
 
-.quick-action-card[data-module='writing']:hover {
+.quick-action-card[data-quick='writing']:hover {
   border-color: rgba(24, 101, 242, 0.3);
 }
 
@@ -1461,12 +1461,12 @@ input[type='file'] {
   height: 18px;
 }
 
-.quick-action-card[data-module='reading'] .quick-action-icon {
+.quick-action-card[data-quick='reading'] .quick-action-icon {
   background: rgba(20, 191, 150, 0.1);
   color: var(--reading-color);
 }
 
-.quick-action-card[data-module='writing'] .quick-action-icon {
+.quick-action-card[data-quick='writing'] .quick-action-icon {
   background: rgba(24, 101, 242, 0.1);
   color: var(--writing-color);
 }
