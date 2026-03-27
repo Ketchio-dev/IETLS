@@ -232,20 +232,11 @@ export default async function HomePage() {
     <main className="app-shell">
       <section className="hero panel home-hero module-hub-hero">
         <div className="hero-copy-stack">
-          <p className="eyebrow">IELTS Academic Reading + Writing</p>
-          <div className="route-pill-row" aria-label="Route status summary">
-            {routePills.map((route) => (
-              <span className="route-pill" data-route={route.id} key={route.id}>
-                <span>{route.label}</span>
-                <strong>{route.status}</strong>
-              </span>
-            ))}
-          </div>
-          <h1>Start with Reading and Writing. Keep Speaking and Listening in reserve.</h1>
+          <p className="eyebrow">IELTS Academic Prep</p>
+          <h1>Your Reading &amp; Writing command center.</h1>
           <p className="hero-copy">
-            The app now prioritizes passage drills and writing practice in the homepage flow and top
-            navigation. Speaking remains experimental, and Listening stays a placeholder while the
-            broader assessment seam evolves.
+            Drill passages, practise timed essays, and track your band progress — all in one place.
+            Speaking and Listening stay available when you need them.
           </p>
           <div className="hero-actions">
             <Link className="primary-button dashboard-link-button hero-cta-reading" href="/reading">
@@ -255,41 +246,49 @@ export default async function HomePage() {
               Open writing practice
             </Link>
           </div>
+          <div className="route-pill-row" aria-label="Route status summary">
+            {routePills.map((route) => (
+              <span className="route-pill" data-route={route.id} key={route.id}>
+                <span>{route.label}</span>
+                <strong>{route.status}</strong>
+              </span>
+            ))}
+          </div>
         </div>
-        <aside className="hero-focus-panel" aria-label="Current product focus">
+        <aside className="hero-focus-panel" aria-label="Current progress snapshot">
           <div className="hero-focus-header">
-            <p className="eyebrow">Current product focus</p>
-            <h2>Put the production energy where the app is already strongest.</h2>
+            <p className="eyebrow">Your progress</p>
+            <h2>Keep the momentum going.</h2>
           </div>
           <div className="home-metric-row">
             <div className="metric-card">
-              <span>Primary tracks</span>
-              <strong>2 core routes</strong>
+              <span>Reading accuracy</span>
+              <strong>{formatAccuracy(readingDashboard.dashboardSummary.averagePercentage)}</strong>
             </div>
             <div className="metric-card">
-              <span>Reading passages</span>
-              <strong>{readingDashboard.availableSets.length}</strong>
+              <span>Writing band</span>
+              <strong>{formatBand(writingDashboard.summary.averageBand)}</strong>
             </div>
             <div className="metric-card">
-              <span>Writing prompts</span>
-              <strong>{writingDashboard.prompts.length}</strong>
+              <span>Total sessions</span>
+              <strong>{readingDashboard.dashboardSummary.totalAttempts + writingDashboard.summary.totalAttempts}</strong>
             </div>
           </div>
           <div className="focus-signal-grid" aria-label="Reading and writing focus signals">
             <article className="focus-signal-card" data-signal="reading">
-              <span className="focus-signal-label">Reading momentum</span>
-              <strong>{formatAccuracy(readingDashboard.dashboardSummary.averagePercentage)}</strong>
-              <p>Average accuracy across {readingDashboard.dashboardSummary.totalAttempts} recorded attempts.</p>
+              <span className="focus-signal-label">Reading</span>
+              <strong>{readingDashboard.availableSets.length} passages</strong>
+              <p>{readingDashboard.dashboardSummary.totalAttempts} attempts completed</p>
             </article>
             <article className="focus-signal-card" data-signal="writing">
-              <span className="focus-signal-label">Writing band</span>
-              <strong>{formatBand(writingDashboard.summary.averageBand)}</strong>
+              <span className="focus-signal-label">Writing</span>
+              <strong>{writingDashboard.prompts.length} prompts</strong>
               <p>{writingDashboard.studyPlan.headline}</p>
             </article>
             <article className="focus-signal-card" data-signal="listening">
-              <span className="focus-signal-label">Secondary routes</span>
-              <strong>Kept live</strong>
-              <p>Speaking stays alpha and Listening stays placeholder without crowding the main flow.</p>
+              <span className="focus-signal-label">More modules</span>
+              <strong>Available</strong>
+              <p>Speaking (alpha) and Listening (placeholder) ready to explore.</p>
             </article>
           </div>
         </aside>
@@ -328,15 +327,15 @@ export default async function HomePage() {
 
       <section className="workspace-column" aria-labelledby="primary-ia-heading">
         <div className="panel primary-section-header">
-          <p className="eyebrow">Primary information architecture</p>
-          <h2 id="primary-ia-heading">Reading and Writing stay at the center of the app.</h2>
+          <p className="eyebrow">Core modules</p>
+          <h2 id="primary-ia-heading">Reading and Writing — your daily practice tracks.</h2>
           <p className="summary-copy">
-            Use these two core workspaces for regular practice. They sit first in the navigation,
-            lead the homepage, and carry the strongest production-ready workflows today.
+            These two modules carry the strongest workflows. They sit first in the nav
+            and lead every session.
           </p>
           <div className="section-tag-row" aria-label="Primary module highlights">
-            <span className="section-tag">Reading leads with imported passage drills</span>
-            <span className="section-tag">Writing keeps the scoring and report loop</span>
+            <span className="section-tag">Passage drills with deterministic scoring</span>
+            <span className="section-tag">Timed essays with band tracking</span>
           </div>
         </div>
         <div className="module-hub-grid" aria-label="Primary IELTS practice modules">
@@ -345,20 +344,20 @@ export default async function HomePage() {
       </section>
 
       <div className="section-divider" role="separator" aria-hidden="true">
-        <span className="section-divider-label">Secondary modules</span>
+        <span className="section-divider-label">More modules</span>
       </div>
 
       <section className="workspace-column secondary-section" aria-labelledby="secondary-ia-heading">
         <div className="panel secondary-section-header">
-          <p className="eyebrow">Secondary modules</p>
-          <h2 id="secondary-ia-heading">Speaking and Listening remain available, but secondary.</h2>
+          <p className="eyebrow">Explore</p>
+          <h2 id="secondary-ia-heading">Speaking and Listening — available when you are ready.</h2>
           <p className="summary-copy">
-            These routes stay registered for experimentation and future expansion without competing
-            with the primary Reading and Writing journey.
+            These modules stay accessible for experimentation and future expansion without
+            crowding the primary flow.
           </p>
           <div className="section-tag-row" aria-label="Secondary module highlights">
-            <span className="section-tag section-tag--muted">Speaking is still an alpha practice lane</span>
-            <span className="section-tag section-tag--muted">Listening keeps the placeholder seam visible</span>
+            <span className="section-tag section-tag--muted">Speaking alpha with transcript support</span>
+            <span className="section-tag section-tag--muted">Listening placeholder for future content</span>
           </div>
         </div>
         <div className="module-hub-grid" aria-label="Secondary IELTS modules">

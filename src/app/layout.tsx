@@ -26,15 +26,17 @@ const navLinks = [
   },
   {
     href: '/speaking',
-    label: 'Speaking alpha',
+    label: 'Speaking',
     dotClassName: 'site-nav-dot site-nav-dot--speaking',
     tier: 'secondary',
+    badge: 'Alpha',
   },
   {
     href: '/listening',
-    label: 'Listening placeholder',
+    label: 'Listening',
     dotClassName: 'site-nav-dot site-nav-dot--listening',
     tier: 'secondary',
+    badge: 'Soon',
   },
 ] as const;
 
@@ -57,12 +59,22 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
                 >
                   <span className={link.dotClassName} aria-hidden="true" />
                   {link.label}
+                  {'badge' in link && link.badge ? (
+                    <span className="site-nav-exp-badge">{link.badge}</span>
+                  ) : null}
                 </Link>
               ))}
             </div>
-            <Link href="/reading/dashboard" className="site-nav-link site-nav-link--dashboard">
-              Dashboards
-            </Link>
+            <div className="site-nav-dashboard-group">
+              <Link href="/reading/dashboard" className="site-nav-link site-nav-link--dashboard">
+                <span className="site-nav-dot site-nav-dot--reading" aria-hidden="true" />
+                Reading stats
+              </Link>
+              <Link href="/dashboard" className="site-nav-link site-nav-link--dashboard">
+                <span className="site-nav-dot site-nav-dot--writing" aria-hidden="true" />
+                Writing stats
+              </Link>
+            </div>
           </div>
         </nav>
         {children}
