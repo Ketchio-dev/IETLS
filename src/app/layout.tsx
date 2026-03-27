@@ -6,9 +6,33 @@ import Link from 'next/link';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'IELTS Academic Platform',
-  description: 'Multi-module IELTS Academic practice hub for writing, reading, speaking, and listening.',
+  title: 'IELTS Reading & Writing Hub',
+  description:
+    'IELTS Academic reading and writing practice hub with secondary speaking alpha and listening placeholder routes.',
 };
+
+const navLinks = [
+  {
+    href: '/reading',
+    label: 'Reading',
+    dotClassName: 'site-nav-dot site-nav-dot--reading',
+  },
+  {
+    href: '/writing',
+    label: 'Writing',
+    dotClassName: 'site-nav-dot site-nav-dot--writing',
+  },
+  {
+    href: '/speaking',
+    label: 'Speaking alpha',
+    dotClassName: 'site-nav-dot site-nav-dot--speaking',
+  },
+  {
+    href: '/listening',
+    label: 'Listening placeholder',
+    dotClassName: 'site-nav-dot site-nav-dot--listening',
+  },
+] as const;
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
@@ -17,25 +41,15 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <nav className="site-nav" aria-label="Main navigation">
           <div className="site-nav-inner">
             <Link href="/" className="site-nav-brand">
-              IELTS Academic
+              IELTS Reading + Writing
             </Link>
             <div className="site-nav-links">
-              <Link href="/writing" className="site-nav-link">
-                <span className="site-nav-dot site-nav-dot--writing" aria-hidden="true" />
-                Writing
-              </Link>
-              <Link href="/reading" className="site-nav-link">
-                <span className="site-nav-dot site-nav-dot--reading" aria-hidden="true" />
-                Reading
-              </Link>
-              <Link href="/speaking" className="site-nav-link">
-                <span className="site-nav-dot site-nav-dot--speaking" aria-hidden="true" />
-                Speaking
-              </Link>
-              <Link href="/listening" className="site-nav-link">
-                <span className="site-nav-dot site-nav-dot--listening" aria-hidden="true" />
-                Listening
-              </Link>
+              {navLinks.map((link) => (
+                <Link href={link.href} className="site-nav-link" key={link.href}>
+                  <span className={link.dotClassName} aria-hidden="true" />
+                  {link.label}
+                </Link>
+              ))}
             </div>
           </div>
         </nav>

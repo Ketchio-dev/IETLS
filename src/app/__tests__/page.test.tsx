@@ -31,7 +31,7 @@ afterEach(() => {
 });
 
 describe('HomePage', () => {
-  it('renders the module hub with writing, reading, speaking, and listening routes', async () => {
+  it('prioritizes reading and writing while keeping speaking and listening secondary', async () => {
     const writingSummary: WritingDashboardSummary = {
       totalAttempts: 12,
       taskCounts: { 'task-1': 4, 'task-2': 8 },
@@ -165,22 +165,20 @@ describe('HomePage', () => {
     expect(mocks.loadAssessmentDashboardPageData).toHaveBeenCalledWith(READING_ASSESSMENT_MODULE_ID);
     expect(mocks.loadAssessmentDashboardPageData).toHaveBeenCalledWith(SPEAKING_ASSESSMENT_MODULE_ID);
     expect(mocks.loadAssessmentDashboardPageData).toHaveBeenCalledWith(LISTENING_ASSESSMENT_MODULE_ID);
-    expect(screen.getByRole('heading', { name: /your learning starts here/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Writing' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Reading' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Speaking' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Listening' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /start with reading and writing/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /reading and writing stay at the center of the app/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /speaking and listening remain available, but secondary/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /start reading practice/i })).toHaveAttribute('href', '/reading');
+    expect(screen.getByRole('link', { name: /open writing practice/i })).toHaveAttribute('href', '/writing');
+    expect(screen.getByRole('link', { name: /open alpha/i })).toHaveAttribute('href', '/speaking');
+    expect(screen.getByRole('link', { name: /open placeholder/i })).toHaveAttribute('href', '/listening');
+    expect(screen.getAllByText('Primary practice track')).toHaveLength(2);
+    expect(screen.getByText('Experimental module')).toBeInTheDocument();
+    expect(screen.getByText('Secondary placeholder')).toBeInTheDocument();
     expect(screen.getAllByText('Full')).toHaveLength(2);
     expect(screen.getAllByText('Alpha')).toHaveLength(1);
     expect(screen.getByText('Placeholder')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /start writing/i })).toHaveAttribute('href', '/writing');
-    expect(screen.getAllByRole('link', { name: /view dashboard/i })).toHaveLength(3);
-    expect(screen.getAllByRole('link', { name: /open practice/i }).map((link) => link.getAttribute('href'))).toEqual([
-      '/writing',
-      '/reading',
-    ]);
-    expect(screen.getByRole('link', { name: /open placeholder/i })).toHaveAttribute('href', '/listening');
-    expect(screen.getAllByText('12').length).toBeGreaterThan(0);
+    expect(screen.getByText('2 core routes')).toBeInTheDocument();
     expect(screen.getAllByText('9').length).toBeGreaterThan(0);
     expect(screen.getByText(/band 6\.5/i)).toBeInTheDocument();
     expect(screen.getByText('Planned')).toBeInTheDocument();

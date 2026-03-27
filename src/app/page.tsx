@@ -23,6 +23,7 @@ interface ModuleCardStat {
 
 interface ModuleCard {
   id: string;
+  priority: 'primary' | 'secondary';
   eyebrow: string;
   name: string;
   status: 'Full' | 'Alpha' | 'Placeholder';
@@ -80,6 +81,60 @@ const moduleIcons: Record<string, () => React.JSX.Element> = {
   listening: ListeningIcon,
 };
 
+function renderModuleCards(moduleCards: ModuleCard[]) {
+  return moduleCards.map((moduleCard) => {
+    const IconComponent = moduleIcons[moduleCard.id];
+
+    return (
+      <article className="panel module-card" data-module={moduleCard.id} key={moduleCard.id}>
+        <div className="module-card-header">
+          <div className="module-card-heading">
+            {IconComponent ? (
+              <div className="module-icon" aria-hidden="true">
+                <IconComponent />
+              </div>
+            ) : null}
+            <div>
+              <p className="eyebrow">{moduleCard.eyebrow}</p>
+              <h2>{moduleCard.name}</h2>
+            </div>
+          </div>
+          <span className="status-badge" data-status={moduleCard.status}>
+            {moduleCard.status}
+          </span>
+        </div>
+
+        <p className="summary-copy">{moduleCard.description}</p>
+
+        <div className="module-stat-grid">
+          {moduleCard.stats.map((stat) => (
+            <div className="module-stat-card" key={`${moduleCard.id}-${stat.label}`}>
+              <span>{stat.label}</span>
+              <strong>{stat.value}</strong>
+            </div>
+          ))}
+        </div>
+
+        <div className="module-card-actions">
+          {moduleCard.actions.map((action) => (
+            <Link
+              className={
+                action.variant === 'primary'
+                  ? 'primary-button dashboard-link-button'
+                  : 'secondary-link-button'
+              }
+              href={action.href}
+              key={`${moduleCard.id}-${action.href}`}
+            >
+              {action.label}
+            </Link>
+          ))}
+        </div>
+      </article>
+    );
+  });
+}
+
 export default async function HomePage() {
   const [writingDashboard, readingDashboard, speakingDashboard, listeningDashboard] = await Promise.all([
     loadDefaultAssessmentDashboardPageData(),
@@ -90,24 +145,9 @@ export default async function HomePage() {
 
   const moduleCards: ModuleCard[] = [
     {
-      id: 'writing',
-      eyebrow: 'Established workflow',
-      name: 'Writing',
-      status: 'Full',
-      description: 'Timed academic writing practice with persistent reports, score trends, and a dedicated dashboard.',
-      stats: [
-        { label: 'Saved attempts', value: String(writingDashboard.summary.totalAttempts) },
-        { label: 'Prompt bank', value: String(writingDashboard.prompts.length) },
-        { label: 'Average band', value: formatBand(writingDashboard.summary.averageBand) },
-      ],
-      actions: [
-        { href: '/writing', label: 'Open practice', variant: 'primary' },
-        { href: '/dashboard', label: 'View dashboard', variant: 'secondary' },
-      ],
-    },
-    {
       id: 'reading',
-      eyebrow: 'Imported drill bank',
+      priority: 'primary',
+      eyebrow: 'Primary practice track',
       name: 'Reading',
       status: 'Full',
       description: 'Passage-based reading drills with imported sets, deterministic scoring, and evidence-backed review.',
@@ -120,16 +160,35 @@ export default async function HomePage() {
         },
       ],
       actions: [
-        { href: '/reading', label: 'Open practice', variant: 'primary' },
+        { href: '/reading', label: 'Start reading practice', variant: 'primary' },
         { href: '/reading/dashboard', label: 'View dashboard', variant: 'secondary' },
       ],
     },
     {
+      id: 'writing',
+      priority: 'primary',
+      eyebrow: 'Primary practice track',
+      name: 'Writing',
+      status: 'Full',
+      description: 'Timed academic writing practice with persistent reports, score trends, and a dedicated dashboard.',
+      stats: [
+        { label: 'Saved attempts', value: String(writingDashboard.summary.totalAttempts) },
+        { label: 'Prompt bank', value: String(writingDashboard.prompts.length) },
+        { label: 'Average band', value: formatBand(writingDashboard.summary.averageBand) },
+      ],
+      actions: [
+        { href: '/writing', label: 'Start writing practice', variant: 'primary' },
+        { href: '/dashboard', label: 'View dashboard', variant: 'secondary' },
+      ],
+    },
+    {
       id: 'speaking',
-      eyebrow: 'Alpha module',
+      priority: 'secondary',
+      eyebrow: 'Experimental module',
       name: 'Speaking',
       status: 'Alpha',
-      description: 'Transcript-first speaking practice that validates the workflow before full audio capture lands.',
+      description:
+        'Transcript-first speaking practice stays available as an experimental add-on while Reading and Writing lead the main flow.',
       stats: [
         { label: 'Sessions', value: String(speakingDashboard.summary.totalSessions) },
         { label: 'Best band', value: formatBand(speakingDashboard.summary.bestBand) },
@@ -142,10 +201,12 @@ export default async function HomePage() {
     },
     {
       id: 'listening',
-      eyebrow: 'Future seam',
+      priority: 'secondary',
+      eyebrow: 'Secondary placeholder',
       name: 'Listening',
       status: 'Placeholder',
-      description: 'Route coverage is in place, but scripts, audio, and answer-timing validation are still future work.',
+      description:
+        'The route coverage remains in place, but scripts, audio, and answer-timing validation are still placeholder work.',
       stats: listeningDashboard.statusCards.slice(0, 3).map((card) => ({
         label: card.label,
         value: card.value,
@@ -154,93 +215,71 @@ export default async function HomePage() {
     },
   ];
 
+  const primaryModuleCards = moduleCards.filter((moduleCard) => moduleCard.priority === 'primary');
+  const secondaryModuleCards = moduleCards.filter((moduleCard) => moduleCard.priority === 'secondary');
+
   return (
     <main className="app-shell">
       <section className="hero panel home-hero module-hub-hero">
         <div>
-          <p className="eyebrow">IELTS Academic Platform</p>
-          <h1>Your learning starts here. Pick a skill to practice.</h1>
+          <p className="eyebrow">IELTS Academic Reading + Writing</p>
+          <h1>Start with Reading and Writing. Keep Speaking and Listening in reserve.</h1>
           <p className="hero-copy">
-            Four modules, one hub. Start with Writing, drill Reading passages, review Speaking progress,
-            and watch Listening take shape as the platform grows.
+            The app now prioritizes passage drills and writing practice in the homepage flow and top
+            navigation. Speaking remains experimental, and Listening stays a placeholder while the
+            broader assessment seam evolves.
           </p>
           <div className="hero-actions">
-            <Link className="primary-button dashboard-link-button" href="/writing">
-              Start writing practice
+            <Link className="primary-button dashboard-link-button" href="/reading">
+              Start reading practice
             </Link>
-            <Link className="secondary-link-button" href="/reading">
-              Open reading drills
+            <Link className="secondary-link-button" href="/writing">
+              Open writing practice
             </Link>
           </div>
         </div>
         <div className="home-metric-row">
           <div className="metric-card">
-            <span>Modules</span>
-            <strong>4 tracks</strong>
-          </div>
-          <div className="metric-card">
-            <span>Writing saved</span>
-            <strong>{writingDashboard.summary.totalAttempts}</strong>
+            <span>Primary tracks</span>
+            <strong>2 core routes</strong>
           </div>
           <div className="metric-card">
             <span>Reading passages</span>
             <strong>{readingDashboard.availableSets.length}</strong>
           </div>
+          <div className="metric-card">
+            <span>Writing prompts</span>
+            <strong>{writingDashboard.prompts.length}</strong>
+          </div>
         </div>
       </section>
 
-      <section className="module-hub-grid" aria-label="IELTS module hub">
-        {moduleCards.map((moduleCard) => {
-          const IconComponent = moduleIcons[moduleCard.id];
+      <section className="workspace-column" aria-labelledby="primary-ia-heading">
+        <div className="panel">
+          <p className="eyebrow">Primary information architecture</p>
+          <h2 id="primary-ia-heading">Reading and Writing stay at the center of the app.</h2>
+          <p className="summary-copy">
+            Use these two core workspaces for regular practice. They sit first in the navigation,
+            lead the homepage, and carry the strongest production-ready workflows today.
+          </p>
+        </div>
+        <div className="module-hub-grid" aria-label="Primary IELTS practice modules">
+          {renderModuleCards(primaryModuleCards)}
+        </div>
+      </section>
 
-          return (
-            <article className="panel module-card" data-module={moduleCard.id} key={moduleCard.id}>
-              <div className="module-card-header">
-                <div className="module-card-heading">
-                  {IconComponent ? (
-                    <div className="module-icon" aria-hidden="true">
-                      <IconComponent />
-                    </div>
-                  ) : null}
-                  <div>
-                    <p className="eyebrow">{moduleCard.eyebrow}</p>
-                    <h2>{moduleCard.name}</h2>
-                  </div>
-                </div>
-                <span className="status-badge" data-status={moduleCard.status}>
-                  {moduleCard.status}
-                </span>
-              </div>
-
-              <p className="summary-copy">{moduleCard.description}</p>
-
-              <div className="module-stat-grid">
-                {moduleCard.stats.map((stat) => (
-                  <div className="module-stat-card" key={`${moduleCard.id}-${stat.label}`}>
-                    <span>{stat.label}</span>
-                    <strong>{stat.value}</strong>
-                  </div>
-                ))}
-              </div>
-
-              <div className="module-card-actions">
-                {moduleCard.actions.map((action) => (
-                  <Link
-                    className={
-                      action.variant === 'primary'
-                        ? 'primary-button dashboard-link-button'
-                        : 'secondary-link-button'
-                    }
-                    href={action.href}
-                    key={`${moduleCard.id}-${action.href}`}
-                  >
-                    {action.label}
-                  </Link>
-                ))}
-              </div>
-            </article>
-          );
-        })}
+      <section className="workspace-column" aria-labelledby="secondary-ia-heading">
+        <div className="panel">
+          <p className="eyebrow">Secondary modules</p>
+          <h2 id="secondary-ia-heading">Speaking and Listening remain available, but secondary.</h2>
+          <p className="summary-copy">
+            These routes stay registered for experimentation and future expansion without competing
+            with the primary Reading and Writing journey.
+          </p>
+        </div>
+        <div className="module-hub-grid" aria-label="Secondary IELTS modules">
+          {renderModuleCards(secondaryModuleCards)}
+        </div>
       </section>
     </main>
   );
