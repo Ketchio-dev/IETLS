@@ -11,7 +11,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "reading:import-private": "node scripts/import-reading-private.mjs",
-    "reading:crawl": "node scripts/crawl-reading-ielts-up.mjs"
+    "reading:crawl": "node scripts/crawl-reading-ielts-up.mjs",
+    "reading:crawl:ieltsbuddy": "node scripts/crawl-reading-ieltsbuddy.mjs",
+    "reading:crawl:all": "node scripts/crawl-reading-ielts-up.mjs && node scripts/crawl-reading-ieltsbuddy.mjs"
   },
   "dependencies": {
     "next": "16.2.1",
