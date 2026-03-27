@@ -143,7 +143,7 @@ export default async function HomePage() {
     loadAssessmentDashboardPageData(LISTENING_ASSESSMENT_MODULE_ID),
   ]);
 
-  const primaryCards: ModuleCard[] = [
+  const moduleCards: ModuleCard[] = [
     {
       id: 'reading',
       priority: 'primary',
@@ -164,9 +164,6 @@ export default async function HomePage() {
         { href: '/reading/dashboard', label: 'View dashboard', variant: 'secondary' },
       ],
     },
-  ];
-
-  const experimentalCards: ModuleCard[] = [
     {
       id: 'writing',
       priority: 'primary',
@@ -282,66 +279,6 @@ export default async function HomePage() {
         </div>
         <div className="module-hub-grid" aria-label="Secondary IELTS modules">
           {renderModuleCards(secondaryModuleCards)}
-        </div>
-      </section>
-
-      <section className="experimental-section" aria-label="Experimental modules">
-        <div className="experimental-section-header">
-          <h2 className="experimental-section-title">Experimental</h2>
-          <p className="experimental-section-subtitle">These modules are under active development and not yet production-ready.</p>
-        </div>
-        <div className="module-hub-grid module-hub-grid--experimental">
-          {experimentalCards.map((moduleCard) => {
-            const IconComponent = moduleIcons[moduleCard.id];
-
-            return (
-              <article className="panel module-card module-card--experimental" data-module={moduleCard.id} key={moduleCard.id}>
-                <div className="module-card-header">
-                  <div className="module-card-heading">
-                    {IconComponent ? (
-                      <div className="module-icon" aria-hidden="true">
-                        <IconComponent />
-                      </div>
-                    ) : null}
-                    <div>
-                      <p className="eyebrow">{moduleCard.eyebrow}</p>
-                      <h2>{moduleCard.name}</h2>
-                    </div>
-                  </div>
-                  <span className="status-badge" data-status={moduleCard.status}>
-                    {moduleCard.status}
-                  </span>
-                </div>
-
-                <p className="summary-copy">{moduleCard.description}</p>
-
-                <div className="module-stat-grid">
-                  {moduleCard.stats.map((stat) => (
-                    <div className="module-stat-card" key={`${moduleCard.id}-${stat.label}`}>
-                      <span>{stat.label}</span>
-                      <strong>{stat.value}</strong>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="module-card-actions">
-                  {moduleCard.actions.map((action) => (
-                    <Link
-                      className={
-                        action.variant === 'primary'
-                          ? 'primary-button dashboard-link-button'
-                          : 'secondary-link-button'
-                      }
-                      href={action.href}
-                      key={`${moduleCard.id}-${action.href}`}
-                    >
-                      {action.label}
-                    </Link>
-                  ))}
-                </div>
-              </article>
-            );
-          })}
         </div>
       </section>
     </main>
