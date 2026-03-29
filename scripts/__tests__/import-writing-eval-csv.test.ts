@@ -65,7 +65,7 @@ describe('writing eval csv importer', () => {
     await writeFile(
       inputPath,
       [
-        'Task Type,Prompt,Response,Overall Band,Task Achievement,Coherence & Cohesion,Lexical Resource,Grammatical Range & Accuracy,Comments',
+        'Task Type,Prompt Text,Response Text,Overall Band,Task Achievement,Coherence & Cohesion,Lexical Resource,Grammatical Range & Accuracy,Rater Comments',
         'Task 1,"The chart below shows...","Candidate response.",6.0,6.0,6.5,6.0,5.5,"Human-rated note"',
       ].join('\n'),
     );
@@ -96,9 +96,11 @@ describe('writing eval csv importer', () => {
     });
 
     const imported = JSON.parse(await readFile(outputPath, 'utf8'));
+    expect(imported.source).toBe('writing-human-rated-csv-import');
     expect(imported.essays[0]).toMatchObject({
       taskType: 'task-1',
       overallBand: 6.0,
+      source: 'writing-human-rated-csv-import',
       notes: ['Human-rated note'],
       criterionScores: {
         'Task Achievement': 6.0,

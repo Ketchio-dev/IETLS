@@ -317,9 +317,9 @@ describe('HomePage', () => {
     expect(screen.getAllByRole('link', { name: /start reading practice/i })[0]).toHaveAttribute('href', '/reading');
     expect(screen.getByRole('link', { name: /open alpha/i })).toHaveAttribute('href', '/speaking');
     expect(screen.getByRole('link', { name: /open placeholder/i })).toHaveAttribute('href', '/listening');
-    expect(screen.getAllByText('Primary practice track')).toHaveLength(2);
-    expect(screen.getByText('Experimental module')).toBeInTheDocument();
-    expect(screen.getByText('Secondary placeholder')).toBeInTheDocument();
+    expect(screen.getAllByText('Ready now')).toHaveLength(2);
+    expect(screen.getAllByText('Preview').length).toBeGreaterThan(0);
+    expect(screen.getByText('Coming next')).toBeInTheDocument();
     expect(screen.getAllByText('Full')).toHaveLength(2);
     expect(screen.getAllByText('Alpha')).toHaveLength(1);
     expect(screen.getByText('Placeholder')).toBeInTheDocument();
@@ -500,6 +500,7 @@ describe('HomePage', () => {
     expect(readingCard).not.toBeNull();
     expect(readingCard!.textContent).toContain('Passages');
     expect(readingCard!.textContent).toContain('Attempts');
+    expect(readingCard!.textContent).toContain('Collections');
 
     // Writing card renders stat cards with expected labels
     const writingCard = container.querySelector('[data-module="writing"]');
@@ -509,7 +510,7 @@ describe('HomePage', () => {
     expect(writingCard!.textContent).toContain('Average band');
   });
 
-  it('renders route pills with Core status for reading/writing and secondary status for others', async () => {
+  it('renders route pills with ready/preview status labels that match the launch hierarchy', async () => {
     setupMocks();
     const { container } = render(await HomePage());
 
@@ -523,17 +524,17 @@ describe('HomePage', () => {
     const pillRouteIds = Array.from(pills).map((el) => el.getAttribute('data-route'));
     expect(pillRouteIds).toEqual(['reading', 'writing', 'speaking', 'listening']);
 
-    // Reading and Writing are "Core"
+    // Reading and Writing are "Ready"
     const readingPill = routePillRow!.querySelector('[data-route="reading"]');
     const writingPill = routePillRow!.querySelector('[data-route="writing"]');
-    expect(readingPill!.textContent).toContain('Core');
-    expect(writingPill!.textContent).toContain('Core');
+    expect(readingPill!.textContent).toContain('Ready');
+    expect(writingPill!.textContent).toContain('Ready');
 
-    // Speaking is "Explore", Listening is "Seam"
+    // Speaking is "Preview", Listening is "Coming soon"
     const speakingPill = routePillRow!.querySelector('[data-route="speaking"]');
     const listeningPill = routePillRow!.querySelector('[data-route="listening"]');
-    expect(speakingPill!.textContent).toContain('Explore');
-    expect(listeningPill!.textContent).toContain('Seam');
+    expect(speakingPill!.textContent).toContain('Preview');
+    expect(listeningPill!.textContent).toContain('Coming soon');
   });
 
   it('renders focus signal cards for reading momentum, writing band, and secondary routes', async () => {
@@ -630,16 +631,15 @@ describe('HomePage', () => {
     const secondaryHeading = screen.getByRole('heading', { name: /speaking and listening .* available when you are ready/i });
     expect(secondaryHeading).toBeInTheDocument();
 
-    // Section tag rows describe the focus
-    expect(screen.getByText('Passage drills with deterministic scoring')).toBeInTheDocument();
-    expect(screen.getByText('Timed essays with band tracking')).toBeInTheDocument();
-
-    // Secondary tags are muted
-    expect(screen.getByText('Speaking alpha with transcript support')).toBeInTheDocument();
-    expect(screen.getByText('Listening placeholder for future content')).toBeInTheDocument();
+    expect(
+      screen.getByText(/these are the strongest practice loops in the product/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/these stay accessible without getting in the way of the main reading and writing flow/i),
+    ).toBeInTheDocument();
   });
 
-  it('renders primary module cards with "Primary practice track" eyebrow and secondary with distinct eyebrows', async () => {
+  it('renders learner-facing eyebrows for primary and secondary module cards', async () => {
     setupMocks();
     const { container } = render(await HomePage());
 
@@ -648,10 +648,10 @@ describe('HomePage', () => {
     const speakingCard = container.querySelector('[data-module="speaking"]');
     const listeningCard = container.querySelector('[data-module="listening"]');
 
-    expect(readingCard!.querySelector('.eyebrow')!.textContent).toBe('Primary practice track');
-    expect(writingCard!.querySelector('.eyebrow')!.textContent).toBe('Primary practice track');
-    expect(speakingCard!.querySelector('.eyebrow')!.textContent).toBe('Experimental module');
-    expect(listeningCard!.querySelector('.eyebrow')!.textContent).toBe('Secondary placeholder');
+    expect(readingCard!.querySelector('.eyebrow')!.textContent).toBe('Ready now');
+    expect(writingCard!.querySelector('.eyebrow')!.textContent).toBe('Ready now');
+    expect(speakingCard!.querySelector('.eyebrow')!.textContent).toBe('Preview');
+    expect(listeningCard!.querySelector('.eyebrow')!.textContent).toBe('Coming next');
   });
 
   it('renders status badges: Full for primary modules, Alpha/Placeholder for secondary', async () => {
@@ -744,7 +744,7 @@ describe('HomePage', () => {
     // The focus signal stays action-oriented even when band data is absent
     const writingSignal = container.querySelector('[data-signal="writing"]');
     expect(writingSignal).not.toBeNull();
-    expect(writingSignal!.textContent).toContain('5 prompts');
+    expect(writingSignal!.textContent).toContain(`${writingPromptBank.length} prompts`);
     expect(writingSignal!.textContent).toContain('Keep writing momentum steady');
 
     // The writing module card still exposes the null-safe band fallback
@@ -774,25 +774,10 @@ describe('HomePage', () => {
     expect(writingCard!.textContent).toContain('prompts ready');
   });
 
-  it('renders section tags with muted styling only for secondary modules', async () => {
+  it('drops the old section-tag rows so the home page reads like product copy instead of an internal roadmap', async () => {
     setupMocks();
     const { container } = render(await HomePage());
 
-    // Primary section tags do NOT have --muted modifier
-    const primaryHeader = container.querySelector('.primary-section-header');
-    expect(primaryHeader).not.toBeNull();
-    const primaryTags = primaryHeader!.querySelectorAll('.section-tag');
-    primaryTags.forEach((tag) => {
-      expect(tag.classList.contains('section-tag--muted')).toBe(false);
-    });
-
-    // Secondary section tags DO have --muted modifier
-    const secondaryHeader = container.querySelector('.secondary-section-header');
-    expect(secondaryHeader).not.toBeNull();
-    const secondaryTags = secondaryHeader!.querySelectorAll('.section-tag');
-    expect(secondaryTags.length).toBeGreaterThan(0);
-    secondaryTags.forEach((tag) => {
-      expect(tag.classList.contains('section-tag--muted')).toBe(true);
-    });
+    expect(container.querySelectorAll('.section-tag')).toHaveLength(0);
   });
 });

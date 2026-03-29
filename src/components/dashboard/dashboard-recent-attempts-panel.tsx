@@ -40,9 +40,19 @@ function buildAttemptStatus(attempt: SavedAssessmentSnapshot) {
 
   return {
     provider: formatProvider(trace.scorerProvider),
-    model: trace.scorerModel,
-    fallback: trace.usedMockFallback ? 'Mock fallback' : 'Live scorer',
+    fallback: trace.usedMockFallback ? 'Backup scoring engine' : 'Standard scoring engine',
   };
+}
+
+function getConfidenceLabel(confidence: SavedAssessmentSnapshot['report']['confidence']) {
+  switch (confidence) {
+    case 'high':
+      return 'High confidence';
+    case 'medium':
+      return 'Moderate confidence';
+    default:
+      return 'Provisional confidence';
+  }
 }
 
 function formatSignedBandDelta(value: number) {
@@ -102,7 +112,7 @@ export function DashboardRecentAttemptsPanel({ attempts, prompts }: Props) {
       <div className="section-heading">
         <div>
           <p className="eyebrow">Recent saved attempts</p>
-          <h2>Inspect and resume from the dashboard</h2>
+          <h2>Review and continue from the dashboard</h2>
         </div>
         <span className="band-chip">{attempts.length} saved</span>
       </div>
@@ -122,16 +132,21 @@ export function DashboardRecentAttemptsPanel({ attempts, prompts }: Props) {
               <p>{activeAttempt.report.summary}</p>
               <div className="history-meta">
                 <span>{formatTaskLabel(activeAttempt.taskType)}</span>
-                <span>{activeAttempt.report.confidence} confidence</span>
+                <span>{getConfidenceLabel(activeAttempt.report.confidence)}</span>
                 <span>{new Date(activeAttempt.createdAt).toLocaleString()}</span>
               </div>
               <div className="history-meta inspection-meta">
                 <span>{activeAttempt.wordCount} words</span>
                 <span>{activeAttempt.timeSpentMinutes.toFixed(1)} min</span>
-                <span>{status.provider}</span>
-                <span>{status.model}</span>
                 <span>{status.fallback}</span>
               </div>
+              <details className="report-technical-details">
+                <summary>Technical details</summary>
+                <ul className="plain-list compact-list">
+                  <li>Scoring provider: {status.provider}</li>
+                  <li>Confidence: {getConfidenceLabel(activeAttempt.report.confidence)}</li>
+                </ul>
+              </details>
               <div className="hero-actions">
                 <Link className="secondary-link-button" href={buildResumeHref(activeAttempt)}>
                   Resume this attempt
@@ -153,7 +168,7 @@ export function DashboardRecentAttemptsPanel({ attempts, prompts }: Props) {
                     <span>
                       {attemptComparison.currentTaskType === attemptComparison.comparedTaskType
                         ? 'Same task type'
-                        : 'Cross-task snapshot'}
+                        : 'Comparing across task types'}
                     </span>
                   </div>
                   <p>
@@ -231,7 +246,7 @@ export function DashboardRecentAttemptsPanel({ attempts, prompts }: Props) {
                     </button>
                   ) : null}
                   <Link className="secondary-link-button" href={buildResumeHref(attempt)}>
-                    Resume in practice shell
+                    Resume task
                   </Link>
                 </div>
               </article>

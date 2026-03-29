@@ -18,6 +18,15 @@ import {
   formatTrendLabel,
 } from '@/components/dashboard/dashboard-formatting';
 import { DashboardRecentAttemptsPanel } from '@/components/dashboard/dashboard-recent-attempts-panel';
+import { buildPromptRecommendations } from '@/lib/services/writing/prompt-recommendations';
+import { getPromptTheme } from '@/lib/services/writing/prompt-taxonomy';
+
+interface ThemeCoverageEntry {
+  theme: string;
+  promptCount: number;
+  attemptCount: number;
+  latestAttemptAt: string | null;
+}
 
 interface Props {
   prompts: WritingPrompt[];
@@ -48,13 +57,13 @@ function buildDashboardMetrics(summary: WritingDashboardSummary, progress: Progr
     },
     {
       id: 'full-test-weighted-band',
-      label: 'Full-test estimate',
+      label: 'Overall writing estimate',
       value: summary.latestFullTestEstimateBand?.toFixed(1) ?? 'Need Task 1 + Task 2',
       detail:
         summary.latestFullTestEstimateBand == null
-          ? 'Save your latest Task 1 and Task 2 reports to unlock an IELTS-style 1:2 weighted full-test estimate built from overall bands.'
-          : `Built from the latest saved Task 1 ${summary.latestFullTestTask1Band?.toFixed(1)} and Task 2 ${summary.latestFullTestTask2Band?.toFixed(1)} overall estimates with IELTS-style 1:2 weighting. Public calibration currently adjusts overall bands only, not criterion bands.`,
-      eyebrow: 'Task weighting',
+          ? 'Save one recent Task 1 and one recent Task 2 report to unlock an overall writing estimate.'
+          : `Based on your latest Task 1 ${summary.latestFullTestTask1Band?.toFixed(1)} and Task 2 ${summary.latestFullTestTask2Band?.toFixed(1)} scores.`,
+      eyebrow: 'Latest saved tasks',
     },
     {
       id: 'average-band',
@@ -67,7 +76,7 @@ function buildDashboardMetrics(summary: WritingDashboardSummary, progress: Progr
       id: 'average-words',
       label: 'Average words',
       value: String(summary.averageWordCount),
-      detail: 'Measured across your persisted drafts.',
+      detail: 'Measured across your saved drafts.',
       eyebrow: 'Output',
     },
     {
@@ -119,6 +128,40 @@ function describeTrendVisual(entry: WritingDashboardSummary['criterionSummaries'
   return `Recent ${entry.criterion} bands: ${entry.recentBands.map((band) => band.toFixed(1)).join(', ')}`;
 }
 
+function buildThemeCoverage(prompts: WritingPrompt[], savedAttempts: SavedAssessmentSnapshot[]) {
+  const promptById = new Map(prompts.map((prompt) => [prompt.id, prompt] as const));
+  const counts = new Map<string, ThemeCoverageEntry>();
+
+  for (const prompt of prompts) {
+    const theme = getPromptTheme(prompt);
+    const current = counts.get(theme) ?? { theme, promptCount: 0, attemptCount: 0, latestAttemptAt: null };
+    current.promptCount += 1;
+    counts.set(theme, current);
+  }
+
+  for (const attempt of savedAttempts) {
+    const prompt = promptById.get(attempt.promptId);
+    if (!prompt) {
+      continue;
+    }
+
+    const theme = getPromptTheme(prompt);
+    const current = counts.get(theme) ?? { theme, promptCount: 0, attemptCount: 0, latestAttemptAt: null };
+    current.attemptCount += 1;
+    if (!current.latestAttemptAt || attempt.createdAt > current.latestAttemptAt) {
+      current.latestAttemptAt = attempt.createdAt;
+    }
+    counts.set(theme, current);
+  }
+
+  return [...counts.values()].sort(
+    (a, b) =>
+      a.attemptCount - b.attemptCount ||
+      b.promptCount - a.promptCount ||
+      a.theme.localeCompare(b.theme),
+  );
+}
+
 function TrendMiniBars({ entry }: { entry: WritingDashboardSummary['criterionSummaries'][number] }) {
   return (
     <div className="dashboard-trend-visual">
@@ -149,6 +192,15 @@ function TrendMiniBars({ entry }: { entry: WritingDashboardSummary['criterionSum
 export function WritingDashboard({ prompts, recentSavedAttempts, summary, progress, studyPlan }: Props) {
   const dashboardMetrics = buildDashboardMetrics(summary, progress);
   const presentationPlan = toDashboardStudyPlan(studyPlan);
+  const themeCoverage = buildThemeCoverage(prompts, recentSavedAttempts);
+  const weakestTheme = themeCoverage[0] ?? null;
+  const strongestTheme = [...themeCoverage].sort((a, b) => b.attemptCount - a.attemptCount || a.theme.localeCompare(b.theme))[0] ?? null;
+  const promptRecommendations = buildPromptRecommendations({
+    prompts,
+    savedAttempts: recentSavedAttempts,
+  }, 2);
+  const recommendedPrompt = promptRecommendations[0] ?? null;
+  const alternatePrompt = promptRecommendations[1] ?? null;
 
   return (
     <main className="app-shell">
@@ -157,7 +209,7 @@ export function WritingDashboard({ prompts, recentSavedAttempts, summary, progre
           <p className="eyebrow">IELTS Academic • Dashboard</p>
           <h1>Track writing momentum across every saved assessment</h1>
           <p className="hero-copy">
-            Review score movement, task coverage, and a persisted study plan built from your latest
+            Review score movement, task coverage, and a saved study plan built from your latest
             assessment history.
           </p>
           <div className="dashboard-actions">
@@ -194,10 +246,113 @@ export function WritingDashboard({ prompts, recentSavedAttempts, summary, progre
         <div className="workspace-column left-column">
           <DashboardMetricGrid
             title="Aggregated writing metrics"
-            description="Saved Task 1 and Task 2 reports condensed into one snapshot. Overall estimates reflect calibrated overall bands, while criterion trend cards stay on direct scorer outputs."
+            description="Saved Task 1 and Task 2 reports condensed into one snapshot so you can see whether your practice is actually moving."
             metrics={dashboardMetrics}
             aside={<span className="band-chip">{formatTaskCoverage(summary.taskCounts)}</span>}
           />
+
+          <article className="panel">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Next revision target</p>
+                <h2>Fix this next</h2>
+              </div>
+            </div>
+            {recommendedPrompt ? (
+              <article className="history-card inspection-card">
+                <div className="history-card-header">
+                  <strong>{recommendedPrompt.prompt.title}</strong>
+                  <span>{recommendedPrompt.reason}</span>
+                </div>
+                <p className="summary-copy">
+                  {summary.weakestCriterion
+                    ? `Train the weakest criterion first: ${summary.weakestCriterion.criterion}.`
+                    : 'Use this as the next best prompt when you want one clear follow-up choice.'}
+                </p>
+                <p>{recommendedPrompt.prompt.prompt}</p>
+                <div className="history-meta">
+                  <span>{recommendedPrompt.theme}</span>
+                  <span>{recommendedPrompt.difficulty}</span>
+                  <span>{recommendedPrompt.prompt.taskType === 'task-1' ? 'Task 1' : 'Task 2'}</span>
+                </div>
+                <div className="history-meta">
+                  <span>{recommendedPrompt.promptAttemptCount} prompt attempts so far</span>
+                  <span>{recommendedPrompt.themeAttemptCount} attempts in this theme</span>
+                </div>
+                <div className="hero-actions">
+                  <Link
+                    className="secondary-link-button"
+                    href={buildPracticeWorkspaceHref(writingAssessmentWorkspace, {
+                      promptId: recommendedPrompt.prompt.id,
+                    })}
+                  >
+                    Open revision target
+                  </Link>
+                  {alternatePrompt ? (
+                    <Link
+                      className="secondary-link-button"
+                      href={buildPracticeWorkspaceHref(writingAssessmentWorkspace, {
+                        promptId: alternatePrompt.prompt.id,
+                      })}
+                    >
+                      Compare another prompt
+                    </Link>
+                  ) : null}
+                </div>
+              </article>
+            ) : (
+              <p className="summary-copy">Add prompts or save attempts to unlock the next-prompt recommendation.</p>
+            )}
+          </article>
+
+          <article className="panel">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Theme coverage</p>
+                <h2>Prompt bank coverage by theme</h2>
+              </div>
+            </div>
+            <div className="dashboard-insight-grid">
+              <div className="history-card">
+                <div className="history-card-header">
+                  <strong>{weakestTheme?.theme ?? 'No theme data yet'}</strong>
+                  <span>{weakestTheme ? `${weakestTheme.attemptCount} attempts` : 'Waiting for attempts'}</span>
+                </div>
+                <p>
+                  {weakestTheme
+                    ? `Next gap to close. ${weakestTheme.promptCount} prompts are available here, so this is the easiest theme to rebalance next.`
+                    : 'Save a few attempts to unlock theme coverage guidance.'}
+                </p>
+              </div>
+              <div className="history-card">
+                <div className="history-card-header">
+                  <strong>{strongestTheme?.theme ?? 'No theme data yet'}</strong>
+                  <span>{strongestTheme ? `${strongestTheme.attemptCount} attempts` : 'Waiting for attempts'}</span>
+                </div>
+                <p>
+                  {strongestTheme
+                    ? 'This is the most-practised theme in your saved history so far.'
+                    : 'The dashboard will highlight your most-practised theme after your first saved response.'}
+                </p>
+              </div>
+            </div>
+            {themeCoverage.length > 0 ? (
+              <div className="dashboard-criterion-list">
+                {themeCoverage.map((entry) => (
+                  <article className="history-card" key={entry.theme}>
+                    <div className="history-card-header">
+                      <strong>{entry.theme}</strong>
+                      <span>{entry.attemptCount} attempts</span>
+                    </div>
+                    <div className="history-meta">
+                      <span>{entry.promptCount} prompts in bank</span>
+                      <span>{entry.latestAttemptAt ? `Latest: ${formatDateTime(entry.latestAttemptAt)}` : 'No saved attempt yet'}</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : null}
+          </article>
 
           <article className="panel">
             <div className="section-heading">
@@ -270,23 +425,26 @@ export function WritingDashboard({ prompts, recentSavedAttempts, summary, progre
           <section className="panel history-panel">
             <div className="section-heading">
               <div>
-                <p className="eyebrow">Scoring pipeline</p>
-                <h2>Saved scorer usage</h2>
+                <p className="eyebrow">Saved reports</p>
+                <h2>Scoring history</h2>
               </div>
             </div>
+            <p className="summary-copy">
+              Use saved reports to compare broad scoring trends and keep an eye on which scoring path handled each report.
+            </p>
             {summary.providerBreakdown.length === 0 ? (
-              <p className="summary-copy">No persisted scoring metadata yet.</p>
+              <p className="summary-copy">Score source details will appear after your first saved report.</p>
             ) : (
               <div className="history-list dashboard-provider-list">
                 {summary.providerBreakdown.map((provider) => (
                   <article className="history-card" key={provider.provider}>
                     <div className="history-card-header">
-                      <strong>{provider.provider}</strong>
-                      <span>{provider.count} attempts</span>
+                      <strong>{provider.count} saved attempt{provider.count === 1 ? '' : 's'}</strong>
+                      <span>{provider.provider}</span>
                     </div>
                     <div className="history-meta">
-                      <span>Live: {provider.liveCount}</span>
-                      <span>Fallback: {provider.fallbackCount}</span>
+                      <span>{provider.liveCount} primary scoring path{provider.liveCount === 1 ? '' : 's'}</span>
+                      <span>{provider.fallbackCount} backup scoring path{provider.fallbackCount === 1 ? '' : 's'}</span>
                     </div>
                   </article>
                 ))}

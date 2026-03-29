@@ -27,13 +27,19 @@ describe('AssessmentReportPanel', () => {
       }),
     );
 
-    expect(screen.getByText(/calibrated overall estimate/i)).toBeInTheDocument();
-    expect(screen.getByText(/^overall estimate$/i)).toBeInTheDocument();
-    expect(screen.getByText(/^calibrated$/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/overall band is calibrated against public overall labels/i),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/criterion bands below remain direct scorer outputs/i)).toBeInTheDocument();
+    expect(screen.getByText(/assessment report/i, { selector: '.eyebrow' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /estimated ielts band/i })).toBeInTheDocument();
+    expect(screen.getByText(/based on rubric signals and saved practice history/i)).toBeInTheDocument();
+    expect(screen.getByText(/a ±0\.5 range is typical/i)).toBeInTheDocument();
+    expect(screen.getByText(/reliable estimate|estimate may shift|rough estimate/i)).toBeInTheDocument();
+    expect(screen.queryByText(/^overall band$/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/your strongest area/i)).toBeInTheDocument();
+    expect(screen.getByText(/what held your score back/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /highest-priority revision/i })).toBeInTheDocument();
+    expect(screen.queryByText(/criterion signal:/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/scorer notes/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('note')).toHaveTextContent(/practice estimate — not an official ielts score/i);
+    expect(screen.getByRole('link', { name: /continue to reading practice/i })).toBeInTheDocument();
   });
 
   it('shows direct-provider wording when OpenRouter calibration is disabled', () => {
@@ -45,10 +51,10 @@ describe('AssessmentReportPanel', () => {
       }),
     );
 
-    expect(screen.getByText(/practice estimate/i, { selector: '.eyebrow' })).toBeInTheDocument();
-    expect(screen.getByText(/direct provider output/i, { selector: 'span' })).toBeInTheDocument();
-    expect(
-      screen.getByText(/overall band remains the direct provider output/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/assessment report/i, { selector: '.eyebrow' })).toBeInTheDocument();
+    expect(screen.getByText(/rough estimate|estimate may shift|reliable estimate/i)).toBeInTheDocument();
+    expect(screen.getByText(/ai-assisted practice estimate, not an official ielts result/i)).toBeInTheDocument();
+    expect(screen.getByText(/overall estimate mode: unadjusted estimate/i)).toBeInTheDocument();
+    expect(screen.getByRole('note')).toHaveTextContent(/guide study, not to predict your result/i);
   });
 });

@@ -73,7 +73,8 @@ function extractTask1Evidence(prompt: WritingPrompt, submission: EssaySubmission
   const normalizedResponse = response.toLowerCase();
   const wordCount = countWords(response);
   const paragraphs = countParagraphs(response);
-  const keywordHits = prompt.keywordTargets.filter((keyword) => normalizedResponse.includes(keyword)).length;
+  const keywordTargets = Array.isArray(prompt.keywordTargets) ? prompt.keywordTargets : [];
+  const keywordHits = keywordTargets.filter((keyword) => normalizedResponse.includes(keyword)).length;
   const numberMentions = countMatches(response, DATA_MENTION_PATTERN);
   const hasOverview = TASK1_OVERVIEW_PATTERN.test(response);
   const comparisonHits = countMatches(response, TASK1_COMPARISON_PATTERN);
@@ -183,7 +184,8 @@ function extractTask2Evidence(prompt: WritingPrompt, submission: EssaySubmission
   const wordCount = countWords(response);
   const paragraphs = countParagraphs(response);
   const sentenceVariety = countMatches(response, SENTENCE_VARIETY_TASK2_PATTERN);
-  const keywordHits = prompt.keywordTargets.filter((keyword) => normalizedResponse.includes(keyword)).length;
+  const keywordTargets = Array.isArray(prompt.keywordTargets) ? prompt.keywordTargets : [];
+  const keywordHits = keywordTargets.filter((keyword) => normalizedResponse.includes(keyword)).length;
   const hasOpinion = OPINION_PATTERN.test(response);
   const hasBalancedDiscussion = BALANCED_DISCUSSION_PATTERN.test(response);
   const examples = countMatches(response, EXAMPLE_PATTERN);

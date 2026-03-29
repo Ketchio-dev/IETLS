@@ -3,6 +3,13 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 
+const KAGGLE_SOURCE = 'kaggle-mazlumi-ielts-writing-scored-essays-dataset';
+const GENERIC_SOURCE = 'writing-human-rated-csv-import';
+
+function normalizeHeader(value: string) {
+  return value.replace(/^\uFEFF/, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
 function parseCsv(content: string) {
   const rows: string[][] = [];
   let row: string[] = [];
@@ -51,7 +58,7 @@ function parseCsv(content: string) {
     rows.push(row);
   }
 
-  const headers = rows[0] ?? [];
+  const headers = (rows[0] ?? []).map((header) => normalizeHeader(header));
   return rows.slice(1).map((values) => Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ''])));
 }
 
@@ -101,7 +108,7 @@ function getBandFromHeaders(row: Record<string, string>, headers: string[]) {
 }
 
 function getTaskType(row: Record<string, string>) {
-  const raw = getFirstNonEmpty(row, ['Task_Type', 'Task Type', 'taskType', 'task_type', 'Task']);
+  const raw = getFirstNonEmpty(row, ['tasktype', 'task', 'taskindex']);
   if (!raw) {
     return null;
   }
@@ -128,11 +135,19 @@ function buildPromptTitle(taskType: 'task-1' | 'task-2', question: string) {
   return `${taskType === 'task-1' ? 'Kaggle Task 1' : 'Kaggle Task 2'}: ${clipped}`;
 }
 
+function inferDatasetSource(rows: Array<Record<string, string>>) {
+  const headerSet = new Set(Object.keys(rows[0] ?? {}));
+  return headerSet.has('tasktype') && headerSet.has('question') && headerSet.has('essay') && headerSet.has('overall')
+    ? KAGGLE_SOURCE
+    : GENERIC_SOURCE;
+}
+
 async function main() {
   const { values } = parseArgs({
     options: {
       input: { type: 'string', short: 'i' },
       output: { type: 'string', short: 'o', default: 'data/evals/writing/kaggle-mazlumi-overall.json' },
+      source: { type: 'string', short: 's' },
     },
   });
 
@@ -142,6 +157,7 @@ async function main() {
 
   const csvContent = await readFile(values.input, 'utf8');
   const rows = parseCsv(csvContent);
+  const datasetSource = values.source ?? inferDatasetSource(rows);
 
   const essays = rows.map((row, index) => {
     const taskType = getTaskType(row);
@@ -149,9 +165,9 @@ async function main() {
       throw new Error(`Row ${index + 2} has unsupported task type.`);
     }
 
-    const question = getFirstNonEmpty(row, ['Question', 'Prompt', 'prompt', 'Task_Prompt', 'Task Prompt']);
-    const essay = getFirstNonEmpty(row, ['Essay', 'Response', 'Essay_Text', 'Essay Text', 'response']);
-    const overallBand = getBandFromHeaders(row, ['Overall', 'Overall_Band', 'Overall Band', 'Band', 'Score']);
+    const question = getFirstNonEmpty(row, ['question', 'prompt', 'prompttext', 'taskprompt']);
+    const essay = getFirstNonEmpty(row, ['essay', 'response', 'essaytext', 'responsetext', 'candidateanswer', 'answer']);
+    const overallBand = getBandFromHeaders(row, ['overall', 'overallband', 'band', 'overallscore', 'score']);
     if (!question || !essay || overallBand === null) {
       throw new Error(`Row ${index + 2} is missing Question, Essay, or Overall.`);
     }
@@ -159,16 +175,16 @@ async function main() {
     const criterionScores = Object.fromEntries(
       [
         [
-          ['Task_Response', 'Task Response', 'TaskResponse', 'Task Achievement', 'Task_Achievement', 'TaskAchievement'],
+          ['taskresponse', 'taskachievement', 'tr', 'ta'],
           taskType === 'task-2' ? 'Task Response' : 'Task Achievement',
         ],
         [
-          ['Coherence_Cohesion', 'Coherence & Cohesion', 'Coherence_Cohesion_Score', 'CC'],
+          ['coherencecohesion', 'cc'],
           'Coherence & Cohesion',
         ],
-        [['Lexical_Resource', 'Lexical Resource', 'LexicalResource', 'LR'], 'Lexical Resource'],
+        [['lexicalresource', 'lr'], 'Lexical Resource'],
         [
-          ['Range_Accuracy', 'Grammatical Range & Accuracy', 'Grammar_Range_Accuracy', 'GRA', 'GrammaticalRangeAccuracy'],
+          ['rangeaccuracy', 'grammaticalrangeaccuracy', 'gra'],
           'Grammatical Range & Accuracy',
         ],
       ]
@@ -177,13 +193,17 @@ async function main() {
     );
 
     const examinerComment = getFirstNonEmpty(row, [
-      'Examiner_Commen',
-      'Examiner_Comment',
-      'Examiner Comment',
-      'Comment',
-      'Comments',
-      'Feedback',
-      'Notes',
+      'examinercommen',
+      'examinercomment',
+      'examinercomments',
+      'examinerfeedback',
+      'ratercomment',
+      'ratercomments',
+      'comment',
+      'comments',
+      'feedback',
+      'note',
+      'notes',
     ]);
 
     return {
@@ -201,13 +221,13 @@ async function main() {
       overallBand,
       ...(Object.keys(criterionScores).length > 0 ? { criterionScores } : {}),
       ...(examinerComment ? { notes: [examinerComment] } : {}),
-      source: 'kaggle-mazlumi-ielts-writing-scored-essays-dataset',
+      source: datasetSource,
     };
   });
 
   const output = {
     version: 1,
-    source: 'kaggle-mazlumi-ielts-writing-scored-essays-dataset',
+    source: datasetSource,
     essays,
   };
 

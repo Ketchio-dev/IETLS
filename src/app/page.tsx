@@ -153,16 +153,16 @@ export default async function HomePage() {
     {
       id: 'reading',
       priority: 'primary',
-      eyebrow: 'Primary practice track',
+      eyebrow: 'Ready now',
       name: 'Reading',
       status: 'Full',
-      description: 'Passage-based reading drills with imported sets, deterministic scoring, and evidence-backed review.',
+      description: 'Timed passage practice with clear answer-key feedback, coaching, and saved set history.',
       stats: [
         { label: 'Passages', value: String(readingDashboard.availableSets.length) },
         { label: 'Attempts', value: String(readingDashboard.dashboardSummary.totalAttempts) },
         {
-          label: 'Latest import',
-          value: readingDashboard.importSummary.latestImportedAt ? 'Ready' : 'Missing',
+          label: 'Collections',
+          value: String(readingDashboard.importSummary.detectedSourceFiles.length),
         },
       ],
       actions: [
@@ -173,10 +173,10 @@ export default async function HomePage() {
     {
       id: 'writing',
       priority: 'primary',
-      eyebrow: 'Primary practice track',
+      eyebrow: 'Ready now',
       name: 'Writing',
       status: 'Full',
-      description: 'Timed academic writing practice with persistent reports, score trends, and a dedicated dashboard.',
+      description: 'Timed essay practice with an expanded prompt bank, AI-assisted practice estimates, and revision-first feedback.',
       stats: [
         { label: 'Saved attempts', value: String(writingDashboard.summary.totalAttempts) },
         { label: 'Prompt bank', value: String(writingDashboard.prompts.length) },
@@ -191,7 +191,7 @@ export default async function HomePage() {
       ? [{
           id: 'speaking',
           priority: 'secondary' as const,
-          eyebrow: 'Experimental module',
+          eyebrow: 'Preview',
           name: 'Speaking',
           status: 'Alpha' as const,
           description:
@@ -210,11 +210,11 @@ export default async function HomePage() {
     {
       id: 'listening',
       priority: 'secondary',
-      eyebrow: 'Secondary placeholder',
+      eyebrow: 'Coming next',
       name: 'Listening',
       status: 'Placeholder',
       description:
-        'The route coverage remains in place, but scripts, audio, and answer-timing validation are still placeholder work.',
+        'Listening practice is planned but not yet available. Reading and Writing are the main tracks for now.',
       stats: listeningDashboard.statusCards.slice(0, 3).map((card) => ({
         label: card.label,
         value: card.value,
@@ -226,10 +226,10 @@ export default async function HomePage() {
   const primaryModuleCards = moduleCards.filter((moduleCard) => moduleCard.priority === 'primary');
   const secondaryModuleCards = moduleCards.filter((moduleCard) => moduleCard.priority === 'secondary');
   const routePills = [
-    { id: 'reading', label: 'Reading', status: 'Core' },
-    { id: 'writing', label: 'Writing', status: 'Core' },
-    ...(speakingAlphaEnabled ? [{ id: 'speaking', label: 'Speaking', status: 'Explore' } as const] : []),
-    { id: 'listening', label: 'Listening', status: 'Seam' },
+    { id: 'reading', label: 'Reading', status: 'Ready' },
+    { id: 'writing', label: 'Writing', status: 'Ready' },
+    ...(speakingAlphaEnabled ? [{ id: 'speaking', label: 'Speaking', status: 'Preview' } as const] : []),
+    { id: 'listening', label: 'Listening', status: 'Coming soon' },
   ] as const;
 
   return (
@@ -239,8 +239,8 @@ export default async function HomePage() {
           <p className="eyebrow">IELTS Academic Prep</p>
           <h1>Your Reading &amp; Writing command center.</h1>
           <p className="hero-copy">
-            Run one-passage Reading drills, practise timed essays, and track your band progress — all in one place.
-            Speaking and Listening stay available when you need them.
+            Work through scored Reading practice sets, write against an expanded prompt bank, and keep your revision history in one place.
+            Speaking and Listening remain available when you need extra range.
           </p>
           <div className="hero-actions">
             <Link className="primary-button dashboard-link-button hero-cta-reading" href="/reading">
@@ -292,7 +292,7 @@ export default async function HomePage() {
             <article className="focus-signal-card" data-signal="listening">
               <span className="focus-signal-label">More modules</span>
               <strong>Available</strong>
-              <p>{speakingAlphaEnabled ? 'Speaking (alpha) and Listening (placeholder) ready to explore.' : 'Listening placeholder remains available while Speaking alpha stays production-gated.'}</p>
+              <p>{speakingAlphaEnabled ? 'Speaking alpha and Listening preview remain available when you want extra practice lanes.' : 'Listening stays visible as a preview while Speaking alpha remains off by default.'}</p>
             </article>
           </div>
         </aside>
@@ -331,17 +331,11 @@ export default async function HomePage() {
 
       <section className="workspace-column" aria-labelledby="primary-ia-heading">
         <div className="panel primary-section-header">
-          <p className="eyebrow">Core modules</p>
+          <p className="eyebrow">Main tracks</p>
           <h2 id="primary-ia-heading">Reading and Writing — your daily practice tracks.</h2>
           <p className="summary-copy">
-            These two modules carry the strongest workflows. They sit first in the nav
-            and lead every session.
+            These are the strongest practice loops in the product: timed passage review for Reading, and draft → score → redraft cycles for Writing.
           </p>
-          <div className="section-tag-row" aria-label="Primary module highlights">
-            <span className="section-tag">Passage drills with deterministic scoring</span>
-            <span className="section-tag">Reading stays one-passage until full mocks land</span>
-            <span className="section-tag">Timed essays with band tracking</span>
-          </div>
         </div>
         <div className="module-hub-grid" aria-label="Primary IELTS practice modules">
           {renderModuleCards(primaryModuleCards)}
@@ -354,16 +348,11 @@ export default async function HomePage() {
 
       <section className="workspace-column secondary-section" aria-labelledby="secondary-ia-heading">
         <div className="panel secondary-section-header">
-          <p className="eyebrow">Explore</p>
+          <p className="eyebrow">More practice lanes</p>
           <h2 id="secondary-ia-heading">Speaking and Listening — available when you are ready.</h2>
           <p className="summary-copy">
-            These modules stay accessible for experimentation and future expansion without
-            crowding the primary flow.
+            These stay accessible without getting in the way of the main Reading and Writing flow.
           </p>
-          <div className="section-tag-row" aria-label="Secondary module highlights">
-            {speakingAlphaEnabled ? <span className="section-tag section-tag--muted">Speaking alpha with transcript support</span> : null}
-            <span className="section-tag section-tag--muted">Listening placeholder for future content</span>
-          </div>
         </div>
         <div className="module-hub-grid" aria-label="Secondary IELTS modules">
           {renderModuleCards(secondaryModuleCards)}

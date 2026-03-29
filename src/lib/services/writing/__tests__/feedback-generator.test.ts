@@ -4,12 +4,12 @@ import { buildSummary, buildWarnings } from '../feedback-generator';
 
 describe('feedback-generator', () => {
   it('keeps Task 1 summaries and warnings task-aware', () => {
-    expect(buildSummary('task-1', { lower: 6, upper: 6.5 }, 149)).toContain('Task 1 estimate');
+    expect(buildSummary('task-1', { lower: 6, upper: 6.5 }, 149)).toContain('Below the minimum for Task 1');
     expect(buildSummary('task-1', { lower: 6, upper: 6.5 }, 149)).not.toContain('Task 2');
     expect(buildWarnings('task-1', 149, 'medium')).toEqual([
       {
         code: 'practice-estimate',
-        message: 'This is an AI-assisted practice estimate and should not be treated as an official IELTS score.',
+        message: 'AI-assisted practice estimate. Do not treat it as an official IELTS score.',
       },
       {
         code: 'single-task-scope',
@@ -17,13 +17,13 @@ describe('feedback-generator', () => {
       },
       {
         code: 'under-length',
-        message: 'The response is below the usual Task 1 target length, which limits scoring confidence.',
+        message: 'Below the minimum for Task 1. Score reliability improves only after the response is expanded.',
       },
     ]);
   });
 
   it('keeps Task 2 under-length warnings on the 250-word gate', () => {
-    expect(buildWarnings('task-2', 249, 'medium')[2]?.message).toContain('Task 2 target length');
+    expect(buildWarnings('task-2', 249, 'medium')[2]?.message).toContain('Below the minimum for Task 2');
   });
 
   it('surfaces single-task scope even when length is sufficient', () => {

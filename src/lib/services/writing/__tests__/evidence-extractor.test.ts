@@ -36,4 +36,21 @@ describe('extractWritingEvidence', () => {
       strength: 'weak',
     });
   });
+
+  it('handles task 2 prompts that omit keywordTargets without crashing', () => {
+    const promptWithoutKeywords = { ...samplePrompt } as typeof samplePrompt & { keywordTargets?: string[] };
+    Reflect.deleteProperty(promptWithoutKeywords, 'keywordTargets');
+
+    const evidence = extractWritingEvidence(
+      promptWithoutKeywords,
+      {
+        promptId: samplePrompt.id,
+        taskType: samplePrompt.taskType,
+        response: getSampleResponse(samplePrompt.id),
+        timeSpentMinutes: 32,
+      },
+    );
+
+    expect(evidence.find((signal) => signal.id === 'coverage-relevance')?.detail).toContain('0 core topic keywords');
+  });
 });

@@ -4,11 +4,11 @@ export const sampleReadingSets: ImportedReadingSet[] = [
   {
     id: 'urban-bee-corridors',
     title: 'Urban bee corridors and rooftop planting',
-    sourceLabel: 'Bundled sample drill',
+    sourceLabel: 'Bundled sample set',
     sourceFile: 'bundled-sample',
     importedAt: '2026-03-26T00:00:00.000Z',
     passageWordCount: 261,
-    notes: 'Bundled fallback so the reading drill remains usable before a private bank is imported.',
+    notes: 'Bundled fallback so the reading practice flow remains usable before a private bank is imported.',
     passage:
       'A five-year city trial examined whether rooftop planting could support bee populations in dense commercial districts. Researchers compared buildings that added flowering corridors with similar buildings that only installed decorative greenery. The corridor sites were designed so that blooming species appeared in sequence from spring to late autumn, giving pollinators a steadier supply of nectar. Decorative roofs, by contrast, often looked lush for a short period but provided little food once their brief flowering stage ended.\n\nThe trial did not claim that rooftop planting could replace large parks. Instead, the researchers argued that corridors could connect isolated feeding areas and reduce the distance bees needed to travel between them. Bee counts rose most sharply on buildings that combined native flowering plants with shallow water points. Sites that lacked water still attracted insects, but returning visits were less frequent during the hottest months.\n\nThe team also reported a management lesson. Some property owners assumed that low-maintenance roofs would always be best, yet the strongest bee activity was recorded on sites where gardeners removed spent flowers regularly and replaced failed plants quickly. The researchers concluded that urban pollinator schemes succeed when design and maintenance are treated as a single system rather than separate tasks.',
     questions: [

@@ -26,7 +26,7 @@ function buildReadingDashboardPageData(): ReadingDashboardPageData {
   return {
     moduleId: 'reading',
     moduleLabel: 'IELTS Academic Reading',
-    summary: 'Review private Reading drill performance by imported set, timing, and question type.',
+    summary: 'Review private Reading practice-set performance by imported set, timing, and question type.',
     routeBase: '/reading',
     importSummary: {
       sourceDir: 'data/private-reading-imports',
@@ -50,7 +50,7 @@ function buildReadingDashboardPageData(): ReadingDashboardPageData {
       strongestType: null,
       weakestType: null,
     },
-    studyFocus: ['Complete one drill.'],
+    studyFocus: ['Complete one set.'],
   };
 }
 
@@ -86,7 +86,7 @@ describe('ReadingDashboardPage', () => {
     const header = container.querySelector('.dashboard-header-section--reading');
     expect(header).not.toBeNull();
     expect(header!.textContent).toContain('Reading dashboard');
-    expect(header!.textContent).toContain('2 attempts tracked across 1 imported set');
+    expect(header!.textContent).toContain('2 attempts tracked across 1 practice set');
     expect(header!.querySelector('.dashboard-resume-cta--reading')?.getAttribute('href')).toBe('/reading');
 
     const tabs = container.querySelector('.dashboard-tab-bar');

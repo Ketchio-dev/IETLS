@@ -70,7 +70,7 @@ describe('assessment workspace registry', () => {
       id: 'writing',
       label: 'IELTS Academic Writing',
       summary:
-        'Timed writing practice with persisted reports, dashboard trends, and Gemini 3 Flash scoring by default.',
+        'Timed writing practice with saved reports, band tracking, and dashboard guidance.',
       routes: {
         practice: '/writing',
         dashboard: '/dashboard',
@@ -94,7 +94,7 @@ describe('assessment workspace registry', () => {
       id: 'reading',
       label: 'IELTS Academic Reading',
       summary:
-        'One-passage Reading drill practice with deterministic scoring, evidence-backed review, and imported local bank support. This is not a full three-passage mock yet.',
+        'One-passage reading practice with answer-key review and saved set history. This is not a full three-passage mock yet.',
       routes: {
         practice: '/reading',
         dashboard: '/reading/dashboard',
@@ -105,7 +105,7 @@ describe('assessment workspace registry', () => {
     expect(getAssessmentWorkspace(LISTENING_ASSESSMENT_MODULE_ID)).toEqual({
       id: 'listening',
       label: 'IELTS Academic Listening Placeholder',
-      summary: 'Placeholder route coverage for future Listening scripts, audio, and timing-validation work.',
+      summary: 'Listening practice is planned but not yet available.',
       routes: {
         practice: '/listening',
         dashboard: '/listening/dashboard',

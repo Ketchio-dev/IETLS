@@ -60,6 +60,17 @@ function getQuestionStatusLabel(answer: string | undefined, review: ReadingQuest
   return answer?.trim() ? 'Answered' : 'Pending';
 }
 
+function getInlineReviewCopy(evidenceHint: string, isCorrect: boolean) {
+  const trimmed = evidenceHint.trim();
+  if (trimmed.length > 0) {
+    return trimmed;
+  }
+
+  return isCorrect
+    ? 'No evidence note was saved for this question. Recheck the closest supporting sentence in the passage.'
+    : 'No evidence hint was saved for this question. Recheck the closest matching sentence in the passage.';
+}
+
 function RecentAttemptsPanel({
   attempts,
   activeAttemptId,
@@ -74,7 +85,7 @@ function RecentAttemptsPanel({
       <div className="section-heading">
         <div>
           <p className="eyebrow">Recent attempts</p>
-          <h2 id="reading-recent-attempts-heading">Review saved drills</h2>
+          <h2 id="reading-recent-attempts-heading">Review saved sets</h2>
         </div>
       </div>
       {attempts.length > 0 ? (
@@ -96,7 +107,7 @@ function RecentAttemptsPanel({
                   Inspect attempt
                 </button>
                 <Link className="secondary-link-button" href={buildResumeHref(attempt)}>
-                  Resume via URL
+                  Reopen this set
                 </Link>
               </div>
             </article>
@@ -173,8 +184,9 @@ export function ReadingPracticeShell({
   const supportedTypes = selectedSet
     ? Array.from(new Set(selectedSet.questions.map((question) => question.type)))
     : [];
+  const canShowFullReview = remainingQuestionCount === 0;
   const reportAnnouncement = report
-    ? `Reading drill scored: ${report.scoreLabel}, ${report.percentage}% accuracy.`
+    ? `Reading set scored: ${report.scoreLabel}, ${report.percentage}% accuracy.`
     : activeAttempt
       ? `Viewing saved attempt ${activeAttempt.report.scoreLabel}.`
       : 'Answer the questions and submit to generate a report.';
@@ -230,7 +242,7 @@ export function ReadingPracticeShell({
       };
 
       if (!response.ok || !payload.report || !payload.attempt || !payload.savedAttempts) {
-        throw new Error(payload.error ?? 'Unable to score the reading drill.');
+        throw new Error(payload.error ?? 'Unable to score the reading set.');
       }
 
       setReport(payload.report);
@@ -250,7 +262,7 @@ export function ReadingPracticeShell({
         <section className="hero panel">
           <div>
             <p className="eyebrow">IELTS Academic Reading</p>
-            <h1>Passage-centred reading drill import required</h1>
+            <h1>No reading practice set is ready yet</h1>
             <p className="hero-copy">{summary}</p>
             <div className="hero-actions">
               <Link className="secondary-link-button" href="/reading/dashboard">
@@ -259,11 +271,6 @@ export function ReadingPracticeShell({
             </div>
           </div>
         </section>
-        <article className="panel history-panel">
-          <p className="summary-copy">
-            Run <code>{importSummary.importCommand}</code> after adding JSON files under <code>{importSummary.sourceDir}</code>.
-          </p>
-        </article>
       </>
     );
   }
@@ -278,7 +285,7 @@ export function ReadingPracticeShell({
       <section className="hero panel reading-practice-hero">
         <div>
           <p className="eyebrow">IELTS Academic Reading</p>
-          <h1>Passage-centred reading drill</h1>
+          <h1>Reading practice</h1>
           <p className="hero-copy">
             {selectedSet.title} · {selectedSet.sourceLabel} · {selectedSet.questions.length} questions
           </p>
@@ -289,7 +296,7 @@ export function ReadingPracticeShell({
             <p className="hero-action-copy">
               {remainingQuestionCount > 0
                 ? `${answeredQuestionCount}/${questionCount} answered · ${remainingQuestionCount} left before your next score pass.`
-                : 'All questions answered — score the drill when you are ready.'}
+                : 'All questions answered — score the set when you are ready.'}
             </p>
           </div>
         </div>
@@ -314,13 +321,36 @@ export function ReadingPracticeShell({
           <article className="panel">
             <div className="section-heading">
               <div>
-                <p className="eyebrow">Drill controls</p>
+                <p className="eyebrow">Start here</p>
+                <h2>Use the same 3-step review loop for every set</h2>
+              </div>
+            </div>
+            <div className="quick-start-grid" aria-label="Reading practice quick start">
+              <article className="quick-start-card">
+                <strong>1. Read for structure</strong>
+                <p>Skim the passage once, then return paragraph by paragraph for evidence.</p>
+              </article>
+              <article className="quick-start-card">
+                <strong>2. Answer and submit</strong>
+                <p>Finish every question when you can. If you submit with blanks, treat the score as a pacing checkpoint rather than a full review.</p>
+              </article>
+              <article className="quick-start-card">
+                <strong>3. Fix missed questions</strong>
+                <p>Use the evidence hint and question-type results to decide what to redo next.</p>
+              </article>
+            </div>
+          </article>
+
+          <article className="panel">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Practice controls</p>
                 <h2>Passage and answer sheet</h2>
               </div>
-              <span className="band-chip">{selectedSetTypes.length} question families</span>
+              <span className="band-chip">{selectedSetTypes.length} question types</span>
             </div>
             <label className="stack-sm" htmlFor="reading-set-select">
-              <span className="summary-copy">Imported drill set</span>
+              <span className="summary-copy">Reading practice set</span>
               <select
                 id="reading-set-select"
                 value={selectedSetId}
@@ -355,8 +385,8 @@ export function ReadingPracticeShell({
                 </ul>
               </article>
               <article className="visual-card reading-overview-card">
-                <h3 className="subsection-title">Question families</h3>
-                <div className="reading-type-list" aria-label="Question families in this drill">
+                <h3 className="subsection-title">Question types</h3>
+                <div className="reading-type-list" aria-label="Question types in this practice set">
                   {selectedSetTypes.map((type) => (
                     <span className="practice-meta-chip" data-module="reading" key={type}>
                       <strong>{formatQuestionType(type)}</strong>
@@ -385,7 +415,7 @@ export function ReadingPracticeShell({
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Questions</p>
-                <h2 id="reading-questions-heading">Complete the reading drill</h2>
+                <h2 id="reading-questions-heading">Complete the set</h2>
                 <p className="summary-copy">
                   Jump between questions, keep answers concise, and use the review states after scoring.
                 </p>
@@ -473,7 +503,8 @@ export function ReadingPracticeShell({
                             {review.isCorrect ? 'Correct' : 'Review needed'}
                           </span>
                           <p className="summary-copy">
-                            <strong>Evidence hint:</strong> {review.evidenceHint}
+                            <strong>{review.isCorrect ? 'What proves this:' : 'Why the answer key rejects this:'}</strong>{' '}
+                            {getInlineReviewCopy(review.evidenceHint, review.isCorrect)}
                           </p>
                         </div>
                       ) : null}
@@ -484,12 +515,12 @@ export function ReadingPracticeShell({
             </div>
             <div className="hero-actions reading-submit-row">
               <button className="primary-button" disabled={isSubmitting} onClick={handleSubmit} type="button">
-                {isSubmitting ? 'Scoring…' : 'Submit reading drill'}
+                {isSubmitting ? 'Scoring…' : canShowFullReview ? 'Score this set' : 'Score with blanks'}
               </button>
               <p className="hero-action-copy reading-submit-copy">
                 {remainingQuestionCount > 0
-                  ? `${remainingQuestionCount} question${remainingQuestionCount === 1 ? '' : 's'} still blank — you can submit now or finish them first.`
-                  : 'All answers captured. Submit to refresh the deterministic review panel.'}
+                  ? `${remainingQuestionCount} question${remainingQuestionCount === 1 ? '' : 's'} still blank — finish them for the clearest review, or submit now for a quick pacing check.`
+                  : 'All answers captured. Submit to refresh your score review panel.'}
               </p>
             </div>
             {error ? (
@@ -509,7 +540,7 @@ export function ReadingPracticeShell({
               <div className="section-heading">
                 <div>
                   <p className="eyebrow">Active attempt</p>
-                  <h2 id="reading-attempt-summary-heading">Current review context</h2>
+                  <h2 id="reading-attempt-summary-heading">Current coaching snapshot</h2>
                 </div>
                 <span className="band-chip">{activeAttempt.report.scoreLabel}</span>
               </div>
@@ -517,6 +548,7 @@ export function ReadingPracticeShell({
                 <li><strong>Saved:</strong> {formatSavedAt(activeAttempt.createdAt)}</li>
                 <li><strong>Time spent:</strong> {formatCompactDuration(activeAttempt.timeSpentSeconds)}</li>
                 <li><strong>Set:</strong> {activeAttempt.setTitle}</li>
+                <li><strong>Next move:</strong> {activeAttempt.report.nextSteps[0] ?? 'Redo one missed question before switching sets.'}</li>
               </ul>
             </article>
           ) : null}

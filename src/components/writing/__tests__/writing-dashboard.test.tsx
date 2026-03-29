@@ -10,6 +10,8 @@ import type {
   WritingPrompt,
 } from '@/lib/domain';
 import { sampleAssessmentReport, sampleTask1Prompt, writingPromptBank } from '@/lib/fixtures/writing';
+import { buildPromptRecommendations } from '@/lib/services/writing/prompt-recommendations';
+import { getPromptTheme } from '@/lib/services/writing/prompt-taxonomy';
 
 import { WritingDashboard } from '../writing-dashboard';
 
@@ -79,6 +81,8 @@ const summary: WritingDashboardSummary = {
   },
 };
 
+const sampleTask2Prompt = writingPromptBank.find((prompt) => prompt.id === 'task-2-online-education') ?? writingPromptBank[0]!;
+
 const progress: ProgressSummary = {
   direction: 'improving',
   label: 'Improving',
@@ -110,7 +114,7 @@ const studyPlan: StudyPlanSnapshot = {
       criterion: 'Task Response',
       taskType: 'task-2',
       targetRange: { lower: 6.5, upper: 7 },
-      promptId: writingPromptBank[3]!.id,
+      promptId: sampleTask2Prompt.id,
       submissionId: 'attempt-4',
       actionLabel: 'Resume latest report',
       sessionLabel: 'Session 1',
@@ -140,14 +144,14 @@ const prompts: WritingPrompt[] = writingPromptBank;
 const recentSavedAttempts: SavedAssessmentSnapshot[] = [
   {
     submissionId: 'attempt-4',
-    promptId: writingPromptBank[3]!.id,
+    promptId: sampleTask2Prompt.id,
     taskType: 'task-2',
     createdAt: '2026-03-26T17:00:00.000Z',
     timeSpentMinutes: 38,
     wordCount: 286,
     report: {
       ...sampleAssessmentReport,
-      promptId: writingPromptBank[3]!.id,
+      promptId: sampleTask2Prompt.id,
       reportId: 'report-4',
       essayId: 'attempt-4',
       taskType: 'task-2',
@@ -190,28 +194,75 @@ const recentSavedAttempts: SavedAssessmentSnapshot[] = [
   },
 ];
 
+const themePromptCounts = writingPromptBank.reduce<Record<string, number>>((counts, prompt) => {
+  const theme = getPromptTheme(prompt);
+  counts[theme] = (counts[theme] ?? 0) + 1;
+  return counts;
+}, {});
+
+const themeAttemptCounts = recentSavedAttempts.reduce<Record<string, number>>((counts, attempt) => {
+  const prompt = writingPromptBank.find((entry) => entry.id === attempt.promptId);
+  if (!prompt) return counts;
+  const theme = getPromptTheme(prompt);
+  counts[theme] = (counts[theme] ?? 0) + 1;
+  return counts;
+}, {});
+
+const expectedWeakestTheme = Object.entries(themePromptCounts)
+  .map(([theme, promptCount]) => ({ theme, promptCount, attemptCount: themeAttemptCounts[theme] ?? 0 }))
+  .sort((a, b) => a.attemptCount - b.attemptCount || b.promptCount - a.promptCount || a.theme.localeCompare(b.theme))[0]!;
+
+const expectedStrongestTheme = Object.entries(themePromptCounts)
+  .map(([theme, promptCount]) => ({ theme, promptCount, attemptCount: themeAttemptCounts[theme] ?? 0 }))
+  .sort((a, b) => b.attemptCount - a.attemptCount || a.theme.localeCompare(b.theme))[0]!;
+const expectedRecommendations = buildPromptRecommendations({
+  prompts: writingPromptBank,
+  savedAttempts: recentSavedAttempts,
+}, 2);
+const expectedRecommendation = expectedRecommendations[0] ?? null;
+const expectedAlternateRecommendation = expectedRecommendations[1] ?? null;
+
 describe('WritingDashboard', () => {
   it('renders aggregated metrics, criterion trends, compare support, and the persisted study plan', () => {
     render(createElement(WritingDashboard, { summary, progress, prompts, recentSavedAttempts, studyPlan }));
 
     expect(screen.getByRole('heading', { name: /track writing momentum across every saved assessment/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /aggregated writing metrics/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /fix this next/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /prompt bank coverage by theme/i })).toBeInTheDocument();
     expect(
-      screen.getByText(/saved task 1 and task 2 reports condensed into one snapshot/i),
+      screen.getByText(/saved task 1 and task 2 reports condensed into one snapshot so you can see whether your practice is actually moving/i),
     ).toBeInTheDocument();
-    expect(screen.getByText(/task weighting/i)).toBeInTheDocument();
+    expect(screen.getByText(/latest saved tasks/i)).toBeInTheDocument();
     expect(
       screen.getByText(
-        /built from the latest saved task 1 6\.5 and task 2 7\.0 overall estimates with ielts-style 1:2 weighting/i,
+        /based on your latest task 1 6\.5 and task 2 7\.0 scores/i,
       ),
     ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /scoring history/i })).toBeInTheDocument();
     expect(
-      screen.getByText(/public calibration currently adjusts overall bands only, not criterion bands/i),
+      screen.getByText(/use saved reports to compare broad scoring trends/i),
     ).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /inspect and resume from the dashboard/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /review and continue from the dashboard/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /criterion trend summaries/i })).toBeInTheDocument();
     expect(screen.getAllByText(/improving/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/1 task 1 • 3 task 2/i)).toBeInTheDocument();
+    expect(screen.getAllByText(expectedWeakestTheme.theme).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(expectedStrongestTheme.theme).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(new RegExp(`${expectedWeakestTheme.promptCount} prompts in bank`, 'i')).length).toBeGreaterThan(0);
+    expect(expectedRecommendation).not.toBeNull();
+    expect(screen.getAllByText(expectedRecommendation!.prompt.title).length).toBeGreaterThan(0);
+    expect(screen.getByText(/train the weakest criterion first: task response/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /open revision target/i })).toHaveAttribute(
+      'href',
+      `/writing?promptId=${expectedRecommendation!.prompt.id}`,
+    );
+    if (expectedAlternateRecommendation) {
+      expect(screen.getByRole('link', { name: /compare another prompt/i })).toHaveAttribute(
+        'href',
+        `/writing?promptId=${expectedAlternateRecommendation.prompt.id}`,
+      );
+    }
     expect(screen.getAllByText(/\+0\.5 band vs previous/i).length).toBeGreaterThan(0);
     expect(screen.getByLabelText(/recent lexical resource bands: 6\.2, 6\.4, 6\.5, 7\.0/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /prioritise task response next/i })).toBeInTheDocument();
@@ -221,7 +272,7 @@ describe('WritingDashboard', () => {
     expect(screen.getByText(/38 min from latest attempt/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /resume latest report/i })).toHaveAttribute(
       'href',
-      `/writing?promptId=${writingPromptBank[3]!.id}&attemptId=attempt-4`,
+      `/writing?promptId=${sampleTask2Prompt.id}&attemptId=attempt-4`,
     );
     expect(screen.getByRole('link', { name: /open task 1 prompt/i })).toHaveAttribute(
       'href',

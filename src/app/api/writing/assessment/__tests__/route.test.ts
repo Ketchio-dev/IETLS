@@ -213,4 +213,22 @@ describe('POST /api/writing/assessment', () => {
       error: 'Live writing scorer timed out. Please try again.',
     });
   });
+
+  it('fails closed when the writing assessment workspace throws unexpectedly', async () => {
+    mocks.submitDefaultAssessment.mockRejectedValue(new Error('boom'));
+
+    const response = await POST(new Request('http://localhost/api/writing/assessment', {
+      method: 'POST',
+      body: JSON.stringify({
+        promptId: samplePrompt.id,
+        response: 'This response is comfortably longer than fifty characters so the route can surface unexpected scoring failures as a generic internal error.',
+        timeSpentMinutes: 18,
+      }),
+    }));
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Unable to score the Writing assessment right now.',
+    });
+  });
 });

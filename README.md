@@ -2,15 +2,16 @@
 
 A Next.js platform for IELTS Academic practice that now puts Reading and Writing at the center of the primary information architecture, while keeping Speaking alpha and Listening placeholder routes available as secondary modules:
 
-- Task-aware prompt bank for **Writing Task 1 Academic** and **Writing Task 2**
+- Task-aware prompt bank for **Writing Task 1 Academic** and **Writing Task 2** with 53 bundled prompts
 - Structured Task 1 visual briefs plus the existing Task 2 essay prompts
+- Bespoke sample essays for 13 Writing prompts, with task-level fallbacks for the rest of the bank
 - Timed drafting shell with live word count, saved-attempt inspection, and quick links into the dashboard
 - Dashboard view for recent saved attempts, criterion-trend direction, compare support, scorer usage, and an action-oriented persisted study plan
 - Practice estimate report with criterion bands, scorer status, confidence reasons, warnings, and revision actions
 - Assessment architecture split into evidence extraction, scoring, and feedback generation
 - Local persistence for prompts, recent submissions, saved scorecards, dashboard summaries, and prompt-specific history
 - Gemini 3 Flash Preview kept as the default live-scorer model when OpenRouter or Gemini CLI is enabled, with deterministic mock mode available when explicitly selected
-- **Reading** module with 15 runtime one-passage drill sets and 160 questions sourced from bundled original content plus local imports
+- **Reading** module with 18 runtime one-passage practice sets and 184 questions sourced from bundled original content plus local imports
 - **Speaking** alpha with transcript-first practice and session persistence, gated off by default in production
 - Listening registered as a lightweight placeholder module through the shared assessment seam
 
@@ -38,7 +39,7 @@ npm run build
 - `/writing` → writing practice shell with task switching, timed drafting, saved-attempt inspection, and assessment submission
 - `/dashboard` → persisted summary of recent saved attempts, criterion trends, compare support, scorer usage, and study-plan guidance
 - `/speaking` + `/speaking/dashboard` → Speaking alpha transcript-first practice and dashboard when explicitly enabled
-- `/reading` + `/reading/dashboard` → Reading drill module with imported/original passage bank, practice shell, and dashboard (not a full three-passage mock yet)
+- `/reading` + `/reading/dashboard` → Reading practice module with imported/original passage bank, practice shell, and dashboard (not a full three-passage mock yet)
 - `/listening` + `/listening/dashboard` → Listening placeholder routes proving the module seam without fake scoring
 - `GET /api/writing/task` → returns the current prompt plus the prompt bank
 - `POST /api/writing/assessment` → generates a practice estimate and stores the attempt locally
@@ -93,7 +94,7 @@ npm run writing:eval -- --input data/evals/writing/my-human-rated.json --scorer 
 npm run writing:fit-calibration -- --input /tmp/openrouter-writing-report.json
 ```
 
-If the source dataset is a CSV like the public Kaggle Mazlumi set, convert it first:
+If the source dataset is a CSV like the public Kaggle Mazlumi set, or a richer human-rated CSV with friendlier column names such as `Task Type`, `Prompt Text`, `Response Text`, and `Rater Comments`, convert it first:
 
 ```bash
 npm run writing:import-eval-csv -- --input /path/to/ielts_writing_dataset.csv
@@ -104,7 +105,7 @@ The evaluator accepts both full human-rated datasets and overall-only datasets w
 
 ## Reading content pipeline
 
-The default Reading bundle intentionally stays on original/local-import content only. The current repo ships with 15 runtime drill sets and 160 questions compiled from bundled AI-generated sets, and you can extend that bank with your own licensed or user-supplied `.json` files:
+The default Reading bundle intentionally stays on original/local-import content only. The current repo ships with 18 runtime practice sets and 184 questions compiled from bundled AI-generated sets, and you can extend that bank with your own licensed or user-supplied `.json` files:
 
 ```bash
 npm run reading:generate             # generate/import AI-ready reading items
@@ -118,7 +119,7 @@ You can also supply your own locally sourced `.json` files:
 
 This compiles a local bank to `data/runtime/reading-private-imports.json` and surfaces the import status on `/reading` and `/reading/dashboard`.
 
-The current product surface is intentionally framed as a **Reading drill** workflow. It does not yet simulate the full IELTS Academic Reading exam shape of three passages in one 60-minute sitting.
+The current product surface is intentionally framed as a **Reading practice set** workflow. It does not yet simulate the full IELTS Academic Reading exam shape of three passages in one 60-minute sitting.
 
 A starter template lives at `data/private-reading-imports/template.reading-import.json` and is ignored by the importer until you copy/rename it.
 

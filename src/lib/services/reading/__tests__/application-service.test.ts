@@ -74,7 +74,7 @@ describe('reading application service', () => {
 
     expect(result).toEqual({
       ok: false,
-      error: 'Provide a setId and an answers object for the Reading drill.',
+      error: 'Provide a setId and an answers object for the Reading set.',
       status: 400,
     });
   });

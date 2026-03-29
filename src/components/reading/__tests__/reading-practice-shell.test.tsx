@@ -20,8 +20,8 @@ function buildPageData(): ReadingPracticePageData {
   return {
     moduleId: 'reading',
     moduleLabel: 'IELTS Academic Reading',
-    statusLabel: 'Private drill ready',
-    summary: 'One-passage private Reading drills are now available from your local import bank.',
+    statusLabel: 'Reading set ready',
+    summary: 'Use one-passage reading sets to train accuracy and pacing for the full IELTS Reading exam.',
     routeBase: '/reading',
     importedSets: [set],
     availableSets: [
@@ -82,7 +82,7 @@ describe('ReadingPracticeShell', () => {
             maxScore: set.questions.length,
             percentage: 83,
             scoreLabel: '5/6',
-            summary: 'Solid private drill pass with one weakness left to revisit.',
+            summary: 'Solid reading set pass with one weakness left to revisit.',
             accuracyByQuestionType: [
               { type: 'multiple_choice', correct: 2, total: 2, accuracy: 100 },
               { type: 'true_false_not_given', correct: 1, total: 2, accuracy: 50 },
@@ -120,7 +120,7 @@ describe('ReadingPracticeShell', () => {
               maxScore: set.questions.length,
               percentage: 83,
               scoreLabel: '5/6',
-              summary: 'Solid private drill pass with one weakness left to revisit.',
+              summary: 'Solid reading set pass with one weakness left to revisit.',
               accuracyByQuestionType: [
                 { type: 'multiple_choice', correct: 2, total: 2, accuracy: 100 },
                 { type: 'true_false_not_given', correct: 1, total: 2, accuracy: 50 },
@@ -161,7 +161,7 @@ describe('ReadingPracticeShell', () => {
                 maxScore: set.questions.length,
                 percentage: 83,
                 scoreLabel: '5/6',
-                summary: 'Solid private drill pass with one weakness left to revisit.',
+                summary: 'Solid reading set pass with one weakness left to revisit.',
                 accuracyByQuestionType: [
                   { type: 'multiple_choice', correct: 2, total: 2, accuracy: 100 },
                   { type: 'true_false_not_given', correct: 1, total: 2, accuracy: 50 },
@@ -192,22 +192,31 @@ describe('ReadingPracticeShell', () => {
     render(<ReadingPracticeShell {...pageData} />);
 
     expect(screen.queryByRole('main')).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /passage-centred reading drill/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /reading practice/i })).toBeInTheDocument();
     expect(screen.getAllByText(/urban bee corridors and rooftop planting/i)[0]).toBeInTheDocument();
     expect(screen.getAllByText(/true false not given/i)[0]).toBeInTheDocument();
     expect(screen.getByText('0/6 answered · 6 left before your next score pass.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /use the same 3-step review loop for every set/i })).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(set.questions[3]!.prompt), { target: { value: 'water' } });
 
     expect(screen.getByText('1/6 answered · 5 left before your next score pass.')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /submit reading drill/i }));
+    fireEvent.click(screen.getByRole('button', { name: /score with blanks/i }));
 
     await waitFor(() => expect(screen.getAllByText('5/6').length).toBeGreaterThan(0));
     expect(screen.getAllByText(/accepted answers:/i)[0]).toBeInTheDocument();
     expect(screen.getAllByText(/review needed/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/evidence hint:/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/reading drill scored: 5\/6, 83% accuracy\./i)).toBeInTheDocument();
+    expect(screen.getAllByText(/why the answer key rejects this:/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/common trap:/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/reading set scored: 5\/6, 83% accuracy\./i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /see what to fix next/i })).toBeInTheDocument();
+    expect(screen.getByText(/what the answer key rewards/i)).toBeInTheDocument();
+    expect(screen.getByText(/what cost you marks/i)).toBeInTheDocument();
+    expect(screen.getByText(/redo this first/i)).toBeInTheDocument();
+    expect(screen.getByRole('note')).toHaveTextContent(/practice estimate — not an official ielts score/i);
+    expect(screen.getByText(/on your next attempt:/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /continue to writing practice/i })).toBeInTheDocument();
   });
 
   it('renders question navigation and semantic question groups before scoring', () => {
@@ -220,5 +229,6 @@ describe('ReadingPracticeShell', () => {
     expect(screen.getByRole('button', { name: /jump to question 1, pending/i })).toBeInTheDocument();
     expect(screen.getAllByText(/choose the single best option from the list below/i).length).toBeGreaterThan(0);
     expect(screen.getByRole('radiogroup', { name: set.questions[0]!.prompt })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /score with blanks/i })).toBeInTheDocument();
   });
 });

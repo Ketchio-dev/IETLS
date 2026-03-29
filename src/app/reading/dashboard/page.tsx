@@ -21,12 +21,12 @@ export default async function ReadingDashboardPage() {
 
       <header className="dashboard-header-section dashboard-header-section--reading" aria-label="Reading dashboard overview">
         <div className="dashboard-header-text">
-          <p className="eyebrow">Primary practice track</p>
+          <p className="eyebrow">IELTS Academic Reading</p>
           <h1 className="dashboard-header-title">Reading dashboard</h1>
           <p className="dashboard-header-subtitle">
             {totalAttempts > 0
-              ? `${totalAttempts} ${totalAttempts === 1 ? 'attempt' : 'attempts'} tracked across ${setCount} imported ${setCount === 1 ? 'set' : 'sets'}.`
-              : 'Bring your imported drills and first scored attempts here to track reading momentum.'}
+              ? `${totalAttempts} ${totalAttempts === 1 ? 'attempt' : 'attempts'} tracked across ${setCount} practice ${setCount === 1 ? 'set' : 'sets'}.`
+              : 'Your practice sets and first scored attempts will appear here as you build reading momentum.'}
           </p>
         </div>
         <div className="dashboard-header-actions">

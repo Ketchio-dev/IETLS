@@ -24,15 +24,15 @@ export default async function ReadingPage({
 
       <header className="practice-page-header practice-page-header--reading" aria-label="Reading practice overview">
         <div className="practice-page-header-text">
-          <p className="eyebrow practice-page-eyebrow">Primary practice track</p>
-          <h1 className="practice-page-title">Reading practice</h1>
+          <p className="eyebrow practice-page-eyebrow">IELTS Academic Reading</p>
+          <h1 className="practice-page-title">Practice IELTS Reading with scored practice sets</h1>
           <p className="practice-page-subtitle">
-            Drill passages, answer questions, and review evidence-backed scores.
+            Work through a full passage under time pressure, then use the score report and coaching notes to sharpen the next set.
           </p>
         </div>
         <div className="practice-page-meta" aria-label="Session snapshot">
           <span className="practice-meta-chip" data-module="reading">
-            <strong>{passageCount}</strong> {passageCount === 1 ? 'passage' : 'passages'}
+            <strong>{passageCount}</strong> {passageCount === 1 ? 'set' : 'sets'}
           </span>
           {attemptCount > 0 ? (
             <span className="practice-meta-chip" data-module="reading">

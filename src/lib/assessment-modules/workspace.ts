@@ -25,7 +25,7 @@ export interface AssessmentWorkspace {
 export const writingAssessmentWorkspace: AssessmentWorkspace = {
   moduleId: 'writing',
   moduleLabel: 'IELTS Academic Writing',
-  moduleSummary: 'Timed writing practice with persisted reports, dashboard trends, and Gemini 3 Flash scoring by default.',
+  moduleSummary: 'Timed writing practice with saved reports, band tracking, and dashboard guidance.',
   practicePath: '/writing',
   dashboardPath: '/dashboard',
   taskApiPath: '/api/writing/task',
@@ -47,7 +47,7 @@ export const readingAssessmentWorkspace: AssessmentWorkspace = {
   moduleId: 'reading',
   moduleLabel: 'IELTS Academic Reading',
   moduleSummary:
-    'One-passage Reading drill practice with deterministic scoring, evidence-backed review, and imported local bank support. This is not a full three-passage mock yet.',
+    'One-passage reading practice with answer-key review and saved set history. This is not a full three-passage mock yet.',
   practicePath: '/reading',
   dashboardPath: '/reading/dashboard',
   taskApiPath: '/api/reading/task',
@@ -57,7 +57,7 @@ export const readingAssessmentWorkspace: AssessmentWorkspace = {
 export const listeningAssessmentWorkspace: AssessmentWorkspace = {
   moduleId: 'listening',
   moduleLabel: 'IELTS Academic Listening Placeholder',
-  moduleSummary: 'Placeholder route coverage for future Listening scripts, audio, and timing-validation work.',
+  moduleSummary: 'Listening practice is planned but not yet available.',
   practicePath: '/listening',
   dashboardPath: '/listening/dashboard',
   taskApiPath: '/api/listening/task',

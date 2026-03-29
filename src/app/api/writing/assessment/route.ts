@@ -27,11 +27,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid request payload.' }, { status: 422 });
   }
 
-  const result = await submitDefaultAssessment(body);
+  try {
+    const result = await submitDefaultAssessment(body);
 
-  if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
+    }
+
+    return NextResponse.json(result.payload);
+  } catch {
+    return NextResponse.json({ error: 'Unable to score the Writing assessment right now.' }, { status: 500 });
   }
-
-  return NextResponse.json(result.payload);
 }

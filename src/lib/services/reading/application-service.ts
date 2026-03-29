@@ -117,27 +117,27 @@ function buildReport(
     scoreLabel: `${rawScore}/${maxScore}`,
     summary:
       percentage >= 80
-        ? 'This private Reading drill looks strong. Keep the same pacing and verify difficult completion answers carefully.'
+        ? 'This reading set looks strong. Keep the same pacing and double-check tricky completion answers before you lock them in.'
         : percentage >= 60
-          ? 'This drill is workable, but one weaker question type is still pulling down the total score.'
-          : 'This drill needs another pass with slower evidence checking and tighter answer validation.',
+          ? 'This set is workable, but one weaker question type is still dragging down the final score.'
+          : 'This set needs another pass with slower evidence checking and tighter answer validation.',
     accuracyByQuestionType,
     questionReviews,
     strengths: strongestType
       ? [`Best question type so far: ${strongestType.type} (${strongestType.correct}/${strongestType.total}).`]
-      : ['Complete one full imported drill to unlock stronger Reading guidance.'],
+      : ['Complete one full reading set to unlock stronger Reading guidance.'],
     risks: [
       weakestType ? `Weakest question type: ${weakestType.type} (${weakestType.correct}/${weakestType.total}).` : 'No question-type breakdown yet.',
       ...(skippedCount > 0 ? [`${skippedCount} question(s) were left blank.`] : []),
     ],
     nextSteps: [
-      weakestType ? `Redo one ${weakestType.type} item and explain the evidence sentence out loud.` : 'Complete another imported drill to compare question-type performance.',
+      weakestType ? `Redo one ${weakestType.type} item and explain the evidence sentence out loud.` : 'Complete another reading set to compare question-type performance.',
       'Check every answer against the evidence hint before you submit the next attempt.',
-      'Keep this as a private/local practice score, not an official IELTS Reading result.',
+      'Treat this as a set score, not an official IELTS Reading result.',
     ],
     warnings: [
-      'Reading scores here are deterministic private drill results, not official IELTS scores.',
-      'Imported content quality depends on your local source material and answer keys.',
+      'Reading scores here are set results, not official IELTS scores.',
+      'Answer quality depends on the source material and answer keys used in your reading bank.',
     ],
     generatedAt,
   };
@@ -200,9 +200,9 @@ function buildStudyFocus(attempts: ReadingAttemptSnapshot[], activeSet: Imported
     return [
       activeSet
         ? `Start with ${activeSet.title} and aim to finish within ${Math.round(activeSet.passageWordCount / 4)} seconds of your target pace.`
-        : 'Import one local reading set so the first real drill can begin.',
-      'Check that every question includes an explanation and evidence hint before trusting the score.',
-      'Keep release 1 focused on MCQ, T/F/NG, and sentence completion only.',
+        : 'Add one reading set so the first real practice session can begin.',
+      'Finish every question before you score if you want the clearest first benchmark.',
+      'Stay focused on multiple choice, true/false/not given, and sentence completion until your set accuracy feels stable.',
     ];
   }
 
@@ -211,13 +211,13 @@ function buildStudyFocus(attempts: ReadingAttemptSnapshot[], activeSet: Imported
 
   return [
     weakest
-      ? `Redo one ${weakest.type} item from ${latest.setTitle} and justify the answer from the passage.`
+      ? `Fix your weakest question type next: redo one ${weakest.type} item from ${latest.setTitle} and justify the answer from the passage.`
       : `Repeat ${latest.setTitle} once to build a second timing data point.`,
     latest.timeSpentSeconds > 1200
       ? 'Trim your next attempt time by focusing on evidence hints before revisiting the full passage.'
       : 'Keep the same pacing, but validate every completion answer against the exact wording in the text.',
-    'Do not treat this private drill score as an official IELTS Reading estimate.',
-  ];
+      'Do not treat this set score as an official IELTS Reading estimate.',
+    ];
 }
 
 export function createReadingApplicationService({
@@ -244,10 +244,10 @@ export function createReadingApplicationService({
     return {
       moduleId: 'reading',
       moduleLabel: 'IELTS Academic Reading',
-      statusLabel: activeSet ? 'Private drill ready' : 'Awaiting import',
+      statusLabel: activeSet ? 'Reading set ready' : 'Awaiting import',
       summary: activeSet
-        ? 'One-passage private Reading drills are now available from your local import bank. This route does not yet simulate the full 60-minute three-passage test.'
-        : 'Import your own local Reading materials to unlock the first passage-centred drill.',
+        ? 'Use one-passage reading sets to train accuracy and pacing for the full IELTS Reading exam.'
+        : 'Add your own reading materials to unlock the first practice set.',
       routeBase: '/reading',
       importedSets: clone(importedBank.sets),
       availableSets: importedBank.sets.map((set) => ({
@@ -283,8 +283,8 @@ export function createReadingApplicationService({
       moduleId: 'reading',
       moduleLabel: 'IELTS Academic Reading',
       summary: importedBank.sets.length > 0
-        ? 'Review private Reading drill performance by imported set, timing, and question type. This dashboard tracks drills, not a full three-passage mock.'
-        : 'Import one local Reading set to unlock the first real Reading drill dashboard.',
+        ? 'Review reading practice by set, timing, and question type. Use each saved set to build accuracy and pacing for the full exam.'
+        : 'Add one reading set to unlock the first practice dashboard.',
       routeBase: '/reading',
       importSummary,
       availableSets: importedBank.sets.map((set) => ({
@@ -311,10 +311,10 @@ export function createReadingApplicationService({
 
     return {
       moduleId: 'reading',
-      title: importedBank.sets[0]?.title ?? 'Reading drill import required',
+      title: importedBank.sets[0]?.title ?? 'Reading set required',
       description: importedBank.sets[0]
-        ? 'The first imported private Reading drill is ready for a timed one-passage session.'
-        : 'Import a local Reading set to expose the first real Reading task payload.',
+        ? 'The first reading practice set is ready for a timed one-passage session.'
+        : 'Add a reading set to unlock the first real task payload.',
       activeSet: importedBank.sets[0] ?? null,
       importedSets: clone(importedBank.sets),
       availableSets: importedBank.sets.map((set) => ({
@@ -339,7 +339,7 @@ export function createReadingApplicationService({
     if (!setId || !answers || typeof answers !== 'object' || Array.isArray(answers)) {
       return {
         ok: false,
-        error: 'Provide a setId and an answers object for the Reading drill.',
+        error: 'Provide a setId and an answers object for the Reading set.',
         status: 400,
       };
     }

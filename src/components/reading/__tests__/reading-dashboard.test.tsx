@@ -16,7 +16,7 @@ function buildPopulatedData(): ReadingDashboardPageData {
   return {
     moduleId: 'reading',
     moduleLabel: 'IELTS Academic Reading',
-    summary: 'Review private Reading drill performance by imported set, timing, and question type.',
+    summary: 'Review reading practice by set, timing, and question type. Use each saved set to build accuracy and pacing for the full exam.',
     routeBase: '/reading',
     importSummary: {
       sourceDir: 'data/private-reading-imports',
@@ -58,7 +58,7 @@ function buildPopulatedData(): ReadingDashboardPageData {
           maxScore: set.questions.length,
           percentage: 83,
           scoreLabel: '5/6',
-          summary: 'Solid private drill pass with one weakness left to revisit.',
+          summary: 'Solid reading set pass with one weakness left to revisit.',
           accuracyByQuestionType: [
             { type: 'multiple_choice', correct: 2, total: 2, accuracy: 100 },
             { type: 'true_false_not_given', correct: 1, total: 2, accuracy: 50 },
@@ -89,7 +89,7 @@ function buildEmptyData(): ReadingDashboardPageData {
   return {
     moduleId: 'reading',
     moduleLabel: 'IELTS Academic Reading',
-    summary: 'Review private Reading drill performance by imported set, timing, and question type.',
+    summary: 'Review reading practice by set, timing, and question type. Use each saved set to build accuracy and pacing for the full exam.',
     routeBase: '/reading',
     importSummary: {
       sourceDir: 'data/private-reading-imports',
@@ -113,20 +113,21 @@ function buildEmptyData(): ReadingDashboardPageData {
       strongestType: null,
       weakestType: null,
     },
-    studyFocus: ['Complete one drill to unlock study guidance.'],
+    studyFocus: ['Complete one set to unlock study guidance.'],
   };
 }
 
 describe('ReadingDashboard', () => {
-  it('renders metrics, study focus, and resume links for saved drills', () => {
+  it('renders metrics, study focus, and resume links for saved sets', () => {
     render(<ReadingDashboard {...buildPopulatedData()} />);
 
-    expect(screen.getByRole('heading', { name: /reading drill metrics/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /reading practice metrics/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /next action/i })).toBeInTheDocument();
     expect(screen.getAllByText(/redo one true_false_not_given item/i)[0]).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /resume in practice shell/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /review this set again/i })).toBeInTheDocument();
   });
 
-  it('renders strongest and weakest question families when attempts exist', () => {
+  it('renders strongest and weakest question types when attempts exist', () => {
     render(<ReadingDashboard {...buildPopulatedData()} />);
 
     expect(screen.getByText(/strongest:/i)).toBeInTheDocument();
@@ -139,7 +140,18 @@ describe('ReadingDashboard', () => {
     render(<ReadingDashboard {...buildEmptyData()} />);
 
     expect(screen.getAllByText(/no attempts yet/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/no saved reading attempts yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/no saved attempts yet\. head to the practice page to start your first set/i)).toBeInTheDocument();
     expect(screen.getByText(/no scored attempts yet/i)).toBeInTheDocument();
+  });
+
+  it('uses user-facing reading bank copy instead of developer import instructions', () => {
+    render(<ReadingDashboard {...buildPopulatedData()} />);
+
+    expect(screen.getByRole('heading', { name: /available practice sets/i })).toBeInTheDocument();
+    expect(screen.getByText(/your current practice sets are ready/i)).toBeInTheDocument();
+    expect(screen.getByText(/collections: 1/i)).toBeInTheDocument();
+    expect(screen.queryByText(/private imports/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/local bank status/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/run npm run reading:import-private/i)).not.toBeInTheDocument();
   });
 });

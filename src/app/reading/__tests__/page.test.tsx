@@ -28,8 +28,8 @@ function buildReadingPageData(): ReadingPracticePageData {
   return {
     moduleId: 'reading',
     moduleLabel: 'IELTS Academic Reading',
-    statusLabel: 'Private drill ready',
-    summary: 'One-passage private Reading drills are now available from your local import bank.',
+    statusLabel: 'Reading set ready',
+    summary: 'One-passage Reading practice sets are now available from your local import bank.',
     routeBase: '/reading',
     availableSets: [
       {
@@ -71,7 +71,7 @@ afterEach(() => {
 });
 
 describe('ReadingPage', () => {
-  it('hydrates the reading drill through the shared assessment workspace', async () => {
+  it('hydrates the reading practice page through the shared assessment workspace', async () => {
     const pageData = buildReadingPageData();
     mocks.loadAssessmentPracticePageData.mockResolvedValue(pageData);
 
@@ -114,8 +114,9 @@ describe('ReadingPage', () => {
 
     const header = container.querySelector('.practice-page-header--reading');
     expect(header).not.toBeNull();
-    expect(header!.textContent).toContain('Reading practice');
-    expect(header!.textContent).toContain('1 passage');
+    expect(header!.textContent).toContain('IELTS Academic Reading');
+    expect(header!.textContent).toContain('Practice IELTS Reading with scored practice sets');
+    expect(header!.textContent).toContain('1 set');
     expect(header!.textContent).toContain('1 recent attempt');
     expect(header!.querySelector('a.practice-meta-link')?.getAttribute('href')).toBe('/reading/dashboard');
   });

@@ -73,7 +73,9 @@ describe('WritingPage', () => {
 
     const header = container.querySelector('.practice-page-header--writing');
     expect(header).not.toBeNull();
+    expect(header!.textContent).toContain('IELTS Academic Writing');
     expect(header!.textContent).toContain('Writing practice');
+    expect(header!.textContent).toContain('Choose from the expanded prompt bank');
     expect(header!.textContent).toContain(`${writingPromptBank.length} prompts`);
     expect(header!.textContent).toContain('1 recent attempt');
     expect(header!.querySelector('a.practice-meta-link')?.getAttribute('href')).toBe('/dashboard');

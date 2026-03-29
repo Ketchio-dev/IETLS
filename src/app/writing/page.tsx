@@ -30,10 +30,10 @@ export default async function WritingPage({ searchParams }: PageProps) {
 
       <header className="practice-page-header practice-page-header--writing" aria-label="Writing practice overview">
         <div className="practice-page-header-text">
-          <p className="eyebrow practice-page-eyebrow">Primary practice track</p>
+          <p className="eyebrow practice-page-eyebrow">IELTS Academic Writing</p>
           <h1 className="practice-page-title">Writing practice</h1>
           <p className="practice-page-subtitle">
-            Timed essays with persistent reports, band tracking, and a dedicated dashboard.
+            Choose from the expanded prompt bank, write to the minimum word count, then use the estimate to guide revision.
           </p>
         </div>
         <div className="practice-page-meta" aria-label="Session snapshot">

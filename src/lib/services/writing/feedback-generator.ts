@@ -40,14 +40,14 @@ export function buildSummary(taskType: WritingTaskType, overallBandRange: BandRa
   const taskLabel = taskType === 'task-1' ? 'Task 1' : 'Task 2';
 
   if (wordCount < minWords) {
-    return `The draft shows promise, but it is under-developed for a stable ${taskLabel} estimate. Add depth before trusting the current score range.`;
+    return `Below the minimum for ${taskLabel}. The score is unreliable until the response is expanded.`;
   }
 
   if (overallBandRange.lower >= 7) {
-    return `This draft looks competitive for a Band ${overallBandRange.lower.toFixed(1)}-${overallBandRange.upper.toFixed(1)} practice range, with the main gains now coming from refinement rather than basic coverage.`;
+    return `This draft looks competitive for a Band ${overallBandRange.lower.toFixed(1)}-${overallBandRange.upper.toFixed(1)} practice range. The next gains should come from refinement, not from rewriting the whole response.`;
   }
 
-  return `This draft is workable for a Band ${overallBandRange.lower.toFixed(1)}-${overallBandRange.upper.toFixed(1)} practice range, but the biggest gains still come from clearer support, tighter organization, and more precise language.`;
+  return `Current practice range: Band ${overallBandRange.lower.toFixed(1)}-${overallBandRange.upper.toFixed(1)}. Improve support, organisation, and wording precision before you re-score.`;
 }
 
 export function buildWarnings(
@@ -60,7 +60,7 @@ export function buildWarnings(
   const warnings: AssessmentWarning[] = [
     {
       code: 'practice-estimate',
-      message: 'This is an AI-assisted practice estimate and should not be treated as an official IELTS score.',
+      message: 'AI-assisted practice estimate. Do not treat it as an official IELTS score.',
     },
     {
       code: 'single-task-scope',
@@ -74,14 +74,15 @@ export function buildWarnings(
   if (wordCount < minWords) {
     warnings.push({
       code: 'under-length',
-      message: `The response is below the usual ${taskLabel} target length, which limits scoring confidence.`,
+      message: `Below the minimum for ${taskLabel}. Score reliability improves only after the response is expanded.`,
     });
   }
 
   if (confidence === 'low') {
     warnings.push({
       code: 'low-confidence',
-      message: 'The scoring signals are mixed, so review the full score range and evidence before trusting the estimate too strongly.',
+      message:
+        'The scorer found conflicting signals in this draft. Fix the top revision target, re-score once, and compare this draft only after the signal tightens.',
     });
   }
 
