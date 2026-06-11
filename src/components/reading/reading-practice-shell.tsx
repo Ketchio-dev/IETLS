@@ -305,6 +305,9 @@ export function ReadingPracticeShell({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [retryMode, setRetryMode] = useState(initialRetryMode === 'incorrect');
+  const [activePracticeStep, setActivePracticeStep] = useState<'passage' | 'questions'>(
+    initialRetryMode === 'incorrect' ? 'questions' : 'passage',
+  );
 
   const selectedSet = useMemo(
     () => (selectedSetId ? findSet(importedSets, activeSet, selectedSetId) : activeSet),
@@ -337,6 +340,7 @@ export function ReadingPracticeShell({
 
   useEffect(() => {
     setRetryMode(initialRetryMode === 'incorrect');
+    setActivePracticeStep(initialRetryMode === 'incorrect' ? 'questions' : 'passage');
   }, [initialRetryMode]);
 
   const reviewByQuestionId = useMemo(() => {
@@ -423,6 +427,7 @@ export function ReadingPracticeShell({
     resetElapsedTimer(attempt.timeSpentSeconds);
     setError(null);
     setRetryMode(false);
+    setActivePracticeStep('questions');
   }, [resetElapsedTimer]);
 
   const handleAnswerChange = useCallback((questionId: string, value: string) => {
@@ -430,6 +435,7 @@ export function ReadingPracticeShell({
   }, []);
 
   const handleJumpToQuestion = useCallback((questionId: string) => {
+    setActivePracticeStep('questions');
     const target = document.getElementById(questionId);
     if (!target) {
       return;
@@ -545,7 +551,14 @@ export function ReadingPracticeShell({
 
       <section className="workspace-grid">
         <div className="workspace-column left-column">
-          <article className="panel">
+          <details className="panel student-help-panel">
+            <summary>
+              <span>
+                <span className="eyebrow">Start here</span>
+                <strong>3-step reading loop</strong>
+              </span>
+              <span className="band-chip">Help</span>
+            </summary>
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Start here</p>
@@ -571,7 +584,7 @@ export function ReadingPracticeShell({
                 Retry mode keeps only the missed questions in view so you can fix weak answers before you move on to a new set.
               </p>
             ) : null}
-          </article>
+          </details>
 
           <article className="panel">
             <div className="section-heading">
@@ -595,6 +608,7 @@ export function ReadingPracticeShell({
                   setError(null);
                   resetElapsedTimer(0);
                   setRetryMode(false);
+                  setActivePracticeStep('passage');
                   if (nextSetId !== selectedSet.id) {
                     router.push(`/reading?setId=${encodeURIComponent(nextSetId)}`);
                   }
@@ -629,6 +643,28 @@ export function ReadingPracticeShell({
               </article>
             </div>
 
+            <div className="task-switcher reading-step-switcher" role="tablist" aria-label="Reading practice step">
+              <button
+                aria-selected={activePracticeStep === 'passage'}
+                className={`task-tab${activePracticeStep === 'passage' ? ' is-active' : ''}`}
+                onClick={() => setActivePracticeStep('passage')}
+                role="tab"
+                type="button"
+              >
+                1. Read passage
+              </button>
+              <button
+                aria-selected={activePracticeStep === 'questions'}
+                className={`task-tab${activePracticeStep === 'questions' ? ' is-active' : ''}`}
+                onClick={() => setActivePracticeStep('questions')}
+                role="tab"
+                type="button"
+              >
+                2. Answer questions
+              </button>
+            </div>
+
+            {activePracticeStep === 'passage' ? (
             <div className="stack-sm reading-section-block">
               <div className="section-heading reading-subsection-heading">
                 <div>
@@ -641,9 +677,16 @@ export function ReadingPracticeShell({
                   {paragraph}
                 </p>
               ))}
+              <div className="hero-actions reading-submit-row">
+                <button className="primary-button" onClick={() => setActivePracticeStep('questions')} type="button">
+                  Continue to questions
+                </button>
+              </div>
             </div>
+            ) : null}
           </article>
 
+          {activePracticeStep === 'questions' ? (
           <article className="panel history-panel" aria-labelledby="reading-questions-heading">
             <div className="section-heading">
               <div>
@@ -728,6 +771,7 @@ export function ReadingPracticeShell({
               </p>
             ) : null}
           </article>
+          ) : null}
         </div>
 
         <div className="workspace-column right-column right-column--sticky">
@@ -758,8 +802,28 @@ export function ReadingPracticeShell({
               ) : null}
             </article>
           ) : null}
-          {report ? <ReadingAssessmentReportPanel report={report} retryHref={retryHref} /> : null}
-          <RecentAttemptsPanel attempts={recentSavedAttempts} activeAttemptId={activeAttemptId} onInspect={handleInspectAttempt} />
+          {report ? (
+            <details className="student-detail-panel">
+              <summary>
+                <span>
+                  <span className="eyebrow">Score report</span>
+                  <strong>Open detailed reading feedback</strong>
+                </span>
+                <span className="band-chip">{report.scoreLabel}</span>
+              </summary>
+              <ReadingAssessmentReportPanel report={report} retryHref={retryHref} />
+            </details>
+          ) : null}
+          <details className="student-detail-panel">
+            <summary>
+              <span>
+                <span className="eyebrow">History</span>
+                <strong>Open recent attempts</strong>
+              </span>
+              <span className="band-chip">{recentSavedAttempts.length} saved</span>
+            </summary>
+            <RecentAttemptsPanel attempts={recentSavedAttempts} activeAttemptId={activeAttemptId} onInspect={handleInspectAttempt} />
+          </details>
         </div>
       </section>
     </>

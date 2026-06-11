@@ -1,6 +1,5 @@
 import Link from 'next/link';
 
-import { writingAssessmentWorkspace } from '@/lib/assessment-modules/workspace';
 import type {
   ProgressSummary,
   SavedAssessmentSnapshot,
@@ -24,6 +23,8 @@ import {
   buildWritingThemeCoverageModel,
   describeTrendVisual,
 } from './writing-dashboard-model';
+
+const WRITING_PRACTICE_PATH = '/writing';
 
 interface Props {
   prompts: WritingPrompt[];
@@ -75,13 +76,12 @@ export function WritingDashboard({ prompts, recentSavedAttempts, summary, progre
       <section className="hero panel dashboard-hero">
         <div>
           <p className="eyebrow">IELTS Academic • Dashboard</p>
-          <h1>Track writing momentum across every saved assessment</h1>
+          <h1>Your next Writing move</h1>
           <p className="hero-copy">
-            Review score movement, task coverage, and a saved study plan built from your latest
-            assessment history.
+            Start with one recommended fix. Open the detailed stats only when you want to review the history behind it.
           </p>
           <div className="dashboard-actions">
-            <Link className="primary-button dashboard-link-button" href={writingAssessmentWorkspace.practicePath}>
+            <Link className="primary-button dashboard-link-button" href={WRITING_PRACTICE_PATH}>
               Return to practice shell
             </Link>
           </div>
@@ -99,26 +99,11 @@ export function WritingDashboard({ prompts, recentSavedAttempts, summary, progre
                 : 'No data yet'}
             </strong>
           </div>
-          <div className="metric-card">
-            <span>Best band</span>
-            <strong>{summary.bestBand?.toFixed(1) ?? '—'}</strong>
-          </div>
-          <div className="metric-card">
-            <span>Practice time</span>
-            <strong>{summary.totalPracticeMinutes.toFixed(1)} min</strong>
-          </div>
         </div>
       </section>
 
       <section className="workspace-grid dashboard-grid">
         <div className="workspace-column left-column">
-          <DashboardMetricGrid
-            title="Aggregated writing metrics"
-            description="Saved Task 1 and Task 2 reports condensed into one snapshot so you can see whether your practice is actually moving."
-            metrics={dashboardMetrics}
-            aside={<span className="band-chip">{formatTaskCoverage(summary.taskCounts)}</span>}
-          />
-
           <article className="panel">
             <div className="section-heading">
               <div>
@@ -179,13 +164,37 @@ export function WritingDashboard({ prompts, recentSavedAttempts, summary, progre
             )}
           </article>
 
-          <article className="panel">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Theme coverage</p>
-                <h2>Prompt bank coverage by theme</h2>
+          <details className="student-detail-panel">
+            <summary>
+              <span>
+                <span className="eyebrow">Stats</span>
+                <strong>Open writing metrics</strong>
+              </span>
+              <span className="band-chip">{formatTaskCoverage(summary.taskCounts)}</span>
+            </summary>
+            <DashboardMetricGrid
+              title="Aggregated writing metrics"
+              description="Saved Task 1 and Task 2 reports condensed into one snapshot so you can see whether your practice is actually moving."
+              metrics={dashboardMetrics}
+              aside={<span className="band-chip">{formatTaskCoverage(summary.taskCounts)}</span>}
+            />
+          </details>
+
+          <details className="student-detail-panel">
+            <summary>
+              <span>
+                <span className="eyebrow">Theme coverage</span>
+                <strong>Open prompt bank coverage</strong>
+              </span>
+              <span className="band-chip">{themeCoverage.entries.length} themes</span>
+            </summary>
+            <article className="panel">
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">Theme coverage</p>
+                  <h2>Prompt bank coverage by theme</h2>
+                </div>
               </div>
-            </div>
             <div className="dashboard-insight-grid">
               <div className="history-card">
                 <div className="history-card-header">
@@ -226,15 +235,24 @@ export function WritingDashboard({ prompts, recentSavedAttempts, summary, progre
                 ))}
               </div>
             ) : null}
-          </article>
+            </article>
+          </details>
 
-          <article className="panel">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Criteria</p>
-                <h2>Criterion trend summaries</h2>
+          <details className="student-detail-panel">
+            <summary>
+              <span>
+                <span className="eyebrow">Criteria</span>
+                <strong>Open criterion trends</strong>
+              </span>
+              <span className="band-chip">{summary.criterionSummaries.length} criteria</span>
+            </summary>
+            <article className="panel">
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">Criteria</p>
+                  <h2>Criterion trend summaries</h2>
+                </div>
               </div>
-            </div>
             <div className="dashboard-insight-grid">
               <div className="history-card">
                 <div className="history-card-header">
@@ -290,19 +308,28 @@ export function WritingDashboard({ prompts, recentSavedAttempts, summary, progre
                 ))}
               </div>
             ) : null}
-          </article>
+            </article>
+          </details>
         </div>
 
         <div className="workspace-column right-column">
-          <DashboardRecentAttemptsPanel attempts={recentSavedAttempts} prompts={prompts} />
+          <DashboardRecentAttemptsPanel attempts={recentSavedAttempts} limit={0} prompts={prompts} />
 
-          <section className="panel history-panel">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Saved reports</p>
-                <h2>Scoring history</h2>
+          <details className="student-detail-panel">
+            <summary>
+              <span>
+                <span className="eyebrow">More detail</span>
+                <strong>Open scoring history</strong>
+              </span>
+              <span className="band-chip">{summary.providerBreakdown.length} sources</span>
+            </summary>
+            <section className="panel history-panel">
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">Saved reports</p>
+                  <h2>Scoring history</h2>
+                </div>
               </div>
-            </div>
             <p className="summary-copy">
               Use saved reports to compare broad scoring trends and keep an eye on which scoring path handled each report.
             </p>
@@ -324,9 +351,19 @@ export function WritingDashboard({ prompts, recentSavedAttempts, summary, progre
                 ))}
               </div>
             )}
-          </section>
+            </section>
+          </details>
 
-          <StudyPlanPanel plan={presentationPlan} title={studyPlan.headline} />
+          <details className="student-detail-panel">
+            <summary>
+              <span>
+                <span className="eyebrow">Full path</span>
+                <strong>Open saved study plan</strong>
+              </span>
+              <span className="band-chip">{presentationPlan.horizonLabel}</span>
+            </summary>
+            <StudyPlanPanel plan={presentationPlan} title={studyPlan.headline} />
+          </details>
         </div>
       </section>
     </main>

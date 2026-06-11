@@ -82,6 +82,9 @@ describe('WritingPracticeShell', () => {
     }));
 
     expect(screen.getAllByText(samplePrompt.title).length).toBeGreaterThan(0);
+    fireEvent.change(screen.getByRole('textbox', { name: /essay response/i }), {
+      target: { value: Array.from({ length: samplePrompt.suggestedWordCount }, (_, index) => `point${index}`).join(' ') },
+    });
     fireEvent.click(screen.getByRole('button', { name: /score my essay/i }));
 
     await waitFor(() => {
@@ -113,8 +116,8 @@ describe('WritingPracticeShell', () => {
     }));
 
     const submitButton = screen.getByRole('button', { name: /score my essay/i });
-    expect(submitButton).toBeEnabled();
-    expect(screen.getByText(/minimum reached/i)).toBeInTheDocument();
+    expect(submitButton).toBeDisabled();
+    expect(screen.getByText(/more to unlock scoring/i)).toBeInTheDocument();
 
     fireEvent.change(screen.getByRole('textbox', { name: /essay response/i }), {
       target: { value: 'Too short to score yet.' },
@@ -125,8 +128,8 @@ describe('WritingPracticeShell', () => {
 
     fireEvent.click(screen.getAllByRole('tab', { name: /writing task 1/i })[0]!);
 
-    expect(screen.getByRole('button', { name: /score my response/i })).toBeEnabled();
-    expect(screen.getByText(/minimum reached/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /score my response/i })).toBeDisabled();
+    expect(screen.getByText(/more to unlock scoring/i)).toBeInTheDocument();
   });
 
   it('submits the latest editor draft after local textarea changes', async () => {
@@ -186,7 +189,7 @@ describe('WritingPracticeShell', () => {
     expect(screen.getAllByText(/writing task 2: at least 250 words/i).length).toBeGreaterThan(0);
     expect(screen.getByRole('heading', { name: /use the estimate as a practice guide, not an official result/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /turn this report into the next better draft/i })).toBeInTheDocument();
-    expect(screen.getByText(/task 1 needs 150\+ words\. task 2 needs 250\+ words\./i)).toBeInTheDocument();
+    expect(screen.getByText(/write to the minimum before scoring unlocks/i)).toBeInTheDocument();
   });
 
   it('switches between prompts in the prompt bank', () => {

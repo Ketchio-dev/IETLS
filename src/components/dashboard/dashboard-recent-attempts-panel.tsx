@@ -6,9 +6,11 @@ import { useMemo, useState } from 'react';
 import { buildPracticeWorkspaceHref, writingAssessmentWorkspace } from '@/lib/assessment-modules/workspace';
 import type { SavedAssessmentSnapshot, WritingPrompt } from '@/lib/domain';
 import { buildAttemptComparison } from '@/lib/services/writing/dashboard';
+import { formatDateTime } from './dashboard-formatting';
 
 interface Props {
   attempts: SavedAssessmentSnapshot[];
+  limit?: number;
   prompts: WritingPrompt[];
 }
 
@@ -79,9 +81,13 @@ function formatSignedMinuteDelta(value: number) {
   return `${value > 0 ? '+' : ''}${value.toFixed(1)} min`;
 }
 
-export function DashboardRecentAttemptsPanel({ attempts, prompts }: Props) {
+export function DashboardRecentAttemptsPanel({ attempts, limit, prompts }: Props) {
   const [activeAttemptId, setActiveAttemptId] = useState<string | null>(attempts[0]?.submissionId ?? null);
   const [compareAttemptId, setCompareAttemptId] = useState<string | null>(null);
+  const visibleAttempts = useMemo(
+    () => (limit === undefined ? attempts : attempts.slice(0, limit)),
+    [attempts, limit],
+  );
   const promptsById = useMemo(() => new Map(prompts.map((prompt) => [prompt.id, prompt])), [prompts]);
   const activeAttempt = useMemo(
     () => attempts.find((attempt) => attempt.submissionId === activeAttemptId) ?? attempts[0] ?? null,
@@ -133,7 +139,7 @@ export function DashboardRecentAttemptsPanel({ attempts, prompts }: Props) {
               <div className="history-meta">
                 <span>{formatTaskLabel(activeAttempt.taskType)}</span>
                 <span>{getConfidenceLabel(activeAttempt.report.confidence)}</span>
-                <span>{new Date(activeAttempt.createdAt).toLocaleString()}</span>
+                <span>{formatDateTime(activeAttempt.createdAt)}</span>
               </div>
               <div className="history-meta inspection-meta">
                 <span>{activeAttempt.wordCount} words</span>
@@ -210,9 +216,9 @@ export function DashboardRecentAttemptsPanel({ attempts, prompts }: Props) {
         </p>
       )}
 
-      {attempts.length > 0 ? (
+      {visibleAttempts.length > 0 ? (
         <div className="history-list">
-          {attempts.map((attempt) => {
+          {visibleAttempts.map((attempt) => {
             const prompt = promptsById.get(attempt.promptId);
             const isActive = attempt.submissionId === activeAttempt?.submissionId;
 
@@ -226,7 +232,7 @@ export function DashboardRecentAttemptsPanel({ attempts, prompts }: Props) {
                 <div className="history-meta">
                   <span>{formatRange(attempt.report.overallBandRange.lower, attempt.report.overallBandRange.upper)}</span>
                   <span>{attempt.wordCount} words</span>
-                  <span>{new Date(attempt.createdAt).toLocaleString()}</span>
+                  <span>{formatDateTime(attempt.createdAt)}</span>
                 </div>
                 <div className="hero-actions">
                   <button
@@ -253,6 +259,13 @@ export function DashboardRecentAttemptsPanel({ attempts, prompts }: Props) {
             );
           })}
         </div>
+      ) : null}
+      {limit !== undefined && attempts.length > limit ? (
+        <p className="summary-copy dashboard-inline-note">
+          {limit > 0
+            ? `Showing the latest ${limit}. Open the detailed history section for all ${attempts.length} saved attempts.`
+            : `Open the detailed history section for all ${attempts.length} saved attempts.`}
+        </p>
       ) : null}
     </section>
   );

@@ -29,6 +29,12 @@ export function formatCompactDuration(totalSeconds: number) {
   return `${minutes}m ${seconds}s`;
 }
 
+const stableSavedAtFormatter = new Intl.DateTimeFormat('en-US', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+  timeZone: 'UTC',
+});
+
 export function formatSavedAt(value: string) {
-  return new Date(value).toLocaleString();
+  return `${stableSavedAtFormatter.format(new Date(value))} UTC`;
 }

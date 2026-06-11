@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { memo } from 'react';
 
+import { formatDateTime } from '@/components/dashboard/dashboard-formatting';
 import type { AssessmentReport } from '@/lib/domain';
 import { buildReportCriterionCoachingPlan } from '@/lib/services/writing/feedback-generator';
 
@@ -169,49 +170,49 @@ export const AssessmentReportPanel = memo(function AssessmentReportPanel({ repor
       </p>
       <p className="summary-copy">{confidenceSummary}</p>
 
-      <div className="report-columns secondary-columns">
-        <div>
-          <h3>{getConfidenceReasonsHeading(report.confidence)}</h3>
-          <ul className="plain-list compact-list">
-            {report.confidenceReasons.map((reason, index) => (
-              <li key={`confidence-reason-${index}`}>{reason}</li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      {criterionCoaching ? (
+      <details className="report-technical-details">
+        <summary>Detailed feedback and scoring notes</summary>
         <div className="report-columns secondary-columns">
           <div>
-            <h3>How to raise {criterionCoaching.criterion} next</h3>
-            <p className="summary-copy">{criterionCoaching.whyItMatters}</p>
-            <div className="report-grid secondary-columns">
-              <article className="score-card">
-                <div className="score-card-header">
-                  <h3>Fix now</h3>
-                  <span>Step 1</span>
-                </div>
-                <p>{criterionCoaching.fixNow}</p>
-              </article>
-              <article className="score-card">
-                <div className="score-card-header">
-                  <h3>Check before re-score</h3>
-                  <span>Step 2</span>
-                </div>
-                <p>{criterionCoaching.checkBeforeRescore}</p>
-              </article>
-            </div>
+            <h3>{getConfidenceReasonsHeading(report.confidence)}</h3>
             <ul className="plain-list compact-list">
-              {criterionCoaching.checklist.map((item, index) => (
-                <li key={`${criterionCoaching.criterion}-checklist-${index}`}>{item}</li>
+              {report.confidenceReasons.map((reason, index) => (
+                <li key={`confidence-reason-${index}`}>{reason}</li>
               ))}
             </ul>
           </div>
         </div>
-      ) : null}
 
-      <details className="report-technical-details">
-        <summary>Advanced details</summary>
+        {criterionCoaching ? (
+          <div className="report-columns secondary-columns">
+            <div>
+              <h3>How to raise {criterionCoaching.criterion} next</h3>
+              <p className="summary-copy">{criterionCoaching.whyItMatters}</p>
+              <div className="report-grid secondary-columns">
+                <article className="score-card">
+                  <div className="score-card-header">
+                    <h3>Fix now</h3>
+                    <span>Step 1</span>
+                  </div>
+                  <p>{criterionCoaching.fixNow}</p>
+                </article>
+                <article className="score-card">
+                  <div className="score-card-header">
+                    <h3>Check before re-score</h3>
+                    <span>Step 2</span>
+                  </div>
+                  <p>{criterionCoaching.checkBeforeRescore}</p>
+                </article>
+              </div>
+              <ul className="plain-list compact-list">
+                {criterionCoaching.checklist.map((item, index) => (
+                  <li key={`${criterionCoaching.criterion}-checklist-${index}`}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ) : null}
+
         <div className="stack-sm">
           <h3>How this score was produced</h3>
           <ul className="plain-list compact-list">
@@ -231,59 +232,59 @@ export const AssessmentReportPanel = memo(function AssessmentReportPanel({ repor
           <li>Rubric version: {trace.rubricVersion}</li>
           <li>Calibration version: {trace.calibrationVersion}</li>
         </ul>
-      </details>
 
-      <div className="report-grid secondary-columns">
-        {report.criterionScores.map((item, index) => (
-          <article className="score-card" key={`${item.criterion}-${index}`}>
-            <div className="score-card-header">
-              <h3>{item.criterion}</h3>
-              <span>
-                Band {item.bandRange.lower.toFixed(1)}-{item.bandRange.upper.toFixed(1)}
-              </span>
-            </div>
-            <p>{item.rationale}</p>
-          </article>
-        ))}
-      </div>
-
-      <div className="report-columns">
-        <div>
-          <h3>Evidence</h3>
-          <ul className="plain-list">
-            {report.evidence.map((item, index) => (
-              <li key={`${item.id}-${index}`}>
-                <strong>{item.label}:</strong> {item.detail}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h3>Next steps</h3>
-          <ul className="plain-list">
-            {report.nextSteps.map((item, index) => (
-              <li key={`${item.title}-${index}`}>
-                <strong>{item.title}</strong>
-                <span className="impact-pill" style={{ backgroundColor: impactStyles[item.impact] }}>
-                  {getImpactLabel(item.impact)}
+        <div className="report-grid secondary-columns">
+          {report.criterionScores.map((item, index) => (
+            <article className="score-card" key={`${item.criterion}-${index}`}>
+              <div className="score-card-header">
+                <h3>{item.criterion}</h3>
+                <span>
+                  Band {item.bandRange.lower.toFixed(1)}-{item.bandRange.upper.toFixed(1)}
                 </span>
-                <p>{item.description}</p>
-              </li>
-            ))}
-          </ul>
+              </div>
+              <p>{item.rationale}</p>
+            </article>
+          ))}
         </div>
-      </div>
 
-      <div className="report-columns secondary-columns">
-        <div>
-          <h3>Warnings</h3>
-          <ul className="plain-list compact-list">
-            {report.warnings.map((warning, index) => (
-              <li key={`${warning.code}-${index}`}>{warning.message}</li>
-            ))}
-          </ul>
+        <div className="report-columns">
+          <div>
+            <h3>Evidence</h3>
+            <ul className="plain-list">
+              {report.evidence.map((item, index) => (
+                <li key={`${item.id}-${index}`}>
+                  <strong>{item.label}:</strong> {item.detail}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3>Next steps</h3>
+            <ul className="plain-list">
+              {report.nextSteps.map((item, index) => (
+                <li key={`${item.title}-${index}`}>
+                  <strong>{item.title}</strong>
+                  <span className="impact-pill" style={{ backgroundColor: impactStyles[item.impact] }}>
+                    {getImpactLabel(item.impact)}
+                  </span>
+                  <p>{item.description}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-      </div>
+
+        <div className="report-columns secondary-columns">
+          <div>
+            <h3>Warnings</h3>
+            <ul className="plain-list compact-list">
+              {report.warnings.map((warning, index) => (
+                <li key={`${warning.code}-${index}`}>{warning.message}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </details>
 
       <div className="report-link-row">
         <Link className="secondary-link-button" href="/reading">
@@ -293,7 +294,7 @@ export const AssessmentReportPanel = memo(function AssessmentReportPanel({ repor
 
       <div className="report-footer">
         <span>Report version: {report.pipelineVersion}</span>
-        <span>Generated: {new Date(report.generatedAt).toLocaleString()}</span>
+        <span>Generated: {formatDateTime(report.generatedAt)}</span>
       </div>
     </section>
   );

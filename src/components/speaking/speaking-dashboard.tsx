@@ -136,7 +136,7 @@ export function SpeakingDashboard({ prompts = [], recentSessions, summary, study
                       <span>{session.transcriptWordCount} words</span>
                       <span>{session.durationSeconds}s</span>
                       <span>{session.audioArtifact.status === 'attached' ? 'audio attached' : 'no audio metadata'}</span>
-                      <span>{new Date(session.createdAt).toLocaleString()}</span>
+                      <span>{formatDateTime(session.createdAt)}</span>
                     </div>
                     <div className="hero-actions">
                       <Link

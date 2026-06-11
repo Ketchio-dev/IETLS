@@ -63,13 +63,18 @@ export function formatCountLabel(count: number, singular: string, plural = `${si
   return `${count} ${count === 1 ? singular : plural}`;
 }
 
+const stableDateTimeFormatter = new Intl.DateTimeFormat('en-US', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+  timeZone: 'UTC',
+});
 
 export function formatDateTime(value: string | null) {
   if (!value) {
     return 'No saved attempt yet';
   }
 
-  return new Date(value).toLocaleString();
+  return `${stableDateTimeFormatter.format(new Date(value))} UTC`;
 }
 
 export function formatTaskCoverage(taskCounts: WritingDashboardSummary['taskCounts']) {

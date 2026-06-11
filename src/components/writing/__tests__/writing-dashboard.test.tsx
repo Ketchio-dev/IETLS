@@ -1,5 +1,5 @@
 import { createElement } from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type {
@@ -226,7 +226,9 @@ describe('WritingDashboard', () => {
   it('renders aggregated metrics, criterion trends, compare support, and the persisted study plan', () => {
     render(createElement(WritingDashboard, { summary, progress, prompts, recentSavedAttempts, studyPlan }));
 
-    expect(screen.getByRole('heading', { name: /track writing momentum across every saved assessment/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /your next writing move/i })).toBeInTheDocument();
+    expect(screen.getByText(/open the detailed stats only when you want/i)).toBeInTheDocument();
+    expect(screen.getByText(/open writing metrics/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /aggregated writing metrics/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /fix this next/i })).toBeInTheDocument();
     expect(screen.getByText(/switch to reading for a quick argument reset/i)).toBeInTheDocument();
@@ -248,7 +250,7 @@ describe('WritingDashboard', () => {
     expect(screen.getByRole('heading', { name: /review and continue from the dashboard/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /criterion trend summaries/i })).toBeInTheDocument();
     expect(screen.getAllByText(/improving/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/1 task 1 • 3 task 2/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/1 task 1 • 3 task 2/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(expectedWeakestTheme.theme).length).toBeGreaterThan(0);
     expect(screen.getAllByText(expectedStrongestTheme.theme).length).toBeGreaterThan(0);
     expect(screen.getAllByText(new RegExp(`${expectedWeakestTheme.promptCount} prompts in bank`, 'i')).length).toBeGreaterThan(0);
@@ -283,18 +285,11 @@ describe('WritingDashboard', () => {
     );
     expect(screen.getByRole('link', { name: /return to practice shell/i })).toHaveAttribute('href', '/writing');
 
-    fireEvent.click(screen.getByRole('button', { name: /inspect here/i }));
-
-    expect(screen.getAllByText(/task 1 inspection summary/i).length).toBeGreaterThan(0);
     expect(screen.getByRole('link', { name: /resume this attempt/i })).toHaveAttribute(
       'href',
-      `/writing?promptId=${sampleTask1Prompt.id}&attemptId=attempt-3`,
+      `/writing?promptId=${sampleTask2Prompt.id}&attemptId=attempt-4`,
     );
-
-    fireEvent.click(screen.getByRole('button', { name: /compare to inspected/i }));
-
-    expect(screen.getByText(/compare against online education versus classroom learning/i)).toBeInTheDocument();
-    expect(screen.getByText(/-0\.5 overall band/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/lexical resource/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/open the detailed history section for all/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /inspect here/i })).not.toBeInTheDocument();
   });
 });

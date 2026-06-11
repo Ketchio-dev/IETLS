@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { writingAssessmentWorkspace } from '@/lib/assessment-modules/workspace';
 import type {
   AssessmentReport,
   ProgressSummary,
@@ -12,7 +11,6 @@ import type {
   WritingPrompt,
   WritingTaskType,
 } from '@/lib/domain';
-import { getSampleResponse } from '@/lib/fixtures/writing';
 import {
   buildReportCriterionCoachingPlan,
   type CriterionCoachingPlan,
@@ -26,9 +24,13 @@ import {
 import { buildPromptRecommendations } from '@/lib/services/writing/prompt-recommendations';
 import type { PromptRecommendation } from '@/lib/services/writing/prompt-recommendations';
 import { buildProgressSummary } from '@/lib/services/writing/progress-summary';
+import { formatDateTime } from '@/components/dashboard/dashboard-formatting';
 
 import { AssessmentReportPanel } from './assessment-report';
 import { Task1VisualRenderer } from './task1-visual-renderer';
+
+const WRITING_ASSESSMENT_API_PATH = '/api/writing/assessment';
+const WRITING_DASHBOARD_PATH = '/dashboard';
 
 interface Props {
   prompts: WritingPrompt[];
@@ -186,7 +188,7 @@ const WritingPromptBankPanel = memo(function WritingPromptBankPanel({
   visiblePrompts: WritingPrompt[];
 }) {
   return (
-    <article className="panel">
+    <article className="panel" id="writing-editor">
       <div className="section-heading">
         <div>
           <p className="eyebrow">Prompt bank</p>
@@ -377,24 +379,27 @@ const WritingActivePromptPanel = memo(function WritingActivePromptPanel({
           <Task1VisualRenderer visual={activePrompt.visual} />
         </div>
       ) : null}
-      <div className="tip-grid">
-        <div>
-          <h3>Planning hints</h3>
-          <ul>
-            {activePrompt.planningHints.map((item, index) => (
-              <li key={`${activePrompt.id}-planning-${index}`}>{item}</li>
-            ))}
-          </ul>
+      <details className="report-technical-details">
+        <summary>Open planning hints and examiner focus</summary>
+        <div className="tip-grid">
+          <div>
+            <h3>Planning hints</h3>
+            <ul>
+              {activePrompt.planningHints.map((item, index) => (
+                <li key={`${activePrompt.id}-planning-${index}`}>{item}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3>What examiners look for</h3>
+            <ul>
+              {activePrompt.rubricFocus.map((item, index) => (
+                <li key={`${activePrompt.id}-rubric-${index}`}>{item}</li>
+              ))}
+            </ul>
+          </div>
         </div>
-        <div>
-          <h3>What examiners look for</h3>
-          <ul>
-            {activePrompt.rubricFocus.map((item, index) => (
-              <li key={`${activePrompt.id}-rubric-${index}`}>{item}</li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      </details>
     </article>
   );
 });
@@ -416,47 +421,40 @@ const WritingRevisionPanel = memo(function WritingRevisionPanel({
     <section className="panel service-panel">
       <p className="eyebrow">Do this next</p>
       <h2>Turn this report into the next better draft</h2>
-      <div className="service-list">
-        <article>
-          <h3>Criterion focus</h3>
-          <p>
-            {criterionCoaching
-              ? `${criterionCoaching.criterion} · Band ${criterionCoaching.currentBand.toFixed(1)} now. ${criterionCoaching.focusSummary}`
-              : 'Score one full draft to unlock the clearest next revision target.'}
-          </p>
-        </article>
-        <article>
-          <h3>Then decide</h3>
-          <p>{nextMoveCopy}</p>
-        </article>
-        <article>
-          <h3>Keep one strength</h3>
-          <p>{report.strengths[0] ?? 'Keep the clearest paragraph structure or idea development from this draft stable while you revise.'}</p>
-        </article>
-      </div>
+      <article className="history-card inspection-card">
+        <div className="history-card-header">
+          <strong>{criterionCoaching ? `Fix ${criterionCoaching.criterion}` : 'Score one full draft'}</strong>
+          <span>{criterionCoaching ? `Band ${criterionCoaching.currentBand.toFixed(1)} now` : 'Next move'}</span>
+        </div>
+        <p>
+          {criterionCoaching
+            ? criterionCoaching.fixNow
+            : 'Score one full draft to unlock the clearest next revision target.'}
+        </p>
+      </article>
       {criterionCoaching ? (
-        <article className="history-card inspection-card">
-          <div className="history-card-header">
-            <strong>Raise {criterionCoaching.criterion} next</strong>
-            <span>Target Band {criterionCoaching.targetBand.toFixed(1)}</span>
-          </div>
-          <p>{criterionCoaching.whyItMatters}</p>
-          <div className="service-list">
-            <article>
-              <h3>Fix now</h3>
-              <p>{criterionCoaching.fixNow}</p>
-            </article>
-            <article>
-              <h3>Check before re-score</h3>
-              <p>{criterionCoaching.checkBeforeRescore}</p>
-            </article>
-          </div>
-          <ul className="plain-list compact-list">
-            {criterionCoaching.checklist.map((item, index) => (
-              <li key={`${criterionCoaching.criterion}-practice-${index}`}>{item}</li>
-            ))}
-          </ul>
-        </article>
+        <details className="report-technical-details">
+          <summary>Open revision checklist</summary>
+          <article className="history-card inspection-card">
+            <div className="history-card-header">
+              <strong>Raise {criterionCoaching.criterion} next</strong>
+              <span>Target Band {criterionCoaching.targetBand.toFixed(1)}</span>
+            </div>
+            <p>{criterionCoaching.whyItMatters}</p>
+            <p className="summary-copy">
+              <strong>Then decide:</strong> {nextMoveCopy}
+            </p>
+            <p className="summary-copy">
+              <strong>Keep one strength:</strong>{' '}
+              {report.strengths[0] ?? 'Keep the clearest paragraph structure or idea development from this draft stable while you revise.'}
+            </p>
+            <ul className="plain-list compact-list">
+              {criterionCoaching.checklist.map((item, index) => (
+                <li key={`${criterionCoaching.criterion}-practice-${index}`}>{item}</li>
+              ))}
+            </ul>
+          </article>
+        </details>
       ) : null}
       <div className="hero-actions">
         <a className="secondary-link-button" href="#writing-editor">
@@ -538,7 +536,7 @@ const WritingSavedHistoryPanel = memo(function WritingSavedHistoryPanel({
         </div>
         {activeSavedAssessment ? (
           <div className="history-meta inspection-meta">
-            <span>Inspecting: {new Date(activeSavedAssessment.createdAt).toLocaleString()}</span>
+            <span>Inspecting: {formatDateTime(activeSavedAssessment.createdAt)}</span>
             <span>{formatRange(activeSavedAssessment.report.overallBandRange.lower, activeSavedAssessment.report.overallBandRange.upper)}</span>
             <span>{getConfidenceBadge(activeSavedAssessment.report.confidence)}</span>
           </div>
@@ -555,7 +553,7 @@ const WritingSavedHistoryPanel = memo(function WritingSavedHistoryPanel({
 
               return (
                 <button
-                  aria-label={`Inspect saved attempt from ${new Date(attempt.createdAt).toLocaleString()}`}
+                  aria-label={`Inspect saved attempt from ${formatDateTime(attempt.createdAt)}`}
                   aria-pressed={isActive}
                   className={`history-card history-card-button${isActive ? ' is-active' : ''}`}
                   key={`${attempt.submissionId}-${index}`}
@@ -572,7 +570,7 @@ const WritingSavedHistoryPanel = memo(function WritingSavedHistoryPanel({
                     <span>{attempt.timeSpentMinutes.toFixed(1)} min</span>
                   </div>
                   <div className="history-meta">
-                    <span>{new Date(attempt.createdAt).toLocaleString()}</span>
+                    <span>{formatDateTime(attempt.createdAt)}</span>
                     <span>{isActive ? 'Viewing report' : 'Saved result'}</span>
                   </div>
                 </button>
@@ -623,7 +621,7 @@ const WritingEditorPanel = memo(function WritingEditorPanel({
         >
           {isSubmitting ? 'Scoring…' : getSubmitLabel(activePrompt.taskType)}
         </button>
-        <p className="summary-copy">Task 1 needs 150+ words. Task 2 needs 250+ words.</p>
+        <p className="summary-copy">Write to the minimum before scoring unlocks.</p>
       </div>
       <textarea
         aria-label="Essay response"
@@ -672,7 +670,7 @@ export function WritingPracticeShell({
   const [selectedTheme, setSelectedTheme] = useState<'all' | PromptTheme>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPromptId, setSelectedPromptId] = useState(initialPromptSelection.id);
-  const initialResponse = getSampleResponse(initialPromptSelection.id);
+  const initialResponse = '';
   const responseRef = useRef(initialResponse);
   const [editorResponseSeed, setEditorResponseSeed] = useState(initialResponse);
   const [editorResponseVersion, setEditorResponseVersion] = useState(0);
@@ -764,7 +762,7 @@ export function WritingPracticeShell({
 
   useEffect(() => {
     resetWritingTimer(activePrompt.recommendedMinutes * 60);
-    const nextResponse = getSampleResponse(activePrompt.id);
+    const nextResponse = '';
     responseRef.current = nextResponse;
     setEditorResponseSeed(nextResponse);
     setEditorResponseVersion((current) => current + 1);
@@ -843,7 +841,7 @@ export function WritingPracticeShell({
     const timeSpentMinutes = Math.max(0, activePrompt.recommendedMinutes - secondsRemainingRef.current / 60);
 
     try {
-      const nextReportResponse = await fetch(writingAssessmentWorkspace.assessmentApiPath, {
+      const nextReportResponse = await fetch(WRITING_ASSESSMENT_API_PATH, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -932,7 +930,7 @@ export function WritingPracticeShell({
             history of your latest saved attempts.
           </p>
           <div className="hero-actions">
-            <Link className="secondary-link-button" href={writingAssessmentWorkspace.dashboardPath}>
+            <Link className="secondary-link-button" href={WRITING_DASHBOARD_PATH}>
               Open dashboard
             </Link>
             <p className="hero-action-copy">
@@ -962,7 +960,14 @@ export function WritingPracticeShell({
 
       <section className="workspace-grid">
         <div className="workspace-column left-column">
-          <article className="panel" id="writing-editor">
+          <details className="panel student-help-panel">
+            <summary>
+              <span>
+                <span className="eyebrow">Start here</span>
+                <strong>3-step writing loop</strong>
+              </span>
+              <span className="band-chip">Help</span>
+            </summary>
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Start here</p>
@@ -983,31 +988,40 @@ export function WritingPracticeShell({
                 <p>Use the estimate, next steps, and saved history to improve your next timed response.</p>
               </article>
             </div>
-          </article>
+          </details>
 
-          <WritingPromptBankPanel
-            activePrompt={activePrompt}
-            availableDifficulties={availableDifficulties}
-            availableQuestionTypes={availableQuestionTypes}
-            availableThemes={availableThemes}
-            hasAdvancedPromptFilters={hasAdvancedPromptFilters}
-            onDifficultyChange={handleDifficultyChange}
-            onPromptChange={handlePromptChange}
-            onQuestionTypeChange={handleQuestionTypeChange}
-            onRecommendationAdvance={handleRecommendationAdvance}
-            onSearchQueryChange={handleSearchQueryChange}
-            onTaskTypeChange={handleTaskTypeChange}
-            onThemeChange={handleThemeChange}
-            promptRecommendations={promptRecommendations}
-            recommendedPrompt={recommendedPrompt}
-            searchQuery={searchQuery}
-            selectedDifficulty={selectedDifficulty}
-            selectedQuestionType={selectedQuestionType}
-            selectedTaskType={selectedTaskType}
-            selectedTheme={selectedTheme}
-            taskPrompts={taskPrompts}
-            visiblePrompts={visiblePrompts}
-          />
+          <details className="student-detail-panel">
+            <summary>
+              <span>
+                <span className="eyebrow">Prompt bank</span>
+                <strong>Change prompt or filters</strong>
+              </span>
+              <span className="band-chip">{visiblePrompts.length} prompts</span>
+            </summary>
+            <WritingPromptBankPanel
+              activePrompt={activePrompt}
+              availableDifficulties={availableDifficulties}
+              availableQuestionTypes={availableQuestionTypes}
+              availableThemes={availableThemes}
+              hasAdvancedPromptFilters={hasAdvancedPromptFilters}
+              onDifficultyChange={handleDifficultyChange}
+              onPromptChange={handlePromptChange}
+              onQuestionTypeChange={handleQuestionTypeChange}
+              onRecommendationAdvance={handleRecommendationAdvance}
+              onSearchQueryChange={handleSearchQueryChange}
+              onTaskTypeChange={handleTaskTypeChange}
+              onThemeChange={handleThemeChange}
+              promptRecommendations={promptRecommendations}
+              recommendedPrompt={recommendedPrompt}
+              searchQuery={searchQuery}
+              selectedDifficulty={selectedDifficulty}
+              selectedQuestionType={selectedQuestionType}
+              selectedTaskType={selectedTaskType}
+              selectedTheme={selectedTheme}
+              taskPrompts={taskPrompts}
+              visiblePrompts={visiblePrompts}
+            />
+          </details>
 
           <WritingActivePromptPanel activePrompt={activePrompt} />
 
@@ -1033,17 +1047,34 @@ export function WritingPracticeShell({
             report={report}
           />
 
-          <AssessmentReportPanel report={report} />
+          <details className="student-detail-panel">
+            <summary>
+              <span>
+                <span className="eyebrow">Score report</span>
+                <strong>Open detailed feedback</strong>
+              </span>
+              <span className="band-chip">Band {report.overallBand.toFixed(1)}</span>
+            </summary>
+            <AssessmentReportPanel report={report} />
+          </details>
 
-          <WritingScoreGuidePanel />
-
-          <WritingSavedHistoryPanel
-            activeAttemptId={activeAttemptId}
-            activeSavedAssessment={activeSavedAssessment}
-            onInspectAttempt={handleInspectAttempt}
-            progressSummary={progressSummary}
-            promptSavedAssessments={promptSavedAssessments}
-          />
+          <details className="student-detail-panel">
+            <summary>
+              <span>
+                <span className="eyebrow">Saved history</span>
+                <strong>Open attempts and score guide</strong>
+              </span>
+              <span className="band-chip">{promptSavedAssessments.length} saved</span>
+            </summary>
+            <WritingScoreGuidePanel />
+            <WritingSavedHistoryPanel
+              activeAttemptId={activeAttemptId}
+              activeSavedAssessment={activeSavedAssessment}
+              onInspectAttempt={handleInspectAttempt}
+              progressSummary={progressSummary}
+              promptSavedAssessments={promptSavedAssessments}
+            />
+          </details>
         </div>
       </section>
     </main>

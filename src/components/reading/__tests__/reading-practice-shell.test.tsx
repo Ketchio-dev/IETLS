@@ -199,6 +199,7 @@ describe('ReadingPracticeShell', () => {
     expect(screen.getByText('0/6 answered · 6 left before your next score pass.')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /use the same 3-step review loop for every set/i })).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('tab', { name: /answer questions/i }));
     fireEvent.change(screen.getByLabelText(set.questions[3]!.prompt), { target: { value: 'water' } });
 
     expect(screen.getByText('1/6 answered · 5 left before your next score pass.')).toBeInTheDocument();
@@ -226,6 +227,8 @@ describe('ReadingPracticeShell', () => {
     const set = sampleReadingSets[0]!;
 
     render(<ReadingPracticeShell {...pageData} />);
+
+    fireEvent.click(screen.getByRole('tab', { name: /answer questions/i }));
 
     expect(screen.getByLabelText(/question navigation/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /jump to question 1, pending/i })).toBeInTheDocument();
@@ -366,6 +369,7 @@ describe('ReadingPracticeShell', () => {
     });
 
     expect(screen.queryByText(/retry mode keeps only the missed questions/i)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: /answer questions/i }));
     expect(screen.getAllByRole('button', { name: /jump to question/i })).toHaveLength(secondSet.questions.length);
     expect(mocks.push).toHaveBeenCalledWith(`/reading?setId=${encodeURIComponent(secondSet.id)}`);
   });
