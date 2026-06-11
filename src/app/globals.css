@@ -153,6 +153,10 @@ input {
   background: var(--reading-color);
 }
 
+.site-nav-dot--curriculum {
+  background: linear-gradient(135deg, var(--reading-color), var(--writing-color));
+}
+
 .site-nav-dot--speaking {
   background: var(--speaking-color);
 }
@@ -1950,6 +1954,137 @@ input[type='file'] {
   min-width: 140px;
 }
 
+.home-student-panel {
+  background: #ffffff;
+  border-color: rgba(20, 191, 150, 0.18);
+}
+
+.home-student-panel .summary-copy {
+  margin: 0;
+  color: #3f4960;
+}
+
+.today-step-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.today-step-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.9rem;
+  border-radius: 14px;
+  background: #f8fbff;
+  border: 1px solid rgba(24, 101, 242, 0.12);
+}
+
+.today-step-card > span {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.today-step-card strong {
+  display: block;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.today-step-card p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+}
+
+.home-lesson-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.home-lesson-meta span {
+  padding: 0.38rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.05);
+  color: #3f4960;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.curriculum-hero {
+  background: #ffffff;
+  border-top: 4px solid var(--reading-color);
+}
+
+.curriculum-current-card {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(20, 191, 150, 0.1), rgba(24, 101, 242, 0.06));
+  border: 1px solid rgba(20, 191, 150, 0.18);
+}
+
+.curriculum-current-card h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.35rem;
+}
+
+.curriculum-current-card p {
+  margin: 0;
+  color: #3f4960;
+}
+
+.student-plan-panel {
+  border-top: 4px solid var(--accent);
+}
+
+.curriculum-today-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.student-plan-panel .history-list {
+  grid-template-columns: 1fr;
+}
+
+.curriculum-today-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.curriculum-step-card {
+  padding: 1.15rem;
+  background: #ffffff;
+  border-color: rgba(24, 101, 242, 0.12);
+}
+
+.curriculum-step-card .history-card-header strong {
+  font-size: 1.08rem;
+}
+
+.curriculum-path-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.curriculum-path-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.curriculum-path-grid .history-list {
+  grid-template-columns: 1fr;
+}
+
 .section-tag {
   background: rgba(24, 101, 242, 0.06);
   border-color: rgba(24, 101, 242, 0.12);
@@ -1976,36 +2111,12 @@ input[type='file'] {
   }
 }
 
-.app-shell > * {
-  animation: fadeSlideUp 0.35s ease both;
-}
-
-.app-shell > *:nth-child(1) { animation-delay: 0s; }
-.app-shell > *:nth-child(2) { animation-delay: 0.06s; }
-.app-shell > *:nth-child(3) { animation-delay: 0.12s; }
-.app-shell > *:nth-child(4) { animation-delay: 0.18s; }
-.app-shell > *:nth-child(5) { animation-delay: 0.24s; }
-.app-shell > *:nth-child(6) { animation-delay: 0.3s; }
-
-/* Grid children stagger */
-.module-hub-grid > * {
-  animation: fadeSlideUp 0.3s ease both;
-}
-
-.module-hub-grid > *:nth-child(1) { animation-delay: 0.08s; }
-.module-hub-grid > *:nth-child(2) { animation-delay: 0.14s; }
-.module-hub-grid > *:nth-child(3) { animation-delay: 0.2s; }
-.module-hub-grid > *:nth-child(4) { animation-delay: 0.26s; }
-
-/* Quick actions strip stagger */
+.app-shell > *,
+.module-hub-grid > *,
 .quick-actions-strip > * {
-  animation: fadeSlideUp 0.3s ease both;
+  opacity: 1;
+  transform: none;
 }
-
-.quick-actions-strip > *:nth-child(1) { animation-delay: 0.04s; }
-.quick-actions-strip > *:nth-child(2) { animation-delay: 0.08s; }
-.quick-actions-strip > *:nth-child(3) { animation-delay: 0.12s; }
-.quick-actions-strip > *:nth-child(4) { animation-delay: 0.16s; }
 
 /* ============================================================
    Responsive: quick actions strip
@@ -2019,7 +2130,7 @@ input[type='file'] {
 
 @media (min-width: 1000px) {
   .quick-actions-strip {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
@@ -2308,6 +2419,12 @@ html {
 
   .home-hero h1 {
     font-size: 1.55rem;
+  }
+
+  .curriculum-today-list,
+  .curriculum-path-grid,
+  .curriculum-path-grid .history-list {
+    grid-template-columns: 1fr;
   }
 }
 

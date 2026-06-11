@@ -19,7 +19,7 @@ import { getStoragePort, type JsonStoragePort, type StorageFile } from './storag
 const PROMPTS_FILE: StorageFile = 'prompts';
 const ASSESSMENTS_FILE: StorageFile = 'assessments';
 const STUDY_PLAN_FILE: StorageFile = 'studyPlan';
-const STUDY_PLAN_VERSION = 2;
+const STUDY_PLAN_VERSION = 3;
 
 export interface PersistedAssessmentResult extends StoredAssessmentRecord {
   recentAttempts: RecentAttemptSummary[];

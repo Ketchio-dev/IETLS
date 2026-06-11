@@ -13,6 +13,12 @@ export const metadata: Metadata = {
 
 const navLinks = [
   {
+    href: '/curriculum',
+    label: 'Today',
+    dotClassName: 'site-nav-dot site-nav-dot--curriculum',
+    tier: 'primary',
+  },
+  {
     href: '/reading',
     label: 'Reading',
     dotClassName: 'site-nav-dot site-nav-dot--reading',

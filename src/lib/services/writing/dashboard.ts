@@ -18,7 +18,7 @@ const EMPTY_TASK_COUNTS: Record<WritingTaskType, number> = {
   'task-1': 0,
   'task-2': 0,
 };
-const STUDY_PLAN_VERSION = 2;
+const STUDY_PLAN_VERSION = 3;
 
 function sortAssessmentsDescending(savedAssessments: SavedAssessmentSnapshot[]) {
   return [...savedAssessments].sort((a, b) => b.createdAt.localeCompare(a.createdAt));

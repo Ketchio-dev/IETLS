@@ -30,7 +30,7 @@ export default async function CurriculumPage() {
         <span className="breadcrumb-current">Curriculum</span>
       </nav>
 
-      <section className="hero panel dashboard-hero">
+      <section className="hero panel dashboard-hero curriculum-hero">
         <div>
           <p className="eyebrow">IELTS curriculum</p>
           <h1>{curriculum.headline}</h1>
@@ -44,58 +44,68 @@ export default async function CurriculumPage() {
             </Link>
           </div>
         </div>
-        <div className="hero-metrics">
-          {curriculum.modules.map((module) => (
-            <div className="metric-card" key={module.id}>
-              <span>{module.label}</span>
-              <strong>{module.completedSteps}/{module.totalSteps}</strong>
-              <p>{module.currentStep?.title ?? 'Plan ready'}</p>
-            </div>
-          ))}
-        </div>
+        <aside className="curriculum-current-card" aria-label="Current curriculum step">
+          <span className="band-chip">{curriculum.primaryModule.label}</span>
+          <h2>{primaryStep?.title ?? 'Plan ready'}</h2>
+          <p>{primaryStep?.detail ?? curriculum.primaryModule.plan.summary}</p>
+          {primaryStep?.completionSignal ? (
+            <p className="summary-copy">
+              <strong>Finish when:</strong> {primaryStep.completionSignal}
+            </p>
+          ) : null}
+        </aside>
       </section>
 
-      <section className="workspace-grid dashboard-grid">
-        <div className="workspace-column left-column">
-          <article className="panel">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Today</p>
-                <h2>Do these in order</h2>
-              </div>
+      <section className="curriculum-today-section">
+        <article className="panel student-plan-panel">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Today</p>
+              <h2>Do these in order</h2>
             </div>
-            <div className="history-list">
-              {curriculum.todaySteps.map((step, index) => (
-                <article className="history-card" key={`${step.moduleId}-${step.id}`}>
-                  <div className="history-card-header">
-                    <strong>{index + 1}. {step.title}</strong>
-                    <span>{step.moduleLabel}</span>
+            <span className="section-tag section-tag--muted">2 steps</span>
+          </div>
+          <div className="history-list curriculum-today-list">
+            {curriculum.todaySteps.map((step, index) => (
+              <article className="history-card curriculum-step-card" key={`${step.moduleId}-${step.id}`}>
+                <div className="history-card-header">
+                  <strong>{index + 1}. {step.title}</strong>
+                  <span>{step.moduleLabel}</span>
+                </div>
+                <p>{step.detail}</p>
+                <ul className="plain-list compact-list">
+                  {step.actions.slice(0, 3).map((action) => (
+                    <li key={action}>{action}</li>
+                  ))}
+                </ul>
+                {step.completionSignal ? (
+                  <p className="summary-copy">
+                    <strong>Finish when:</strong> {step.completionSignal}
+                  </p>
+                ) : null}
+                {step.actionHref && step.actionLabel ? (
+                  <div className="hero-actions">
+                    <Link className="primary-button dashboard-link-button" href={step.actionHref}>
+                      {step.actionLabel}
+                    </Link>
                   </div>
-                  <p>{step.detail}</p>
-                  <ul className="plain-list compact-list">
-                    {step.actions.slice(0, 3).map((action) => (
-                      <li key={action}>{action}</li>
-                    ))}
-                  </ul>
-                  {step.completionSignal ? (
-                    <p className="summary-copy">
-                      <strong>Finish when:</strong> {step.completionSignal}
-                    </p>
-                  ) : null}
-                  {step.actionHref && step.actionLabel ? (
-                    <div className="hero-actions">
-                      <Link className="primary-button dashboard-link-button" href={step.actionHref}>
-                        {step.actionLabel}
-                      </Link>
-                    </div>
-                  ) : null}
-                </article>
-              ))}
-            </div>
-          </article>
-        </div>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        </article>
+      </section>
 
-        <div className="workspace-column right-column">
+      <section className="workspace-column curriculum-path-section" aria-labelledby="curriculum-path-heading">
+        <div className="panel primary-section-header">
+          <p className="eyebrow">Full path</p>
+          <h2 id="curriculum-path-heading">Use this when you want to look ahead.</h2>
+          <p className="summary-copy">
+            The app still keeps the complete Reading and Writing plan here, but your main work starts with today&apos;s
+            two cards above.
+          </p>
+        </div>
+        <div className="curriculum-path-grid">
           {curriculum.modules.map((module) => (
             <StudyPlanPanel
               key={module.id}

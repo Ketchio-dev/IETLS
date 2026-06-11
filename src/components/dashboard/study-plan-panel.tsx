@@ -32,10 +32,12 @@ function StudyPlanStepCard({ step }: { step: DashboardStudyPlanStep }) {
         </div>
       </div>
 
-      <div className="history-meta">
-        <span>{formatTaskTypeList(step.taskTypes)}</span>
-        <span>{formatBandRange(step.targetRange)}</span>
-      </div>
+      {step.taskTypes || step.targetRange ? (
+        <div className="history-meta">
+          {step.taskTypes ? <span>{formatTaskTypeList(step.taskTypes)}</span> : null}
+          {step.targetRange ? <span>{formatBandRange(step.targetRange)}</span> : null}
+        </div>
+      ) : null}
 
       {step.actions.length > 0 ? (
         <ul className="plain-list compact-list">

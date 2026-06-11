@@ -10,6 +10,7 @@ import {
   loadDefaultAssessmentDashboardPageData,
 } from '@/lib/server/assessment-workspace';
 import { isSpeakingAlphaEnabled } from '@/lib/server/module-flags';
+import { buildCurriculumPageData } from '@/lib/services/curriculum';
 
 interface ModuleCardAction {
   href: string;
@@ -148,6 +149,10 @@ export default async function HomePage() {
     speakingAlphaEnabled ? loadAssessmentDashboardPageData(SPEAKING_ASSESSMENT_MODULE_ID) : Promise.resolve(null),
     loadAssessmentDashboardPageData(LISTENING_ASSESSMENT_MODULE_ID),
   ]);
+  const curriculum = buildCurriculumPageData({
+    writing: writingDashboard,
+    reading: readingDashboard,
+  });
 
   const moduleCards: ModuleCard[] = [
     {
@@ -259,41 +264,27 @@ export default async function HomePage() {
             ))}
           </div>
         </div>
-        <aside className="hero-focus-panel" aria-label="Current progress snapshot">
+        <aside className="hero-focus-panel home-student-panel" aria-label="Today's IELTS lesson">
           <div className="hero-focus-header">
-            <p className="eyebrow">Your progress</p>
-            <h2>Keep the momentum going.</h2>
+            <p className="eyebrow">Today&apos;s lesson</p>
+            <h2>Do this next.</h2>
+            <p className="summary-copy">{curriculum.primaryModule.currentStep?.detail ?? curriculum.summary}</p>
           </div>
-          <div className="home-metric-row">
-            <div className="metric-card">
-              <span>Reading accuracy</span>
-              <strong>{formatAccuracy(readingDashboard.dashboardSummary.averagePercentage)}</strong>
-            </div>
-            <div className="metric-card">
-              <span>Writing band</span>
-              <strong>{formatBand(writingDashboard.summary.averageBand)}</strong>
-            </div>
-            <div className="metric-card">
-              <span>Total sessions</span>
-              <strong>{readingDashboard.dashboardSummary.totalAttempts + writingDashboard.summary.totalAttempts}</strong>
-            </div>
+          <div className="today-step-list">
+            {curriculum.todaySteps.slice(0, 2).map((step, index) => (
+              <article className="today-step-card" key={`${step.moduleId}-${step.id}`}>
+                <span>{index + 1}</span>
+                <div>
+                  <strong>{step.title}</strong>
+                  <p>{step.moduleLabel}</p>
+                </div>
+              </article>
+            ))}
           </div>
-          <div className="focus-signal-grid" aria-label="Reading and writing focus signals">
-            <article className="focus-signal-card" data-signal="reading">
-              <span className="focus-signal-label">Reading</span>
-              <strong>{readingDashboard.availableSets.length} passages</strong>
-              <p>{readingDashboard.dashboardSummary.totalAttempts} attempts completed</p>
-            </article>
-            <article className="focus-signal-card" data-signal="writing">
-              <span className="focus-signal-label">Writing</span>
-              <strong>{writingDashboard.prompts.length} prompts</strong>
-              <p>{writingDashboard.studyPlan.headline}</p>
-            </article>
-            <article className="focus-signal-card" data-signal="listening">
-              <span className="focus-signal-label">More modules</span>
-              <strong>Available</strong>
-              <p>{speakingAlphaEnabled ? 'Speaking alpha and Listening preview remain available when you want extra practice lanes.' : 'Listening stays visible as a preview while Speaking alpha remains off by default.'}</p>
-            </article>
+          <div className="home-lesson-meta" aria-label="Current learning signals">
+            <span>Reading {formatAccuracy(readingDashboard.dashboardSummary.averagePercentage)}</span>
+            <span>Writing {formatBand(writingDashboard.summary.averageBand)}</span>
+            <span>{readingDashboard.dashboardSummary.totalAttempts + writingDashboard.summary.totalAttempts} sessions</span>
           </div>
         </aside>
       </section>

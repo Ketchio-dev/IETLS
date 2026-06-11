@@ -324,7 +324,9 @@ describe('HomePage', () => {
     expect(screen.getAllByText('Full')).toHaveLength(2);
     expect(screen.getAllByText('Alpha')).toHaveLength(1);
     expect(screen.getByText('Placeholder')).toBeInTheDocument();
-    expect(screen.getByText(/total sessions/i)).toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: /today's ielts lesson/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /do this next/i })).toBeInTheDocument();
+    expect(screen.getByText(/17 sessions/i)).toBeInTheDocument();
     expect(screen.getAllByText('9').length).toBeGreaterThan(0);
     expect(screen.getByText(/band 6\.5/i)).toBeInTheDocument();
     expect(screen.getByText('Planned')).toBeInTheDocument();
@@ -538,53 +540,41 @@ describe('HomePage', () => {
     expect(listeningPill!.textContent).toContain('Coming soon');
   });
 
-  it('renders focus signal cards for reading momentum, writing band, and secondary routes', async () => {
+  it('renders a student-first lesson panel with current learning signals', async () => {
     setupMocks();
     const { container } = render(await HomePage());
 
-    const focusGrid = container.querySelector('[aria-label="Reading and writing focus signals"]');
-    expect(focusGrid).not.toBeNull();
+    const lessonPanel = screen.getByRole('complementary', { name: /today's ielts lesson/i });
+    expect(lessonPanel).toBeInTheDocument();
+    expect(lessonPanel.textContent).toContain("Today's lesson");
+    expect(lessonPanel.textContent).toContain('Do this next.');
+    expect(lessonPanel.textContent).toContain('Start with the current step');
 
-    const signals = focusGrid!.querySelectorAll('.focus-signal-card');
-    expect(signals).toHaveLength(3);
+    const lessonSignals = lessonPanel.querySelector('.home-lesson-meta');
+    expect(lessonSignals).not.toBeNull();
+    expect(lessonSignals!.textContent).toContain('Reading 71%');
+    expect(lessonSignals!.textContent).toContain('Writing Band 6.6');
+    expect(lessonSignals!.textContent).toContain('17 sessions');
 
-    // First signal: reading
-    const readingSignal = focusGrid!.querySelector('[data-signal="reading"]');
-    expect(readingSignal).not.toBeNull();
-    expect(readingSignal!.textContent).toContain('Reading');
-    expect(readingSignal!.textContent).toContain('passages');
-
-    // Second signal: writing
-    const writingSignal = focusGrid!.querySelector('[data-signal="writing"]');
-    expect(writingSignal).not.toBeNull();
-    expect(writingSignal!.textContent).toContain('Writing');
-    expect(writingSignal!.textContent).toContain('prompts');
-
-    // Third signal: more modules available
-    const listeningSignal = focusGrid!.querySelector('[data-signal="listening"]');
-    expect(listeningSignal).not.toBeNull();
-    expect(listeningSignal!.textContent).toContain('More modules');
-    expect(listeningSignal!.textContent).toContain('Available');
+    const quickCurriculum = container.querySelector('[data-quick="curriculum"]');
+    expect(quickCurriculum).not.toBeNull();
+    expect(quickCurriculum!.textContent).toContain("Today's curriculum");
   });
 
-  it('renders hero metric row with primary track counts', async () => {
+  it('renders the hero with a direct path into the guided curriculum', async () => {
     setupMocks();
     const { container } = render(await HomePage());
 
-    const metricRow = container.querySelector('.home-metric-row');
-    expect(metricRow).not.toBeNull();
+    const hero = container.querySelector('.home-hero');
+    expect(hero).not.toBeNull();
 
-    const metricCards = metricRow!.querySelectorAll('.metric-card');
-    expect(metricCards).toHaveLength(3);
+    const curriculumLinks = screen.getAllByRole('link', { name: /curriculum/i });
+    expect(curriculumLinks.some((link) => link.getAttribute('href') === '/curriculum')).toBe(true);
 
-    // Reading accuracy metric
-    expect(metricCards[0]!.textContent).toContain('Reading accuracy');
-
-    // Writing band metric
-    expect(metricCards[1]!.textContent).toContain('Writing band');
-
-    // Total sessions metric
-    expect(metricCards[2]!.textContent).toContain('Total sessions');
+    const lessonPanel = hero!.querySelector('.home-student-panel');
+    expect(lessonPanel).not.toBeNull();
+    expect(lessonPanel!.textContent).toContain('Reading 71%');
+    expect(lessonPanel!.textContent).toContain('Writing Band 6.6');
   });
 
   it('renders reading before writing in the primary module card order', async () => {
@@ -736,18 +726,17 @@ describe('HomePage', () => {
     expect(dividerIndex).toBeLessThan(secondaryIndex);
   });
 
-  it('gracefully keeps the writing focus signal stable when band data is null', async () => {
+  it('gracefully keeps the lesson panel stable when band data is null', async () => {
     const writingData = buildWritingPageData({ averageBand: null, bestBand: null });
     const readingData = buildReadingPageData({ averagePercentage: null as unknown as number, totalAttempts: 0 });
     setupMocks(writingData, readingData);
 
     const { container } = render(await HomePage());
 
-    // The focus signal stays action-oriented even when band data is absent
-    const writingSignal = container.querySelector('[data-signal="writing"]');
-    expect(writingSignal).not.toBeNull();
-    expect(writingSignal!.textContent).toContain(`${writingPromptBank.length} prompts`);
-    expect(writingSignal!.textContent).toContain('Keep writing momentum steady');
+    const lessonPanel = screen.getByRole('complementary', { name: /today's ielts lesson/i });
+    expect(lessonPanel.textContent).toContain('Do this next.');
+    expect(lessonPanel.textContent).toContain('Reading No data yet');
+    expect(lessonPanel.textContent).toContain('Writing No data yet');
 
     // The writing module card still exposes the null-safe band fallback
     const writingCard = container.querySelector('[data-module="writing"]');
