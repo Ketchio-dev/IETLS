@@ -313,7 +313,8 @@ describe('HomePage', () => {
     expect(screen.getByRole('heading', { name: /your reading .* writing command center/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /reading and writing .* your daily practice tracks/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /speaking and listening .* available when you are ready/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /open writing practice/i })).toHaveAttribute('href', '/writing');
+    expect(screen.getByRole('link', { name: /follow today's curriculum/i })).toHaveAttribute('href', '/curriculum');
+    expect(screen.getByRole('link', { name: /open reading practice/i })).toHaveAttribute('href', '/reading');
     expect(screen.getAllByRole('link', { name: /start reading practice/i })[0]).toHaveAttribute('href', '/reading');
     expect(screen.getByRole('link', { name: /open alpha/i })).toHaveAttribute('href', '/speaking');
     expect(screen.getByRole('link', { name: /open placeholder/i })).toHaveAttribute('href', '/listening');
@@ -478,13 +479,13 @@ describe('HomePage', () => {
     const secondaryIndex = allGrids.indexOf(secondaryGrid!);
     expect(primaryIndex).toBeLessThan(secondaryIndex);
 
-    // Hero CTA buttons link to reading and writing (not speaking/listening)
+    // Hero CTA buttons lead to the curriculum and Reading entry point (not speaking/listening)
     const heroSection = container.querySelector('.home-hero');
     expect(heroSection).not.toBeNull();
     const heroLinks = heroSection!.querySelectorAll('a');
     const heroHrefs = Array.from(heroLinks).map((a) => a.getAttribute('href'));
+    expect(heroHrefs).toContain('/curriculum');
     expect(heroHrefs).toContain('/reading');
-    expect(heroHrefs).toContain('/writing');
     expect(heroHrefs).not.toContain('/speaking');
     expect(heroHrefs).not.toContain('/listening');
 
@@ -632,7 +633,7 @@ describe('HomePage', () => {
     expect(secondaryHeading).toBeInTheDocument();
 
     expect(
-      screen.getByText(/these are the strongest practice loops in the product/i),
+      screen.getByText(/use the curriculum route when you want the app to choose the next step/i),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/these stay accessible without getting in the way of the main reading and writing flow/i),
@@ -690,18 +691,19 @@ describe('HomePage', () => {
     expect(strip).not.toBeNull();
 
     const quickCards = strip!.querySelectorAll('.quick-action-card');
-    expect(quickCards).toHaveLength(4);
+    expect(quickCards).toHaveLength(5);
 
-    // First two quick actions are reading and writing practice
+    // Quick actions include the guided curriculum plus direct practice/dashboard routes
     const hrefs = Array.from(quickCards).map((card) => card.getAttribute('href'));
     expect(hrefs[0]).toBe('/reading');
-    expect(hrefs[1]).toBe('/writing');
-    expect(hrefs[2]).toBe('/reading/dashboard');
-    expect(hrefs[3]).toBe('/dashboard');
+    expect(hrefs[1]).toBe('/curriculum');
+    expect(hrefs[2]).toBe('/writing');
+    expect(hrefs[3]).toBe('/reading/dashboard');
+    expect(hrefs[4]).toBe('/dashboard');
 
     // Quick action data attributes identify reading and writing
     const quickTypes = Array.from(quickCards).map((card) => card.getAttribute('data-quick'));
-    expect(quickTypes).toEqual(['reading', 'writing', 'reading', 'writing']);
+    expect(quickTypes).toEqual(['reading', 'curriculum', 'writing', 'reading', 'writing']);
 
     // Each quick action card has an icon and text
     quickCards.forEach((card) => {

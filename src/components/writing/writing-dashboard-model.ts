@@ -130,8 +130,13 @@ export function buildDashboardStudyPlanModel(plan: StudyPlanSnapshot): Dashboard
         taskTypes,
         sessionLabel: step.sessionLabel ?? `Step ${index + 1}`,
         targetRange: step.targetRange ?? null,
-        actionHref: buildStudyPlanHref(step),
+        actionHref: step.actionHref ?? buildStudyPlanHref(step),
         actionLabel: step.actionLabel,
+        phase: step.phase,
+        status: step.status,
+        completionSignal: step.completionSignal,
+        completedAt: step.completedAt,
+        moduleLabel: step.moduleLabel,
       };
     }),
     carryForward:

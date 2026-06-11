@@ -31,6 +31,34 @@ export function formatTaskTypeList(taskTypes: WritingTaskType[] | undefined) {
   return `${uniqueLabels.slice(0, -1).join(', ')} + ${uniqueLabels[uniqueLabels.length - 1]}`;
 }
 
+export function formatPlanPhase(value: string | undefined) {
+  switch (value) {
+    case 'benchmark':
+      return 'Benchmark';
+    case 'daily-session':
+      return 'Today';
+    case 'next-block':
+      return 'Next block';
+    case 'complete':
+      return 'Checkpoint';
+    default:
+      return 'Plan step';
+  }
+}
+
+export function formatPlanStatus(value: string | undefined) {
+  switch (value) {
+    case 'done':
+      return 'Done';
+    case 'current':
+      return 'Do now';
+    case 'locked':
+      return 'Locked';
+    default:
+      return 'Queued';
+  }
+}
+
 export function formatCountLabel(count: number, singular: string, plural = `${singular}s`) {
   return `${count} ${count === 1 ? singular : plural}`;
 }

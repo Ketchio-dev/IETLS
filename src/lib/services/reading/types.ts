@@ -3,6 +3,7 @@ import type {
   ImportedReadingSetSummary,
   PrivateReadingImportSummary,
 } from '@/lib/services/reading-imports/types';
+import type { DashboardStudyPlan } from '@/components/dashboard/dashboard-types';
 
 export type ReadingPracticeSet = ImportedReadingSet;
 
@@ -105,6 +106,7 @@ export interface ReadingDashboardPageData {
   recentAttempts: ReadingAttemptSnapshot[];
   dashboardSummary: ReadingDashboardSummary;
   studyFocus: string[];
+  studyPlan?: DashboardStudyPlan;
 }
 
 export interface ReadingTaskData {

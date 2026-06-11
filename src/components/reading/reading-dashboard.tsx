@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { DashboardMetricGrid } from '@/components/dashboard';
+import { DashboardMetricGrid, StudyPlanPanel } from '@/components/dashboard';
 import { getReadingToWritingCrossTraining } from '@/lib/services/cross-training';
 import type { ReadingDashboardPageData } from '@/lib/services/reading/types';
 
@@ -15,6 +15,7 @@ export function ReadingDashboard({
   dashboardSummary,
   recentAttempts,
   studyFocus,
+  studyPlan,
   importSummary,
 }: ReadingDashboardPageData) {
   const readingSetCount = importSummary.importedSetCount;
@@ -83,6 +84,8 @@ export function ReadingDashboard({
               </Link>
             </div>
           </article>
+
+          <StudyPlanPanel plan={studyPlan ?? null} title="Follow today's Reading path" />
 
           <article className="panel history-panel">
             <div className="section-heading">

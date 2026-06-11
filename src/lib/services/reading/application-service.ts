@@ -228,6 +228,146 @@ function buildStudyFocus(attempts: ReadingAttemptSnapshot[], activeSet: Imported
     ];
 }
 
+function buildReadingStudyPlan(
+  attempts: ReadingAttemptSnapshot[],
+  availableSets: ImportedReadingSet[],
+): ReadingDashboardPageData['studyPlan'] {
+  const activeSet = availableSets[0] ?? null;
+
+  if (attempts.length === 0) {
+    return {
+      summary: activeSet
+        ? `Start with ${activeSet.title}. This first benchmark unlocks the rest of the Reading path.`
+        : 'Add one Reading set before the curriculum can start.',
+      horizonLabel: 'First Reading block',
+      recommendedSessionLabel: activeSet ? `${activeSet.questions.length} questions` : undefined,
+      steps: [
+        {
+          id: 'reading-first-benchmark',
+          title: 'Complete your first Reading benchmark set',
+          detail: activeSet
+            ? `Work through ${activeSet.title} without checking answers until the end.`
+            : 'Import one Reading set, then complete it under timed conditions.',
+          actions: [
+            'Answer every question before scoring.',
+            'Keep your elapsed time visible so pacing data is meaningful.',
+            'Review evidence hints only after submission.',
+          ],
+          phase: 'benchmark',
+          status: activeSet ? 'current' : 'locked',
+          completionSignal: 'One scored Reading set is saved.',
+          moduleLabel: 'Reading',
+          sessionLabel: 'Session 1',
+          actionHref: activeSet ? `/reading?setId=${activeSet.id}` : undefined,
+          actionLabel: activeSet ? 'Start first Reading set' : undefined,
+        },
+        {
+          id: 'reading-first-review',
+          title: 'Review the first miss pattern',
+          detail: 'After the first score, fix missed questions before opening another set.',
+          actions: [
+            'Sort mistakes by question type.',
+            'Say the exact evidence sentence before changing an answer.',
+          ],
+          phase: 'daily-session',
+          status: 'locked',
+          completionSignal: 'Every missed question from the first set has been reviewed once.',
+          moduleLabel: 'Reading',
+          sessionLabel: 'Review',
+        },
+      ],
+      carryForward: ['Treat Reading scores as practice-set signals, not official band estimates.'],
+    };
+  }
+
+  const latest = attempts[0]!;
+  const missedCount = latest.report.questionReviews.filter((review) => !review.isCorrect).length;
+  const weakest = latest.report.accuracyByQuestionType.at(-1);
+  const nextFreshSet = availableSets.find((set) => !attempts.some((attempt) => attempt.setId === set.id))
+    ?? availableSets.find((set) => set.id !== latest.setId)
+    ?? activeSet;
+  const isStable = attempts.length >= 3 && attempts.slice(0, 3).every((attempt) => attempt.report.percentage >= 75);
+
+  return {
+    summary: missedCount > 0
+      ? `Today starts with ${missedCount} missed question${missedCount === 1 ? '' : 's'} from ${latest.setTitle}.`
+      : `Today moves from ${latest.setTitle} into a fresh set while preserving evidence accuracy.`,
+    horizonLabel: `Next ${Math.min(3, attempts.length + 1)} Reading blocks`,
+    recommendedSessionLabel: `${latest.report.scoreLabel} latest set`,
+    steps: [
+      {
+        id: 'reading-retry-missed',
+        title: missedCount > 0 ? 'Retry missed questions first' : 'Confirm the latest set once',
+        detail: missedCount > 0
+          ? `Redo only the missed questions from ${latest.setTitle} before starting anything new.`
+          : `${latest.setTitle} had no missed questions. Skim the evidence trail once before moving on.`,
+        actions: missedCount > 0
+          ? [
+              'Open only the missed-question retry mode.',
+              'Write down the evidence sentence before choosing the answer.',
+              'Do not start a fresh set until this retry is complete.',
+            ]
+          : [
+              'Re-read the evidence hints for the hardest items.',
+              'Keep the same pacing pattern for the next set.',
+            ],
+        phase: 'daily-session',
+        status: 'current',
+        completionSignal: missedCount > 0
+          ? 'All missed questions from the latest set are retried.'
+          : 'The latest evidence review is complete.',
+        moduleLabel: 'Reading',
+        sessionLabel: 'Today',
+        actionHref: missedCount > 0
+          ? `/reading?attemptId=${latest.attemptId}&retry=incorrect`
+          : `/reading?attemptId=${latest.attemptId}`,
+        actionLabel: missedCount > 0 ? 'Retry missed questions' : 'Review latest set',
+      },
+      {
+        id: 'reading-weakest-type',
+        title: weakest ? `Repair ${weakest.type}` : 'Repair the weakest question type',
+        detail: weakest
+          ? `${weakest.type} is currently ${weakest.correct}/${weakest.total}. Make this the next micro-skill before a new score.`
+          : 'Use the next set to identify which question type needs the most attention.',
+        actions: [
+          'Name the answer trap before selecting an option.',
+          'Match the answer to exact passage wording, not memory.',
+        ],
+        phase: 'next-block',
+        status: 'locked',
+        completionSignal: weakest
+          ? `${weakest.type} reaches at least 75% accuracy across saved attempts.`
+          : 'A weakest question type is identified from a saved set.',
+        moduleLabel: 'Reading',
+        sessionLabel: 'Next block',
+      },
+      {
+        id: 'reading-fresh-set',
+        title: isStable ? 'Step up with a fresh set' : 'Build stability with one more set',
+        detail: nextFreshSet
+          ? `Use ${nextFreshSet.title} after the retry block so the score reflects new evidence, not memory.`
+          : 'Add another Reading set when you want broader topic coverage.',
+        actions: [
+          'Keep one visible timer for the whole set.',
+          'Finish all questions before checking the answer key.',
+        ],
+        phase: isStable ? 'complete' : 'next-block',
+        status: 'locked',
+        completionSignal: isStable
+          ? 'Three recent Reading sets stay at 75%+ accuracy.'
+          : 'One fresh Reading set is completed after the retry block.',
+        moduleLabel: 'Reading',
+        sessionLabel: isStable ? 'Checkpoint' : 'Session 2',
+        actionHref: nextFreshSet ? `/reading?setId=${nextFreshSet.id}` : undefined,
+        actionLabel: nextFreshSet ? 'Open next Reading set' : undefined,
+      },
+    ],
+    carryForward: latest.report.strengths.length > 0
+      ? latest.report.strengths.slice(0, 2)
+      : ['Validate every Reading answer against a passage sentence.'],
+  };
+}
+
 export function createReadingApplicationService({
   repository = createReadingAssessmentRepository(),
   loadImportSummary = loadReadingPrivateImportSummary,
@@ -313,6 +453,7 @@ export function createReadingApplicationService({
       recentAttempts: savedAttempts.slice(0, 8),
       dashboardSummary: buildDashboardSummary(savedAttempts),
       studyFocus: buildStudyFocus(savedAttempts, importedBank.sets[0] ?? null),
+      studyPlan: buildReadingStudyPlan(savedAttempts, importedBank.sets),
     };
   }
 

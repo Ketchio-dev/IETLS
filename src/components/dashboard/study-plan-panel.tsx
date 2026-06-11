@@ -1,6 +1,12 @@
 import Link from 'next/link';
 
-import { formatBandRange, formatCountLabel, formatTaskTypeList } from './dashboard-formatting';
+import {
+  formatBandRange,
+  formatCountLabel,
+  formatPlanPhase,
+  formatPlanStatus,
+  formatTaskTypeList,
+} from './dashboard-formatting';
 import type { DashboardStudyPlan, DashboardStudyPlanStep } from './dashboard-types';
 
 interface Props {
@@ -18,8 +24,11 @@ function StudyPlanStepCard({ step }: { step: DashboardStudyPlanStep }) {
           <p className="summary-copy">{step.detail}</p>
         </div>
         <div className="dashboard-chip-stack">
+          {step.status ? <span className="band-chip">{formatPlanStatus(step.status)}</span> : null}
+          {step.phase ? <span className="band-chip">{formatPlanPhase(step.phase)}</span> : null}
           {step.sessionLabel ? <span className="band-chip">{step.sessionLabel}</span> : null}
           {step.criterion ? <span className="band-chip">{step.criterion}</span> : null}
+          {step.moduleLabel ? <span className="band-chip">{step.moduleLabel}</span> : null}
         </div>
       </div>
 
@@ -34,6 +43,12 @@ function StudyPlanStepCard({ step }: { step: DashboardStudyPlanStep }) {
             <li key={action}>{action}</li>
           ))}
         </ul>
+      ) : null}
+
+      {step.completionSignal ? (
+        <p className="summary-copy">
+          <strong>Completion signal:</strong> {step.completionSignal}
+        </p>
       ) : null}
 
       {step.actionHref && step.actionLabel ? (

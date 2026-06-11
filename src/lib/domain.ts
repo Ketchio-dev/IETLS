@@ -253,6 +253,10 @@ export interface StudyPlanStep {
   title: string;
   detail: string;
   actions: string[];
+  phase?: 'benchmark' | 'daily-session' | 'next-block' | 'complete';
+  status?: 'locked' | 'current' | 'done';
+  completionSignal?: string;
+  completedAt?: string | null;
   criterion?: CriterionName | 'Overall';
   taskType: WritingTaskType | 'either';
   targetRange?: BandRange | null;
@@ -260,6 +264,8 @@ export interface StudyPlanStep {
   submissionId?: string | null;
   actionLabel?: string;
   sessionLabel?: string;
+  actionHref?: string;
+  moduleLabel?: string;
 }
 
 export interface StudyPlanSnapshot {

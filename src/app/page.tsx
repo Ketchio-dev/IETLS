@@ -239,15 +239,15 @@ export default async function HomePage() {
           <p className="eyebrow">IELTS Academic Prep</p>
           <h1>Your Reading &amp; Writing command center.</h1>
           <p className="hero-copy">
-            Work through scored Reading practice sets, write against an expanded prompt bank, and keep your revision history in one place.
-            Speaking and Listening remain available when you need extra range.
+            Follow a daily Reading and Writing path that updates from your saved attempts. Start with the current
+            curriculum step, finish its signal, then come back for the next block.
           </p>
           <div className="hero-actions">
-            <Link className="primary-button dashboard-link-button hero-cta-reading" href="/reading">
-              Start reading practice
+            <Link className="primary-button dashboard-link-button hero-cta-reading" href="/curriculum">
+              Follow today&apos;s curriculum
             </Link>
-            <Link className="secondary-link-button hero-cta-writing" href="/writing">
-              Open writing practice
+            <Link className="secondary-link-button hero-cta-writing" href="/reading">
+              Open reading practice
             </Link>
           </div>
           <div className="route-pill-row" aria-label="Route status summary">
@@ -306,6 +306,13 @@ export default async function HomePage() {
             <span>{readingDashboard.availableSets.length} passages available</span>
           </div>
         </Link>
+        <Link className="quick-action-card" href="/curriculum" data-quick="curriculum">
+          <div className="quick-action-icon" aria-hidden="true"><WritingIcon /></div>
+          <div className="quick-action-text">
+            <strong>Today&apos;s curriculum</strong>
+            <span>Follow the next Reading + Writing block</span>
+          </div>
+        </Link>
         <Link className="quick-action-card" href="/writing" data-quick="writing">
           <div className="quick-action-icon" aria-hidden="true"><WritingIcon /></div>
           <div className="quick-action-text">
@@ -334,7 +341,8 @@ export default async function HomePage() {
           <p className="eyebrow">Main tracks</p>
           <h2 id="primary-ia-heading">Reading and Writing — your daily practice tracks.</h2>
           <p className="summary-copy">
-            These are the strongest practice loops in the product: timed passage review for Reading, and draft → score → redraft cycles for Writing.
+            Use the curriculum route when you want the app to choose the next step for you, or open each track directly
+            when you need a specific practice lane.
           </p>
         </div>
         <div className="module-hub-grid" aria-label="Primary IELTS practice modules">
