@@ -63,6 +63,7 @@ function buildReadingPageData(): ReadingPracticePageData {
     savedAttempts: [],
     initialSetId: set.id,
     initialAttemptId: null,
+    initialRetryMode: 'all',
   };
 }
 

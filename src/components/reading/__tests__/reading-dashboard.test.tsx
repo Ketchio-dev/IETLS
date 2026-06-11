@@ -63,7 +63,16 @@ function buildPopulatedData(): ReadingDashboardPageData {
             { type: 'multiple_choice', correct: 2, total: 2, accuracy: 100 },
             { type: 'true_false_not_given', correct: 1, total: 2, accuracy: 50 },
           ],
-          questionReviews: [],
+          questionReviews: set.questions.map((question, index) => ({
+            questionId: question.id,
+            type: question.type,
+            prompt: question.prompt,
+            userAnswer: index === 2 ? 'FALSE' : 'sample',
+            acceptedAnswers: question.acceptedAnswers,
+            isCorrect: index !== 2,
+            explanation: question.explanation,
+            evidenceHint: question.evidenceHint,
+          })),
           strengths: [],
           risks: [],
           nextSteps: [],
@@ -124,7 +133,10 @@ describe('ReadingDashboard', () => {
     expect(screen.getByRole('heading', { name: /reading practice metrics/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /next action/i })).toBeInTheDocument();
     expect(screen.getAllByText(/redo one true_false_not_given item/i)[0]).toBeInTheDocument();
+    expect(screen.getByText(/switch to writing for a precision reset/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /switch to writing practice/i })).toHaveAttribute('href', '/writing');
     expect(screen.getByRole('link', { name: /review this set again/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /retry missed questions/i }).length).toBeGreaterThan(0);
   });
 
   it('renders strongest and weakest question types when attempts exist', () => {

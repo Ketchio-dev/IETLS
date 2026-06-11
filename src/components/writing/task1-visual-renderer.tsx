@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 import type { Task1VisualDatum, Task1VisualPrompt } from '@/lib/domain';
 
 interface Props {
@@ -335,7 +337,7 @@ function ReportingCues({ visual }: Props) {
   );
 }
 
-export function Task1VisualRenderer({ visual }: Props) {
+export const Task1VisualRenderer = memo(function Task1VisualRenderer({ visual }: Props) {
   const usesTableRenderer = visual.type === 'table';
   const usesReportingCues = usesTableRenderer || visual.type === 'pie-chart';
 
@@ -368,4 +370,4 @@ export function Task1VisualRenderer({ visual }: Props) {
       </div>
     </>
   );
-}
+});

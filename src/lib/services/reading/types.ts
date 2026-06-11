@@ -92,6 +92,7 @@ export interface ReadingPracticePageData {
   savedAttempts: ReadingAttemptSnapshot[];
   initialSetId: string | null;
   initialAttemptId: string | null;
+  initialRetryMode: 'all' | 'incorrect';
 }
 
 export interface ReadingDashboardPageData {

@@ -38,6 +38,7 @@ describe('reading application service', () => {
     expect(pageData.activeSet?.title).toBe(sampleReadingSets[0]?.title);
     expect(pageData.activeSet?.questions).toHaveLength(6);
     expect(pageData.availableSets[0]?.types).toContain('true_false_not_given');
+    expect(pageData.initialRetryMode).toBe('all');
   });
 
   it('scores supported answers deterministically and includes evidence-backed review', async () => {
@@ -161,5 +162,102 @@ describe('reading application service', () => {
     expect(result.payload.report.questionReviews[0]?.isCorrect).toBe(true);
     expect(result.payload.report.questionReviews[1]?.isCorrect).toBe(true);
     expect(result.payload.report.questionReviews[2]?.isCorrect).toBe(false);
+  });
+
+  it('starts in incorrect-only retry mode when a saved attempt is requested with retry=incorrect', async () => {
+    const { repository, attempts } = createRepository();
+    const set = sampleReadingSets[0]!;
+    attempts.unshift({
+      attemptId: 'attempt-1',
+      setId: set.id,
+      setTitle: set.title,
+      createdAt: '2026-03-26T12:00:00.000Z',
+      timeSpentSeconds: 320,
+      answers: { [set.questions[2]!.id]: 'FALSE' },
+      report: {
+        reportId: 'report-1',
+        attemptId: 'attempt-1',
+        setId: set.id,
+        setTitle: set.title,
+        rawScore: 5,
+        maxScore: set.questions.length,
+        percentage: 83,
+        scoreLabel: '5/6',
+        summary: 'Solid reading set pass with one weakness left to revisit.',
+        accuracyByQuestionType: [
+          { type: 'multiple_choice', correct: 2, total: 2, accuracy: 100 },
+          { type: 'true_false_not_given', correct: 1, total: 2, accuracy: 50 },
+        ],
+        strengths: [],
+        risks: [],
+        nextSteps: ['Redo one true_false_not_given item from the same set.'],
+        warnings: [],
+        generatedAt: '2026-03-26T12:00:00.000Z',
+        questionReviews: set.questions.map((question, index) => ({
+          questionId: question.id,
+          type: question.type,
+          prompt: question.prompt,
+          userAnswer: index === 2 ? 'FALSE' : 'sample',
+          acceptedAnswers: question.acceptedAnswers,
+          isCorrect: index !== 2,
+          explanation: question.explanation,
+          evidenceHint: question.evidenceHint,
+        })),
+      },
+    });
+    const service = createReadingApplicationService({ repository: repository as never });
+
+    const pageData = await service.loadPracticePageData({ attemptId: 'attempt-1', retry: 'incorrect' });
+
+    expect(pageData.initialAttemptId).toBe('attempt-1');
+    expect(pageData.initialRetryMode).toBe('incorrect');
+  });
+
+  it('prioritizes retrying missed questions in dashboard study focus when mistakes exist', async () => {
+    const { repository, attempts } = createRepository();
+    const set = sampleReadingSets[0]!;
+    attempts.unshift({
+      attemptId: 'attempt-1',
+      setId: set.id,
+      setTitle: set.title,
+      createdAt: '2026-03-26T12:00:00.000Z',
+      timeSpentSeconds: 320,
+      answers: { [set.questions[2]!.id]: 'FALSE' },
+      report: {
+        reportId: 'report-1',
+        attemptId: 'attempt-1',
+        setId: set.id,
+        setTitle: set.title,
+        rawScore: 5,
+        maxScore: set.questions.length,
+        percentage: 83,
+        scoreLabel: '5/6',
+        summary: 'Solid reading set pass with one weakness left to revisit.',
+        accuracyByQuestionType: [
+          { type: 'multiple_choice', correct: 2, total: 2, accuracy: 100 },
+          { type: 'true_false_not_given', correct: 1, total: 2, accuracy: 50 },
+        ],
+        strengths: [],
+        risks: [],
+        nextSteps: ['Redo one true_false_not_given item from the same set.'],
+        warnings: [],
+        generatedAt: '2026-03-26T12:00:00.000Z',
+        questionReviews: set.questions.map((question, index) => ({
+          questionId: question.id,
+          type: question.type,
+          prompt: question.prompt,
+          userAnswer: index === 2 ? 'FALSE' : 'sample',
+          acceptedAnswers: question.acceptedAnswers,
+          isCorrect: index !== 2,
+          explanation: question.explanation,
+          evidenceHint: question.evidenceHint,
+        })),
+      },
+    });
+    const service = createReadingApplicationService({ repository: repository as never });
+
+    const dashboardData = await service.loadDashboardPageData();
+
+    expect(dashboardData.studyFocus[0]).toContain('Retry the 1 missed question');
   });
 });

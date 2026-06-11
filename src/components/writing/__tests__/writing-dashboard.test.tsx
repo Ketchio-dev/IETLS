@@ -229,6 +229,8 @@ describe('WritingDashboard', () => {
     expect(screen.getByRole('heading', { name: /track writing momentum across every saved assessment/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /aggregated writing metrics/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /fix this next/i })).toBeInTheDocument();
+    expect(screen.getByText(/switch to reading for a quick argument reset/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /switch to reading practice/i })).toHaveAttribute('href', '/reading');
     expect(screen.getByRole('heading', { name: /prompt bank coverage by theme/i })).toBeInTheDocument();
     expect(
       screen.getByText(/saved task 1 and task 2 reports condensed into one snapshot so you can see whether your practice is actually moving/i),
@@ -252,8 +254,9 @@ describe('WritingDashboard', () => {
     expect(screen.getAllByText(new RegExp(`${expectedWeakestTheme.promptCount} prompts in bank`, 'i')).length).toBeGreaterThan(0);
     expect(expectedRecommendation).not.toBeNull();
     expect(screen.getAllByText(expectedRecommendation!.prompt.title).length).toBeGreaterThan(0);
-    expect(screen.getByText(/train the weakest criterion first: task response/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /open revision target/i })).toHaveAttribute(
+    expect(screen.getByText(/train the weakest criterion first: task response toward band/i)).toBeInTheDocument();
+    expect(screen.getByText(/state one clear position in the introduction and keep it stable/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /train task response next/i })).toHaveAttribute(
       'href',
       `/writing?promptId=${expectedRecommendation!.prompt.id}`,
     );

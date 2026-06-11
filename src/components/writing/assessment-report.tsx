@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import { memo } from 'react';
 
 import type { AssessmentReport } from '@/lib/domain';
+import { buildReportCriterionCoachingPlan } from '@/lib/services/writing/feedback-generator';
 
 const impactStyles = {
   high: 'var(--impact-high)',
@@ -96,7 +98,7 @@ function getImpactLabel(impact: AssessmentReport['nextSteps'][number]['impact'])
   }
 }
 
-export function AssessmentReportPanel({ report }: { report: AssessmentReport }) {
+export const AssessmentReportPanel = memo(function AssessmentReportPanel({ report }: { report: AssessmentReport }) {
   const trace = report.evaluationTrace;
   const overallRange = `Band ${report.overallBandRange.lower.toFixed(1)}-${report.overallBandRange.upper.toFixed(1)}`;
   const fallbackStatus = trace.usedMockFallback ? 'Backup scoring engine used' : 'Standard scoring engine used';
@@ -104,7 +106,7 @@ export function AssessmentReportPanel({ report }: { report: AssessmentReport }) 
   const overallEstimate = getOverallEstimateCopy(getOverallEstimateMode(trace.notes));
   const strongestSignal = report.strengths[0] ?? report.evidence.find((item) => item.strength === 'strong')?.detail;
   const biggestRisk = report.risks[0] ?? report.evidence.find((item) => item.strength !== 'strong')?.detail;
-  const firstRevisionTarget = report.nextSteps[0];
+  const criterionCoaching = buildReportCriterionCoachingPlan(report);
   const confidenceSummary =
     report.confidence === 'high'
       ? 'Use the band as a solid practice checkpoint, then keep the same strength stable in the next draft.'
@@ -147,10 +149,18 @@ export function AssessmentReportPanel({ report }: { report: AssessmentReport }) 
         </article>
         <article className="score-card">
           <div className="score-card-header">
-            <h3>Highest-priority revision</h3>
-            <span>Next move</span>
+            <h3>Criterion focus</h3>
+            <span>
+              {criterionCoaching
+                ? `Band ${criterionCoaching.currentBand.toFixed(1)} now`
+                : 'Next move'}
+            </span>
           </div>
-          <p>{firstRevisionTarget ? `${firstRevisionTarget.title}: ${firstRevisionTarget.description}` : 'Score one full draft to unlock the first revision target.'}</p>
+          <p>
+            {criterionCoaching
+              ? `${criterionCoaching.criterion}: ${criterionCoaching.focusSummary}`
+              : 'Score one full draft to unlock the first revision target.'}
+          </p>
         </article>
       </div>
 
@@ -169,6 +179,36 @@ export function AssessmentReportPanel({ report }: { report: AssessmentReport }) 
           </ul>
         </div>
       </div>
+
+      {criterionCoaching ? (
+        <div className="report-columns secondary-columns">
+          <div>
+            <h3>How to raise {criterionCoaching.criterion} next</h3>
+            <p className="summary-copy">{criterionCoaching.whyItMatters}</p>
+            <div className="report-grid secondary-columns">
+              <article className="score-card">
+                <div className="score-card-header">
+                  <h3>Fix now</h3>
+                  <span>Step 1</span>
+                </div>
+                <p>{criterionCoaching.fixNow}</p>
+              </article>
+              <article className="score-card">
+                <div className="score-card-header">
+                  <h3>Check before re-score</h3>
+                  <span>Step 2</span>
+                </div>
+                <p>{criterionCoaching.checkBeforeRescore}</p>
+              </article>
+            </div>
+            <ul className="plain-list compact-list">
+              {criterionCoaching.checklist.map((item, index) => (
+                <li key={`${criterionCoaching.criterion}-checklist-${index}`}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
 
       <details className="report-technical-details">
         <summary>Advanced details</summary>
@@ -257,4 +297,4 @@ export function AssessmentReportPanel({ report }: { report: AssessmentReport }) 
       </div>
     </section>
   );
-}
+});

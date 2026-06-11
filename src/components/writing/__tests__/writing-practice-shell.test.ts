@@ -95,6 +95,10 @@ describe('WritingPracticeShell', () => {
     expect(summaryMatches.length).toBeGreaterThan(0);
     expect(await screen.findByText(/1 for this prompt/i)).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: /turn this report into the next better draft/i })).toBeInTheDocument();
+    expect((await screen.findAllByText(/criterion focus/i)).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText(/raise .* next/i)).length).toBeGreaterThan(0);
+    expect((await screen.findAllByRole('heading', { name: /fix now/i })).length).toBeGreaterThan(0);
+    expect((await screen.findAllByRole('heading', { name: /check before re-score/i })).length).toBeGreaterThan(0);
     expect(await screen.findByRole('button', { name: /open next recommended prompt/i })).toBeInTheDocument();
   });
 
@@ -123,6 +127,47 @@ describe('WritingPracticeShell', () => {
 
     expect(screen.getByRole('button', { name: /score my response/i })).toBeEnabled();
     expect(screen.getByText(/minimum reached/i)).toBeInTheDocument();
+  });
+
+  it('submits the latest editor draft after local textarea changes', async () => {
+    const latestDraft = Array.from(
+      { length: samplePrompt.suggestedWordCount },
+      (_, index) => `argument${index}`,
+    ).join(' ');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        report: sampleAssessmentReport,
+        recentAttempts: [],
+        savedAssessments: [],
+      }),
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(createElement(WritingPracticeShell, {
+      fallbackReports: sampleAssessmentReportsByPromptId,
+      initialHistory: [],
+      initialReport: sampleAssessmentReport,
+      initialSavedAssessments: [],
+      prompt: samplePrompt,
+      prompts: writingPromptBank,
+    }));
+
+    fireEvent.change(screen.getByRole('textbox', { name: /essay response/i }), {
+      target: { value: latestDraft },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /score my essay/i }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+
+    const [, requestInit] = fetchMock.mock.calls[0]!;
+    expect(JSON.parse(String(requestInit.body))).toMatchObject({
+      promptId: samplePrompt.id,
+      response: latestDraft,
+    });
   });
 
   it('shows a first-run quick-start guide with minimum-word guidance', () => {

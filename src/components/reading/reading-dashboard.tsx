@@ -1,8 +1,14 @@
 import Link from 'next/link';
 
 import { DashboardMetricGrid } from '@/components/dashboard';
+import { getReadingToWritingCrossTraining } from '@/lib/services/cross-training';
 import type { ReadingDashboardPageData } from '@/lib/services/reading/types';
 
+import {
+  buildReadingAttemptResumeHref,
+  buildReadingAttemptRetryHref,
+  hasMissedQuestions,
+} from './reading-attempt-utils';
 import { formatCompactDuration, formatQuestionType, formatSavedAt } from './reading-formatting';
 
 export function ReadingDashboard({
@@ -13,6 +19,8 @@ export function ReadingDashboard({
 }: ReadingDashboardPageData) {
   const readingSetCount = importSummary.importedSetCount;
   const latestSetRefresh = importSummary.latestImportedAt ? formatSavedAt(importSummary.latestImportedAt) : null;
+  const latestRetryAttempt = recentAttempts.find((attempt) => hasMissedQuestions(attempt.report.questionReviews)) ?? null;
+  const crossTraining = getReadingToWritingCrossTraining(dashboardSummary);
 
   return (
     <>
@@ -60,6 +68,20 @@ export function ReadingDashboard({
                 <li key={item}>{item}</li>
               ))}
             </ul>
+            {latestRetryAttempt ? (
+              <div className="hero-actions">
+                <Link className="primary-button" href={buildReadingAttemptRetryHref(latestRetryAttempt)}>
+                  Retry missed questions
+                </Link>
+              </div>
+            ) : null}
+            <div className="dashboard-inline-note">
+              <strong>{crossTraining.title}</strong>
+              <p>{crossTraining.description}</p>
+              <Link className="secondary-link-button" href="/writing">
+                Switch to Writing practice
+              </Link>
+            </div>
           </article>
 
           <article className="panel history-panel">
@@ -115,9 +137,17 @@ export function ReadingDashboard({
                       <span>{formatSavedAt(attempt.createdAt)}</span>
                     </div>
                     <div className="hero-actions">
+                      {hasMissedQuestions(attempt.report.questionReviews) ? (
+                        <Link
+                          className="primary-button"
+                          href={buildReadingAttemptRetryHref(attempt)}
+                        >
+                          Retry missed questions
+                        </Link>
+                      ) : null}
                       <Link
                         className="secondary-link-button"
-                        href={`/reading?setId=${encodeURIComponent(attempt.setId)}&attemptId=${encodeURIComponent(attempt.attemptId)}`}
+                        href={buildReadingAttemptResumeHref(attempt)}
                       >
                         Review this set again
                       </Link>

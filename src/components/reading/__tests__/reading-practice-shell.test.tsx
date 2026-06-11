@@ -55,6 +55,7 @@ function buildPageData(): ReadingPracticePageData {
     savedAttempts: [],
     initialSetId: set.id,
     initialAttemptId: null,
+    initialRetryMode: 'all',
   };
 }
 
@@ -217,6 +218,7 @@ describe('ReadingPracticeShell', () => {
     expect(screen.getByRole('note')).toHaveTextContent(/practice estimate — not an official ielts score/i);
     expect(screen.getByText(/on your next attempt:/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /continue to writing practice/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /retry missed questions/i }).length).toBeGreaterThan(0);
   });
 
   it('renders question navigation and semantic question groups before scoring', () => {
@@ -230,5 +232,141 @@ describe('ReadingPracticeShell', () => {
     expect(screen.getAllByText(/choose the single best option from the list below/i).length).toBeGreaterThan(0);
     expect(screen.getByRole('radiogroup', { name: set.questions[0]!.prompt })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /score with blanks/i })).toBeInTheDocument();
+  });
+
+  it('filters the workspace to missed questions when retry mode starts from a saved attempt', () => {
+    const set = sampleReadingSets[0]!;
+    const pageData = buildPageData();
+    pageData.initialAttemptId = 'attempt-1';
+    pageData.initialRetryMode = 'incorrect';
+    pageData.initialAnswers = { [set.questions[0]!.id]: 'C', [set.questions[2]!.id]: 'FALSE' };
+    pageData.initialReport = {
+      reportId: 'report-1',
+      attemptId: 'attempt-1',
+      setId: set.id,
+      setTitle: set.title,
+      rawScore: 5,
+      maxScore: set.questions.length,
+      percentage: 83,
+      scoreLabel: '5/6',
+      summary: 'Solid reading set pass with one weakness left to revisit.',
+      accuracyByQuestionType: [
+        { type: 'multiple_choice', correct: 2, total: 2, accuracy: 100 },
+        { type: 'true_false_not_given', correct: 1, total: 2, accuracy: 50 },
+      ],
+      strengths: [],
+      risks: [],
+      nextSteps: ['Redo one true_false_not_given item from the same set.'],
+      warnings: [],
+      generatedAt: '2026-03-26T12:00:00.000Z',
+      questionReviews: set.questions.map((question, index) => ({
+        questionId: question.id,
+        type: question.type,
+        prompt: question.prompt,
+        userAnswer: index === 2 ? 'FALSE' : 'sample',
+        acceptedAnswers: question.acceptedAnswers,
+        isCorrect: index !== 2,
+        explanation: question.explanation,
+        evidenceHint: question.evidenceHint,
+      })),
+    };
+    pageData.savedAttempts = [
+      {
+        attemptId: 'attempt-1',
+        setId: set.id,
+        setTitle: set.title,
+        createdAt: '2026-03-26T12:00:00.000Z',
+        timeSpentSeconds: 320,
+        answers: pageData.initialAnswers,
+        report: pageData.initialReport,
+      },
+    ];
+
+    render(<ReadingPracticeShell {...pageData} />);
+
+    expect(screen.getByText(/retry the 1 missed question/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /re-score missed questions/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /return to full set/i })).toBeInTheDocument();
+    expect(screen.getAllByText(set.questions[2]!.prompt).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: /jump to question/i })).toHaveLength(1);
+    expect(screen.queryByRole('radiogroup', { name: set.questions[0]!.prompt })).not.toBeInTheDocument();
+  });
+
+  it('clears retry mode when the learner switches to another reading set', () => {
+    const firstSet = sampleReadingSets[0]!;
+    const secondSet = {
+      ...firstSet,
+      id: 'urban-bee-corridors-second-pass',
+      title: 'Urban bee corridors second pass',
+      questions: firstSet.questions.map((question) => ({
+        ...question,
+        id: `${question.id}-second-pass`,
+      })),
+    };
+    const pageData = buildPageData();
+    pageData.importedSets = [firstSet, secondSet];
+    pageData.availableSets = [firstSet, secondSet].map((set) => ({
+      id: set.id,
+      title: set.title,
+      sourceLabel: set.sourceLabel,
+      sourceFile: set.sourceFile,
+      importedAt: set.importedAt,
+      questionCount: set.questions.length,
+      passageWordCount: set.passageWordCount,
+      types: Array.from(new Set(set.questions.map((question) => question.type))),
+    }));
+    pageData.importSummary.sets = pageData.availableSets;
+    pageData.initialAttemptId = 'attempt-1';
+    pageData.initialRetryMode = 'incorrect';
+    pageData.initialReport = {
+      reportId: 'report-1',
+      attemptId: 'attempt-1',
+      setId: firstSet.id,
+      setTitle: firstSet.title,
+      rawScore: firstSet.questions.length - 1,
+      maxScore: firstSet.questions.length,
+      percentage: 83,
+      scoreLabel: '5/6',
+      summary: 'Solid reading set pass with one weakness left to revisit.',
+      accuracyByQuestionType: [],
+      strengths: [],
+      risks: [],
+      nextSteps: [],
+      warnings: [],
+      generatedAt: '2026-03-26T12:00:00.000Z',
+      questionReviews: firstSet.questions.map((question, index) => ({
+        questionId: question.id,
+        type: question.type,
+        prompt: question.prompt,
+        userAnswer: index === 2 ? 'FALSE' : 'sample',
+        acceptedAnswers: question.acceptedAnswers,
+        isCorrect: index !== 2,
+        explanation: question.explanation,
+        evidenceHint: question.evidenceHint,
+      })),
+    };
+    pageData.savedAttempts = [
+      {
+        attemptId: 'attempt-1',
+        setId: firstSet.id,
+        setTitle: firstSet.title,
+        createdAt: '2026-03-26T12:00:00.000Z',
+        timeSpentSeconds: 320,
+        answers: {},
+        report: pageData.initialReport,
+      },
+    ];
+
+    render(<ReadingPracticeShell {...pageData} />);
+
+    expect(screen.getByText(/retry mode keeps only the missed questions/i)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/reading practice set/i), {
+      target: { value: secondSet.id },
+    });
+
+    expect(screen.queryByText(/retry mode keeps only the missed questions/i)).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /jump to question/i })).toHaveLength(secondSet.questions.length);
+    expect(mocks.push).toHaveBeenCalledWith(`/reading?setId=${encodeURIComponent(secondSet.id)}`);
   });
 });

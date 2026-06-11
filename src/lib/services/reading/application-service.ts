@@ -40,6 +40,11 @@ function getSingleSearchParam(value: SearchParamValue) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function shouldStartIncorrectRetry(value: SearchParamValue) {
+  const normalized = getSingleSearchParam(value)?.trim().toLowerCase();
+  return normalized === 'incorrect' || normalized === 'missed' || normalized === 'retry';
+}
+
 function summarizeAttempt(attempt: ReadingAttemptSnapshot): ReadingAttemptSummary {
   return {
     attemptId: attempt.attemptId,
@@ -208,11 +213,14 @@ function buildStudyFocus(attempts: ReadingAttemptSnapshot[], activeSet: Imported
 
   const latest = attempts[0]!;
   const weakest = latest.report.accuracyByQuestionType.at(-1);
+  const missedQuestions = latest.report.questionReviews.filter((review) => !review.isCorrect).length;
 
   return [
-    weakest
-      ? `Fix your weakest question type next: redo one ${weakest.type} item from ${latest.setTitle} and justify the answer from the passage.`
-      : `Repeat ${latest.setTitle} once to build a second timing data point.`,
+    missedQuestions > 0
+      ? `Retry the ${missedQuestions} missed question${missedQuestions === 1 ? '' : 's'} from ${latest.setTitle} before you start a new set.`
+      : weakest
+        ? `Fix your weakest question type next: redo one ${weakest.type} item from ${latest.setTitle} and justify the answer from the passage.`
+        : `Repeat ${latest.setTitle} once to build a second timing data point.`,
     latest.timeSpentSeconds > 1200
       ? 'Trim your next attempt time by focusing on evidence hints before revisiting the full passage.'
       : 'Keep the same pacing, but validate every completion answer against the exact wording in the text.',
@@ -237,6 +245,10 @@ export function createReadingApplicationService({
     const requestedSetId = getSingleSearchParam(searchParams.setId);
     const requestedAttemptId = getSingleSearchParam(searchParams.attemptId);
     const selectedAttempt = savedAttempts.find((attempt) => attempt.attemptId === requestedAttemptId) ?? null;
+    const requestedRetryMode = shouldStartIncorrectRetry(searchParams.retry)
+      && selectedAttempt?.report.questionReviews.some((review) => !review.isCorrect)
+      ? 'incorrect'
+      : 'all';
     const activeSet = importedBank.sets.find((set) => set.id === (requestedSetId ?? selectedAttempt?.setId))
       ?? importedBank.sets[0]
       ?? null;
@@ -269,6 +281,7 @@ export function createReadingApplicationService({
       savedAttempts,
       initialSetId: activeSet?.id ?? null,
       initialAttemptId: selectedAttempt?.attemptId ?? null,
+      initialRetryMode: requestedRetryMode,
     };
   }
 

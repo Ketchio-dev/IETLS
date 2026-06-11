@@ -819,6 +819,10 @@ select:focus {
   margin-top: 1rem;
 }
 
+.reading-section-block {
+  margin-top: 1rem;
+}
+
 .reading-overview-card {
   display: grid;
   gap: 0.65rem;

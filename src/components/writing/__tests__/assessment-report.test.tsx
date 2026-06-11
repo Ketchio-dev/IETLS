@@ -35,7 +35,10 @@ describe('AssessmentReportPanel', () => {
     expect(screen.queryByText(/^overall band$/i)).not.toBeInTheDocument();
     expect(screen.getByText(/your strongest area/i)).toBeInTheDocument();
     expect(screen.getByText(/what held your score back/i)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /highest-priority revision/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /criterion focus/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /how to raise .* next/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /fix now/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /check before re-score/i })).toBeInTheDocument();
     expect(screen.queryByText(/criterion signal:/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/scorer notes/i)).not.toBeInTheDocument();
     expect(screen.getByRole('note')).toHaveTextContent(/practice estimate — not an official ielts score/i);

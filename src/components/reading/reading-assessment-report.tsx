@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { memo } from 'react';
 
 import type { ReadingAssessmentReport } from '@/lib/services/reading/types';
 
@@ -48,7 +49,13 @@ function getNextAttemptStrategy(type: string) {
   }
 }
 
-export function ReadingAssessmentReportPanel({ report }: { report: ReadingAssessmentReport }) {
+export const ReadingAssessmentReportPanel = memo(function ReadingAssessmentReportPanel({
+  report,
+  retryHref,
+}: {
+  report: ReadingAssessmentReport;
+  retryHref?: string | null;
+}) {
   const strongestTakeaway = report.strengths[0] ?? 'Finish one full set to unlock stronger reading feedback.';
   const biggestRisk = report.risks[0] ?? 'The report will highlight your weakest area after the first scored set.';
   const nextStep = report.nextSteps[0] ?? 'Redo one missed question type, then match your answer against the exact passage sentence before scoring again.';
@@ -87,7 +94,7 @@ export function ReadingAssessmentReportPanel({ report }: { report: ReadingAssess
         </div>
       </div>
 
-      <div className="dashboard-insight-grid" style={{ marginTop: '1rem' }}>
+      <div className="dashboard-insight-grid reading-section-block">
         <article className="history-card">
           <div className="history-card-header">
             <strong>What the answer key rewards</strong>
@@ -114,7 +121,7 @@ export function ReadingAssessmentReportPanel({ report }: { report: ReadingAssess
         </article>
       </div>
 
-      <div className="stack-sm" style={{ marginTop: '1rem' }}>
+      <div className="stack-sm reading-section-block">
         <h3 className="subsection-title">Question-type accuracy</h3>
         <ul className="plain-list compact-list">
           {report.accuracyByQuestionType.map((entry) => (
@@ -125,7 +132,7 @@ export function ReadingAssessmentReportPanel({ report }: { report: ReadingAssess
         </ul>
       </div>
 
-      <div className="stack-sm" style={{ marginTop: '1rem' }}>
+      <div className="stack-sm reading-section-block">
         <h3 className="subsection-title">Answer review</h3>
         <div className="history-list">
           {report.questionReviews.map((review) => (
@@ -164,7 +171,7 @@ export function ReadingAssessmentReportPanel({ report }: { report: ReadingAssess
       </div>
 
       {report.warnings.length > 0 ? (
-        <ul className="plain-list compact-list import-warning-list" style={{ marginTop: '1rem' }}>
+        <ul className="plain-list compact-list import-warning-list">
           {report.warnings.map((warning) => (
             <li key={warning}>{warning}</li>
           ))}
@@ -172,10 +179,15 @@ export function ReadingAssessmentReportPanel({ report }: { report: ReadingAssess
       ) : null}
 
       <div className="report-link-row">
+        {retryHref ? (
+          <Link className="primary-button" href={retryHref}>
+            Retry missed questions
+          </Link>
+        ) : null}
         <Link className="secondary-link-button" href="/writing">
           Continue to Writing practice
         </Link>
       </div>
     </article>
   );
-}
+});

@@ -1,11 +1,10 @@
 import Link from 'next/link';
 
-import { buildPracticeWorkspaceHref, writingAssessmentWorkspace } from '@/lib/assessment-modules/workspace';
+import { writingAssessmentWorkspace } from '@/lib/assessment-modules/workspace';
 import type {
   ProgressSummary,
   SavedAssessmentSnapshot,
   StudyPlanSnapshot,
-  WritingTaskType,
   WritingDashboardSummary,
   WritingPrompt,
 } from '@/lib/domain';
@@ -18,15 +17,13 @@ import {
   formatTrendLabel,
 } from '@/components/dashboard/dashboard-formatting';
 import { DashboardRecentAttemptsPanel } from '@/components/dashboard/dashboard-recent-attempts-panel';
-import { buildPromptRecommendations } from '@/lib/services/writing/prompt-recommendations';
-import { getPromptTheme } from '@/lib/services/writing/prompt-taxonomy';
-
-interface ThemeCoverageEntry {
-  theme: string;
-  promptCount: number;
-  attemptCount: number;
-  latestAttemptAt: string | null;
-}
+import {
+  buildDashboardStudyPlanModel,
+  buildWritingDashboardMetrics,
+  buildWritingNextActionModel,
+  buildWritingThemeCoverageModel,
+  describeTrendVisual,
+} from './writing-dashboard-model';
 
 interface Props {
   prompts: WritingPrompt[];
@@ -34,132 +31,6 @@ interface Props {
   summary: WritingDashboardSummary;
   progress: ProgressSummary;
   studyPlan: StudyPlanSnapshot;
-}
-
-function buildStudyPlanHref(step: StudyPlanSnapshot['steps'][number]) {
-  if (!step.promptId) {
-    return undefined;
-  }
-  return buildPracticeWorkspaceHref(writingAssessmentWorkspace, {
-    promptId: step.promptId,
-    attemptId: step.submissionId ?? undefined,
-  });
-}
-
-function buildDashboardMetrics(summary: WritingDashboardSummary, progress: ProgressSummary) {
-  return [
-    {
-      id: 'trend',
-      label: 'Trend',
-      value: progress.label,
-      detail: progress.detail,
-      eyebrow: 'Momentum',
-    },
-    {
-      id: 'full-test-weighted-band',
-      label: 'Overall writing estimate',
-      value: summary.latestFullTestEstimateBand?.toFixed(1) ?? 'Need Task 1 + Task 2',
-      detail:
-        summary.latestFullTestEstimateBand == null
-          ? 'Save one recent Task 1 and one recent Task 2 report to unlock an overall writing estimate.'
-          : `Based on your latest Task 1 ${summary.latestFullTestTask1Band?.toFixed(1)} and Task 2 ${summary.latestFullTestTask2Band?.toFixed(1)} scores.`,
-      eyebrow: 'Latest saved tasks',
-    },
-    {
-      id: 'average-band',
-      label: 'Average band',
-      value: summary.averageBand?.toFixed(1) ?? '—',
-      detail: `Across ${summary.totalAttempts} saved attempt(s).`,
-      eyebrow: 'Consistency',
-    },
-    {
-      id: 'average-words',
-      label: 'Average words',
-      value: String(summary.averageWordCount),
-      detail: 'Measured across your saved drafts.',
-      eyebrow: 'Output',
-    },
-    {
-      id: 'active-days',
-      label: 'Active practice days',
-      value: String(summary.activeDays),
-      detail: `Last attempt: ${formatDateTime(summary.latestAttemptAt)}`,
-      eyebrow: 'Recency',
-    },
-  ];
-}
-
-function toDashboardStudyPlan(plan: StudyPlanSnapshot) {
-  return {
-    summary: plan.focus,
-    horizonLabel:
-      plan.horizonLabel ??
-      `${plan.attemptsConsidered} saved attempt${plan.attemptsConsidered === 1 ? '' : 's'}`,
-    recommendedSessionLabel:
-      plan.recommendedSessionLabel ??
-      (plan.basedOnSubmissionId ? 'Use the latest saved report first' : undefined),
-    steps: plan.steps.map((step, index) => {
-      const taskTypes: WritingTaskType[] =
-        step.taskType === 'either' ? ['task-1', 'task-2'] : [step.taskType];
-
-      return {
-        id: step.id,
-        title: step.title,
-        detail: step.detail,
-        actions: step.actions,
-        criterion: step.criterion,
-        taskTypes,
-        sessionLabel: step.sessionLabel ?? `Step ${index + 1}`,
-        targetRange: step.targetRange ?? null,
-        actionHref: buildStudyPlanHref(step),
-        actionLabel: step.actionLabel,
-      };
-    }),
-    carryForward:
-      plan.carryForward.length > 0
-        ? plan.carryForward
-        : plan.basedOnSubmissionId
-          ? ['Re-open the latest saved report before drafting the next response.']
-          : undefined,
-  };
-}
-
-function describeTrendVisual(entry: WritingDashboardSummary['criterionSummaries'][number]) {
-  return `Recent ${entry.criterion} bands: ${entry.recentBands.map((band) => band.toFixed(1)).join(', ')}`;
-}
-
-function buildThemeCoverage(prompts: WritingPrompt[], savedAttempts: SavedAssessmentSnapshot[]) {
-  const promptById = new Map(prompts.map((prompt) => [prompt.id, prompt] as const));
-  const counts = new Map<string, ThemeCoverageEntry>();
-
-  for (const prompt of prompts) {
-    const theme = getPromptTheme(prompt);
-    const current = counts.get(theme) ?? { theme, promptCount: 0, attemptCount: 0, latestAttemptAt: null };
-    current.promptCount += 1;
-    counts.set(theme, current);
-  }
-
-  for (const attempt of savedAttempts) {
-    const prompt = promptById.get(attempt.promptId);
-    if (!prompt) {
-      continue;
-    }
-
-    const theme = getPromptTheme(prompt);
-    const current = counts.get(theme) ?? { theme, promptCount: 0, attemptCount: 0, latestAttemptAt: null };
-    current.attemptCount += 1;
-    if (!current.latestAttemptAt || attempt.createdAt > current.latestAttemptAt) {
-      current.latestAttemptAt = attempt.createdAt;
-    }
-    counts.set(theme, current);
-  }
-
-  return [...counts.values()].sort(
-    (a, b) =>
-      a.attemptCount - b.attemptCount ||
-      b.promptCount - a.promptCount ||
-      a.theme.localeCompare(b.theme),
-  );
 }
 
 function TrendMiniBars({ entry }: { entry: WritingDashboardSummary['criterionSummaries'][number] }) {
@@ -190,17 +61,14 @@ function TrendMiniBars({ entry }: { entry: WritingDashboardSummary['criterionSum
 }
 
 export function WritingDashboard({ prompts, recentSavedAttempts, summary, progress, studyPlan }: Props) {
-  const dashboardMetrics = buildDashboardMetrics(summary, progress);
-  const presentationPlan = toDashboardStudyPlan(studyPlan);
-  const themeCoverage = buildThemeCoverage(prompts, recentSavedAttempts);
-  const weakestTheme = themeCoverage[0] ?? null;
-  const strongestTheme = [...themeCoverage].sort((a, b) => b.attemptCount - a.attemptCount || a.theme.localeCompare(b.theme))[0] ?? null;
-  const promptRecommendations = buildPromptRecommendations({
+  const dashboardMetrics = buildWritingDashboardMetrics(summary, progress);
+  const presentationPlan = buildDashboardStudyPlanModel(studyPlan);
+  const themeCoverage = buildWritingThemeCoverageModel(prompts, recentSavedAttempts);
+  const nextAction = buildWritingNextActionModel({
     prompts,
-    savedAttempts: recentSavedAttempts,
-  }, 2);
-  const recommendedPrompt = promptRecommendations[0] ?? null;
-  const alternatePrompt = promptRecommendations[1] ?? null;
+    recentSavedAttempts,
+    summary,
+  });
 
   return (
     <main className="app-shell">
@@ -254,50 +122,56 @@ export function WritingDashboard({ prompts, recentSavedAttempts, summary, progre
           <article className="panel">
             <div className="section-heading">
               <div>
-                <p className="eyebrow">Next revision target</p>
+                <p className="eyebrow">Next best action</p>
                 <h2>Fix this next</h2>
               </div>
             </div>
-            {recommendedPrompt ? (
+            {nextAction.recommendedPrompt ? (
               <article className="history-card inspection-card">
                 <div className="history-card-header">
-                  <strong>{recommendedPrompt.prompt.title}</strong>
-                  <span>{recommendedPrompt.reason}</span>
+                  <strong>{nextAction.recommendedPrompt.prompt.title}</strong>
+                  <span>{nextAction.recommendedPrompt.reason}</span>
                 </div>
                 <p className="summary-copy">
-                  {summary.weakestCriterion
-                    ? `Train the weakest criterion first: ${summary.weakestCriterion.criterion}.`
+                  {nextAction.criterionCoaching
+                    ? `Train the weakest criterion first: ${nextAction.criterionCoaching.criterion} toward Band ${nextAction.criterionCoaching.targetBand.toFixed(1)}.`
                     : 'Use this as the next best prompt when you want one clear follow-up choice.'}
                 </p>
-                <p>{recommendedPrompt.prompt.prompt}</p>
+                {nextAction.criterionCoaching ? (
+                  <ul className="plain-list compact-list">
+                    {nextAction.criterionCoaching.checklist.slice(0, 2).map((item, index) => (
+                      <li key={`${nextAction.criterionCoaching?.criterion}-dashboard-${index}`}>{item}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                <p>{nextAction.recommendedPrompt.prompt.prompt}</p>
                 <div className="history-meta">
-                  <span>{recommendedPrompt.theme}</span>
-                  <span>{recommendedPrompt.difficulty}</span>
-                  <span>{recommendedPrompt.prompt.taskType === 'task-1' ? 'Task 1' : 'Task 2'}</span>
+                  <span>{nextAction.recommendedPrompt.theme}</span>
+                  <span>{nextAction.recommendedPrompt.difficulty}</span>
+                  <span>{nextAction.recommendedPrompt.prompt.taskType === 'task-1' ? 'Task 1' : 'Task 2'}</span>
                 </div>
                 <div className="history-meta">
-                  <span>{recommendedPrompt.promptAttemptCount} prompt attempts so far</span>
-                  <span>{recommendedPrompt.themeAttemptCount} attempts in this theme</span>
+                  <span>{nextAction.recommendedPrompt.promptAttemptCount} prompt attempts so far</span>
+                  <span>{nextAction.recommendedPrompt.themeAttemptCount} attempts in this theme</span>
                 </div>
                 <div className="hero-actions">
-                  <Link
-                    className="secondary-link-button"
-                    href={buildPracticeWorkspaceHref(writingAssessmentWorkspace, {
-                      promptId: recommendedPrompt.prompt.id,
-                    })}
-                  >
-                    Open revision target
-                  </Link>
-                  {alternatePrompt ? (
-                    <Link
-                      className="secondary-link-button"
-                      href={buildPracticeWorkspaceHref(writingAssessmentWorkspace, {
-                        promptId: alternatePrompt.prompt.id,
-                      })}
-                    >
+                  {nextAction.primaryHref ? (
+                    <Link className="secondary-link-button" href={nextAction.primaryHref}>
+                      {nextAction.primaryLabel}
+                    </Link>
+                  ) : null}
+                  {nextAction.alternateHref ? (
+                    <Link className="secondary-link-button" href={nextAction.alternateHref}>
                       Compare another prompt
                     </Link>
                   ) : null}
+                </div>
+                <div className="dashboard-inline-note">
+                  <strong>{nextAction.crossTraining.title}</strong>
+                  <p>{nextAction.crossTraining.description}</p>
+                  <Link className="secondary-link-button" href="/reading">
+                    Switch to Reading practice
+                  </Link>
                 </div>
               </article>
             ) : (
@@ -315,30 +189,30 @@ export function WritingDashboard({ prompts, recentSavedAttempts, summary, progre
             <div className="dashboard-insight-grid">
               <div className="history-card">
                 <div className="history-card-header">
-                  <strong>{weakestTheme?.theme ?? 'No theme data yet'}</strong>
-                  <span>{weakestTheme ? `${weakestTheme.attemptCount} attempts` : 'Waiting for attempts'}</span>
+                  <strong>{themeCoverage.weakestTheme?.theme ?? 'No theme data yet'}</strong>
+                  <span>{themeCoverage.weakestTheme ? `${themeCoverage.weakestTheme.attemptCount} attempts` : 'Waiting for attempts'}</span>
                 </div>
                 <p>
-                  {weakestTheme
-                    ? `Next gap to close. ${weakestTheme.promptCount} prompts are available here, so this is the easiest theme to rebalance next.`
+                  {themeCoverage.weakestTheme
+                    ? `Next gap to close. ${themeCoverage.weakestTheme.promptCount} prompts are available here, so this is the easiest theme to rebalance next.`
                     : 'Save a few attempts to unlock theme coverage guidance.'}
                 </p>
               </div>
               <div className="history-card">
                 <div className="history-card-header">
-                  <strong>{strongestTheme?.theme ?? 'No theme data yet'}</strong>
-                  <span>{strongestTheme ? `${strongestTheme.attemptCount} attempts` : 'Waiting for attempts'}</span>
+                  <strong>{themeCoverage.strongestTheme?.theme ?? 'No theme data yet'}</strong>
+                  <span>{themeCoverage.strongestTheme ? `${themeCoverage.strongestTheme.attemptCount} attempts` : 'Waiting for attempts'}</span>
                 </div>
                 <p>
-                  {strongestTheme
+                  {themeCoverage.strongestTheme
                     ? 'This is the most-practised theme in your saved history so far.'
                     : 'The dashboard will highlight your most-practised theme after your first saved response.'}
                 </p>
               </div>
             </div>
-            {themeCoverage.length > 0 ? (
+            {themeCoverage.entries.length > 0 ? (
               <div className="dashboard-criterion-list">
-                {themeCoverage.map((entry) => (
+                {themeCoverage.entries.map((entry) => (
                   <article className="history-card" key={entry.theme}>
                     <div className="history-card-header">
                       <strong>{entry.theme}</strong>
