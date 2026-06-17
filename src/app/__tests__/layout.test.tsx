@@ -92,6 +92,18 @@ describe('RootLayout', () => {
     expect(html).toContain('Writing stats');
   });
 
+  it('surfaces the spaced-review module in the navigation', () => {
+    const html = renderToStaticMarkup(RootLayout({ children: React.createElement('main', null, 'Child') }));
+
+    expect(html).toContain('href="/review"');
+    expect(html).toContain('>Review<');
+    expect(html).toContain('site-nav-dot--review');
+    expect(html).toContain('href="/review/dashboard"');
+    expect(html).toContain('Review stats');
+    // Review is a primary link, so it must not add to the secondary count.
+    expect(html.match(/site-nav-link--secondary/g)).toHaveLength(2);
+  });
+
   it('renders the IELTS Academic kicker above the brand name', () => {
     const html = renderToStaticMarkup(RootLayout({ children: React.createElement('main', null, 'Child') }));
 

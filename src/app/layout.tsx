@@ -31,6 +31,12 @@ const navLinks = [
     tier: 'primary',
   },
   {
+    href: '/review',
+    label: 'Review',
+    dotClassName: 'site-nav-dot site-nav-dot--review',
+    tier: 'primary',
+  },
+  {
     href: '/speaking',
     label: 'Speaking',
     dotClassName: 'site-nav-dot site-nav-dot--speaking',
@@ -79,6 +85,10 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
               <Link href="/dashboard" className="site-nav-link site-nav-link--dashboard">
                 <span className="site-nav-dot site-nav-dot--writing" aria-hidden="true" />
                 Writing stats
+              </Link>
+              <Link href="/review/dashboard" className="site-nav-link site-nav-link--dashboard">
+                <span className="site-nav-dot site-nav-dot--review" aria-hidden="true" />
+                Review stats
               </Link>
             </div>
           </div>
