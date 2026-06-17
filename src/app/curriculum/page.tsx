@@ -9,15 +9,22 @@ import {
   loadDefaultAssessmentDashboardPageData,
 } from '@/lib/server/assessment-workspace';
 import { buildCurriculumPageData } from '@/lib/services/curriculum';
+import { loadReviewDeckSummary } from '@/lib/services/review/application-service';
 
 export default async function CurriculumPage() {
-  const [writingDashboard, readingDashboard] = await Promise.all([
+  const [writingDashboard, readingDashboard, reviewSummary] = await Promise.all([
     loadDefaultAssessmentDashboardPageData(),
     loadAssessmentDashboardPageData(READING_ASSESSMENT_MODULE_ID),
+    loadReviewDeckSummary(),
   ]);
   const curriculum = buildCurriculumPageData({
     writing: writingDashboard,
     reading: readingDashboard,
+    review: {
+      dueCount: reviewSummary.dueCount,
+      totalTracked: reviewSummary.totalTracked,
+      nextDueAt: reviewSummary.nextDueAt,
+    },
   });
   const primaryStep = curriculum.primaryModule.currentStep;
   const primaryHref = primaryStep?.actionHref ?? curriculum.primaryModule.href;
@@ -63,7 +70,9 @@ export default async function CurriculumPage() {
               <p className="eyebrow">Today</p>
               <h2>Do these in order</h2>
             </div>
-            <span className="section-tag section-tag--muted">2 steps</span>
+            <span className="section-tag section-tag--muted">
+              {curriculum.todaySteps.length} step{curriculum.todaySteps.length === 1 ? '' : 's'}
+            </span>
           </div>
           <div className="history-list curriculum-today-list">
             {curriculum.todaySteps.map((step, index) => (

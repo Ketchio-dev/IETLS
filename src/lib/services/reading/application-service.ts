@@ -8,8 +8,10 @@ import {
   loadReadingPrivateImportSummary,
   type ReadingPrivateImportRepository,
 } from '@/lib/server/reading-private-import-repository';
+import { createReviewRepository } from '@/lib/server/review-repository';
 import type { ImportedReadingQuestion, ImportedReadingSet } from '@/lib/services/reading-imports/types';
 import { isReadingAnswerCorrect } from '@/lib/services/reading/grading';
+import { ingestReadingReviewItems } from '@/lib/services/review/ingest';
 
 import type {
   ReadingAccuracyByType,
@@ -30,6 +32,12 @@ interface ReadingApplicationServiceOptions {
   repository?: ReadingAssessmentRepository;
   loadImportSummary?: ReadingPrivateImportRepository['loadSummary'];
   now?: () => string;
+  /**
+   * Side-channel that feeds missed questions into the spaced-repetition deck.
+   * Defaults to a no-op so test-constructed services stay free of review-store
+   * side effects; the default exported service wires in the real deck below.
+   */
+  ingestReviewItems?: (report: ReadingAssessmentReport, now: string) => Promise<void>;
 }
 
 function clone<T>(value: T): T {
@@ -372,6 +380,7 @@ export function createReadingApplicationService({
   repository = createReadingAssessmentRepository(),
   loadImportSummary = loadReadingPrivateImportSummary,
   now = () => new Date().toISOString(),
+  ingestReviewItems = async () => {},
 }: ReadingApplicationServiceOptions = {}) {
   async function loadPracticePageData(
     searchParams: Record<string, SearchParamValue> = {},
@@ -525,6 +534,14 @@ export function createReadingApplicationService({
 
     const savedAttempts = await repository.saveAttempt(attempt, 12);
 
+    // Feed missed questions into the spaced-repetition deck. This is a learning
+    // side-benefit, so a review-store hiccup must never fail the user's score.
+    try {
+      await ingestReviewItems(attempt.report, generatedAt);
+    } catch (error) {
+      console.error('[review] Failed to ingest reading review items.', error);
+    }
+
     return {
       ok: true,
       payload: {
@@ -544,7 +561,13 @@ export function createReadingApplicationService({
   };
 }
 
-const defaultReadingApplicationService = createReadingApplicationService();
+const defaultReviewRepository = createReviewRepository();
+
+const defaultReadingApplicationService = createReadingApplicationService({
+  ingestReviewItems: async (report, generatedAt) => {
+    await ingestReadingReviewItems(report, generatedAt, defaultReviewRepository);
+  },
+});
 
 export const loadReadingPracticePageData = defaultReadingApplicationService.loadPracticePageData;
 export const loadReadingDashboardPageData = defaultReadingApplicationService.loadDashboardPageData;

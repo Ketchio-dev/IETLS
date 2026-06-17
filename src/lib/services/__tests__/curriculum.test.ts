@@ -135,4 +135,32 @@ describe('curriculum page model', () => {
     });
     expect(model.primaryModule.href).toBe('/reading');
   });
+
+  it('prepends a spaced-review warm-up step when items are due', () => {
+    const model = buildCurriculumPageData({
+      reading: readingDashboard,
+      writing: writingDashboard,
+      review: { dueCount: 3, totalTracked: 5, nextDueAt: '2026-06-16T00:00:00.000Z' },
+    });
+
+    expect(model.todaySteps[0]).toMatchObject({
+      moduleId: 'review',
+      moduleLabel: 'Review',
+      actionHref: '/review',
+      title: 'Clear 3 spaced-review items',
+    });
+    expect(model.todaySteps.map((step) => step.moduleLabel)).toEqual(['Review', 'Reading', 'Writing']);
+    expect(model.reviewSummary?.dueCount).toBe(3);
+  });
+
+  it('omits the review step when nothing is due', () => {
+    const model = buildCurriculumPageData({
+      reading: readingDashboard,
+      writing: writingDashboard,
+      review: { dueCount: 0, totalTracked: 4, nextDueAt: null },
+    });
+
+    expect(model.todaySteps.some((step) => step.moduleId === 'review')).toBe(false);
+    expect(model.reviewSummary?.totalTracked).toBe(4);
+  });
 });

@@ -11,6 +11,7 @@ import {
 } from '@/lib/server/assessment-workspace';
 import { isSpeakingAlphaEnabled } from '@/lib/server/module-flags';
 import { buildCurriculumPageData } from '@/lib/services/curriculum';
+import { loadReviewDeckSummary } from '@/lib/services/review/application-service';
 
 interface ModuleCardAction {
   href: string;
@@ -143,15 +144,21 @@ function renderModuleCards(moduleCards: ModuleCard[]) {
 
 export default async function HomePage() {
   const speakingAlphaEnabled = isSpeakingAlphaEnabled();
-  const [writingDashboard, readingDashboard, speakingDashboard, listeningDashboard] = await Promise.all([
+  const [writingDashboard, readingDashboard, speakingDashboard, listeningDashboard, reviewSummary] = await Promise.all([
     loadDefaultAssessmentDashboardPageData(),
     loadAssessmentDashboardPageData(READING_ASSESSMENT_MODULE_ID),
     speakingAlphaEnabled ? loadAssessmentDashboardPageData(SPEAKING_ASSESSMENT_MODULE_ID) : Promise.resolve(null),
     loadAssessmentDashboardPageData(LISTENING_ASSESSMENT_MODULE_ID),
+    loadReviewDeckSummary(),
   ]);
   const curriculum = buildCurriculumPageData({
     writing: writingDashboard,
     reading: readingDashboard,
+    review: {
+      dueCount: reviewSummary.dueCount,
+      totalTracked: reviewSummary.totalTracked,
+      nextDueAt: reviewSummary.nextDueAt,
+    },
   });
 
   const moduleCards: ModuleCard[] = [
@@ -285,6 +292,7 @@ export default async function HomePage() {
             <span>Reading {formatAccuracy(readingDashboard.dashboardSummary.averagePercentage)}</span>
             <span>Writing {formatBand(writingDashboard.summary.averageBand)}</span>
             <span>{readingDashboard.dashboardSummary.totalAttempts + writingDashboard.summary.totalAttempts} sessions</span>
+            {reviewSummary.dueCount > 0 ? <span>{reviewSummary.dueCount} reviews due</span> : null}
           </div>
         </aside>
       </section>
@@ -302,6 +310,17 @@ export default async function HomePage() {
           <div className="quick-action-text">
             <strong>Today&apos;s curriculum</strong>
             <span>Follow the next Reading + Writing block</span>
+          </div>
+        </Link>
+        <Link className="quick-action-card" href="/review" data-quick="reading">
+          <div className="quick-action-icon" aria-hidden="true"><ReadingIcon /></div>
+          <div className="quick-action-text">
+            <strong>Spaced review</strong>
+            <span>
+              {reviewSummary.dueCount > 0
+                ? `${reviewSummary.dueCount} item${reviewSummary.dueCount === 1 ? '' : 's'} due now`
+                : `${reviewSummary.totalTracked} tracked`}
+            </span>
           </div>
         </Link>
         <Link className="quick-action-card" href="/writing" data-quick="writing">

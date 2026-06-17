@@ -12,13 +12,14 @@ const STORAGE_FILES = {
   speakingSessions: 'speaking-sessions.json',
   readingPrivateImports: 'reading-private-imports.json',
   readingAttempts: 'reading-attempts.json',
+  reviewItems: 'review-items.json',
 } as const;
 
 const defaultDataDir = path.join('data', 'runtime');
 const SQLITE_STORAGE_FILE = 'assessment-storage.sqlite';
 const GLOBAL_STORAGE_SCOPE = 'global';
 const FILE_BACKED_STORAGE_FILES = new Set<StorageFile>(['readingPrivateImports']);
-const USER_SCOPED_STORAGE_FILES = new Set<StorageFile>(['assessments', 'studyPlan', 'speakingSessions', 'readingAttempts']);
+const USER_SCOPED_STORAGE_FILES = new Set<StorageFile>(['assessments', 'studyPlan', 'speakingSessions', 'readingAttempts', 'reviewItems']);
 
 export type StorageFile = keyof typeof STORAGE_FILES;
 export type JsonStorageUpdater<T> = (current: T) => Promise<T> | T;

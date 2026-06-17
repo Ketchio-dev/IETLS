@@ -318,6 +318,18 @@ li,
   font-size: 1.15rem;
 }
 
+.metric-card small {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.metric-card--wide {
+  grid-column: 1 / -1;
+}
+
 /* ------ Workspace grid ------ */
 
 .workspace-grid {
@@ -2506,4 +2518,183 @@ html {
     font-size: 0.8rem;
     padding: 0.4rem 0.65rem;
   }
+}
+
+/* ============================================================
+   Spaced review module
+   ============================================================ */
+
+.review-stat-grid {
+  margin-top: 1rem;
+}
+
+.review-session-section {
+  margin-top: 1.5rem;
+}
+
+.review-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.review-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.review-progress strong {
+  color: var(--text);
+}
+
+.review-question-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.review-question-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.review-question-source {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.review-question-prompt {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.45;
+}
+
+.review-answer-area {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.review-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.review-options--stacked {
+  flex-direction: column;
+}
+
+.review-option {
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 0.7rem 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.review-option:hover {
+  border-color: var(--accent);
+}
+
+.review-option[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--impact-medium);
+  font-weight: 600;
+}
+
+.review-text-input {
+  width: 100%;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  background: var(--panel);
+  color: var(--text);
+}
+
+.review-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.review-reveal {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border-radius: 12px;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--panel-border);
+}
+
+.review-reveal--correct {
+  background: rgba(20, 191, 150, 0.1);
+  border-color: rgba(20, 191, 150, 0.3);
+}
+
+.review-reveal--incorrect {
+  background: rgba(217, 69, 60, 0.08);
+  border-color: rgba(217, 69, 60, 0.28);
+}
+
+.review-reveal-verdict {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.review-reveal--correct .review-reveal-verdict {
+  color: #0f8f70;
+}
+
+.review-reveal--incorrect .review-reveal-verdict {
+  color: var(--danger);
+}
+
+.review-reveal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.review-reveal-grid dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.review-reveal-grid dd {
+  margin: 0.15rem 0 0;
+  font-weight: 600;
+}
+
+.review-reveal-explanation,
+.review-reveal-evidence,
+.review-reveal-schedule {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.review-reveal-evidence {
+  color: var(--muted);
+}
+
+.review-empty-card,
+.review-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
 }
