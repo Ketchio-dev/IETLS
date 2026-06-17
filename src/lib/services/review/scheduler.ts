@@ -14,6 +14,26 @@ const EASE_PENALTY_ON_MISS = 0.2;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const MS_PER_MINUTE = 60 * 1000;
 
+/**
+ * The spaced-repetition scheduling fields shared by every deck (Reading review,
+ * vocabulary, ...). The scheduler is generic over anything carrying this state,
+ * so a single SM-2-lite engine drives all decks.
+ */
+export interface SchedulingState {
+  repetitions: number;
+  intervalDays: number;
+  easeFactor: number;
+  dueAt: string;
+  lapses: number;
+  status: ReviewItemStatus;
+  lastReviewedAt: string | null;
+  lastResult: ReviewGrade | null;
+  timesSeen: number;
+  timesCorrect: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 function addDays(iso: string, days: number): string {
   return new Date(new Date(iso).getTime() + days * MS_PER_DAY).toISOString();
 }
@@ -38,6 +58,24 @@ function deriveStatus(repetitions: number, intervalDays: number): ReviewItemStat
   return repetitions === 0 ? 'learning' : 'review';
 }
 
+/** Fresh scheduling state: due immediately, in the learning phase. */
+export function createSchedulingState(now: string): SchedulingState {
+  return {
+    repetitions: 0,
+    intervalDays: 0,
+    easeFactor: INITIAL_EASE_FACTOR,
+    dueAt: now,
+    lapses: 0,
+    status: 'learning',
+    lastReviewedAt: null,
+    lastResult: null,
+    timesSeen: 0,
+    timesCorrect: 0,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
 export interface CreateReviewItemInput {
   id: string;
   setId: string;
@@ -48,36 +86,25 @@ export interface CreateReviewItemInput {
 }
 
 /**
- * Build a freshly tracked item. New items are due immediately so the first
- * review session surfaces them right away.
+ * Build a freshly tracked Reading review item. New items are due immediately so
+ * the first review session surfaces them right away.
  */
 export function createReviewItem(input: CreateReviewItemInput, now: string): ReviewItem {
   return {
     ...input,
     source: 'reading',
-    repetitions: 0,
-    intervalDays: 0,
-    easeFactor: INITIAL_EASE_FACTOR,
-    dueAt: now,
-    lapses: 0,
-    status: 'learning',
-    lastReviewedAt: null,
-    lastResult: null,
     firstMissedAt: now,
-    timesSeen: 0,
-    timesCorrect: 0,
-    createdAt: now,
-    updatedAt: now,
+    ...createSchedulingState(now),
   };
 }
 
 /**
- * Advance an item's schedule after a graded re-review. A miss resets the streak
- * and resurfaces the item within minutes; a correct answer grows the interval
- * geometrically (1d, 3d, then interval * ease) until the item reaches mastery.
- * Pure and deterministic — `now` is injected rather than read from the clock.
+ * Advance any scheduling state after a graded re-review. A miss resets the
+ * streak and resurfaces the item within minutes; a correct answer grows the
+ * interval geometrically (1d, 3d, then interval * ease) until it reaches
+ * mastery. Pure and deterministic — `now` is injected, never read from a clock.
  */
-export function scheduleReviewItem(item: ReviewItem, grade: ReviewGrade, now: string): ReviewItem {
+export function scheduleReviewItem<T extends SchedulingState>(item: T, grade: ReviewGrade, now: string): T {
   const timesSeen = item.timesSeen + 1;
 
   if (grade === 'incorrect') {
@@ -93,7 +120,7 @@ export function scheduleReviewItem(item: ReviewItem, grade: ReviewGrade, now: st
       lastResult: 'incorrect',
       timesSeen,
       updatedAt: now,
-    };
+    } as T;
   }
 
   const repetitions = item.repetitions + 1;
@@ -117,10 +144,10 @@ export function scheduleReviewItem(item: ReviewItem, grade: ReviewGrade, now: st
     timesSeen,
     timesCorrect: item.timesCorrect + 1,
     updatedAt: now,
-  };
+  } as T;
 }
 
 /** Mastered items leave the active queue; everything else is due once its time passes. */
-export function isReviewItemDue(item: ReviewItem, now: string): boolean {
+export function isReviewItemDue(item: Pick<SchedulingState, 'status' | 'dueAt'>, now: string): boolean {
   return item.status !== 'mastered' && item.dueAt <= now;
 }

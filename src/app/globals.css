@@ -169,6 +169,10 @@ input {
   background: #f59e0b;
 }
 
+.site-nav-dot--vocab {
+  background: #0891b2;
+}
+
 /* Experimental nav links */
 
 .site-nav-link--experimental {

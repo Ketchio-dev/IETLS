@@ -104,6 +104,16 @@ describe('RootLayout', () => {
     expect(html.match(/site-nav-link--secondary/g)).toHaveLength(2);
   });
 
+  it('surfaces the vocabulary module in the navigation', () => {
+    const html = renderToStaticMarkup(RootLayout({ children: React.createElement('main', null, 'Child') }));
+
+    expect(html).toContain('href="/vocab"');
+    expect(html).toContain('>Vocab<');
+    expect(html).toContain('site-nav-dot--vocab');
+    // Vocab is a primary link too — secondary count stays at speaking + listening.
+    expect(html.match(/site-nav-link--secondary/g)).toHaveLength(2);
+  });
+
   it('renders the IELTS Academic kicker above the brand name', () => {
     const html = renderToStaticMarkup(RootLayout({ children: React.createElement('main', null, 'Child') }));
 

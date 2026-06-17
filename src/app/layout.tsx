@@ -37,6 +37,12 @@ const navLinks = [
     tier: 'primary',
   },
   {
+    href: '/vocab',
+    label: 'Vocab',
+    dotClassName: 'site-nav-dot site-nav-dot--vocab',
+    tier: 'primary',
+  },
+  {
     href: '/speaking',
     label: 'Speaking',
     dotClassName: 'site-nav-dot site-nav-dot--speaking',
