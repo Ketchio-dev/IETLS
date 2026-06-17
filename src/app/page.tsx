@@ -11,7 +11,8 @@ import {
 } from '@/lib/server/assessment-workspace';
 import { isSpeakingAlphaEnabled } from '@/lib/server/module-flags';
 import { buildCurriculumPageData } from '@/lib/services/curriculum';
-import { loadReviewDeckSummary } from '@/lib/services/review/application-service';
+import { loadReviewDeckSummary, loadReviewStreak } from '@/lib/services/review/application-service';
+import { loadVocabDeckSummary } from '@/lib/services/vocab/application-service';
 
 interface ModuleCardAction {
   href: string;
@@ -144,12 +145,22 @@ function renderModuleCards(moduleCards: ModuleCard[]) {
 
 export default async function HomePage() {
   const speakingAlphaEnabled = isSpeakingAlphaEnabled();
-  const [writingDashboard, readingDashboard, speakingDashboard, listeningDashboard, reviewSummary] = await Promise.all([
+  const [
+    writingDashboard,
+    readingDashboard,
+    speakingDashboard,
+    listeningDashboard,
+    reviewSummary,
+    reviewStreak,
+    vocabSummary,
+  ] = await Promise.all([
     loadDefaultAssessmentDashboardPageData(),
     loadAssessmentDashboardPageData(READING_ASSESSMENT_MODULE_ID),
     speakingAlphaEnabled ? loadAssessmentDashboardPageData(SPEAKING_ASSESSMENT_MODULE_ID) : Promise.resolve(null),
     loadAssessmentDashboardPageData(LISTENING_ASSESSMENT_MODULE_ID),
     loadReviewDeckSummary(),
+    loadReviewStreak(),
+    loadVocabDeckSummary(),
   ]);
   const curriculum = buildCurriculumPageData({
     writing: writingDashboard,
@@ -293,6 +304,7 @@ export default async function HomePage() {
             <span>Writing {formatBand(writingDashboard.summary.averageBand)}</span>
             <span>{readingDashboard.dashboardSummary.totalAttempts + writingDashboard.summary.totalAttempts} sessions</span>
             {reviewSummary.dueCount > 0 ? <span>{reviewSummary.dueCount} reviews due</span> : null}
+            {reviewStreak.currentStreak > 0 ? <span>{reviewStreak.currentStreak}-day streak</span> : null}
           </div>
         </aside>
       </section>
@@ -320,6 +332,17 @@ export default async function HomePage() {
               {reviewSummary.dueCount > 0
                 ? `${reviewSummary.dueCount} item${reviewSummary.dueCount === 1 ? '' : 's'} due now`
                 : `${reviewSummary.totalTracked} tracked`}
+            </span>
+          </div>
+        </Link>
+        <Link className="quick-action-card" href="/vocab" data-quick="reading">
+          <div className="quick-action-icon" aria-hidden="true"><ReadingIcon /></div>
+          <div className="quick-action-text">
+            <strong>Vocabulary</strong>
+            <span>
+              {vocabSummary.dueCount > 0
+                ? `${vocabSummary.dueCount} word${vocabSummary.dueCount === 1 ? '' : 's'} due now`
+                : `${vocabSummary.totalTracked} tracked`}
             </span>
           </div>
         </Link>

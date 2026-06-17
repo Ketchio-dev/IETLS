@@ -18,6 +18,8 @@ const mocks = vi.hoisted(() => ({
   loadDefaultAssessmentDashboardPageData: vi.fn(),
   loadAssessmentDashboardPageData: vi.fn(),
   loadReviewDeckSummary: vi.fn(),
+  loadReviewStreak: vi.fn(),
+  loadVocabDeckSummary: vi.fn(),
 }));
 
 vi.mock('@/lib/server/assessment-workspace', () => ({
@@ -27,6 +29,11 @@ vi.mock('@/lib/server/assessment-workspace', () => ({
 
 vi.mock('@/lib/services/review/application-service', () => ({
   loadReviewDeckSummary: mocks.loadReviewDeckSummary,
+  loadReviewStreak: mocks.loadReviewStreak,
+}));
+
+vi.mock('@/lib/services/vocab/application-service', () => ({
+  loadVocabDeckSummary: mocks.loadVocabDeckSummary,
 }));
 
 import HomePage from '../page';
@@ -45,6 +52,23 @@ beforeEach(() => {
     nextDueAt: null,
     weakestType: null,
     typeBreakdown: [],
+  });
+  mocks.loadReviewStreak.mockResolvedValue({
+    currentStreak: 0,
+    longestStreak: 0,
+    todayCount: 0,
+    goal: 10,
+    goalMet: false,
+    activeDays: 0,
+    lastActiveDate: null,
+  });
+  mocks.loadVocabDeckSummary.mockResolvedValue({
+    totalTracked: 0,
+    dueCount: 0,
+    learningCount: 0,
+    reviewCount: 0,
+    masteredCount: 0,
+    nextDueAt: null,
   });
 });
 
@@ -699,20 +723,21 @@ describe('HomePage', () => {
     expect(strip).not.toBeNull();
 
     const quickCards = strip!.querySelectorAll('.quick-action-card');
-    expect(quickCards).toHaveLength(6);
+    expect(quickCards).toHaveLength(7);
 
-    // Quick actions include the guided curriculum and spaced review plus direct practice/dashboard routes
+    // Quick actions include the guided curriculum, spaced review, and vocabulary plus practice/dashboard routes
     const hrefs = Array.from(quickCards).map((card) => card.getAttribute('href'));
     expect(hrefs[0]).toBe('/reading');
     expect(hrefs[1]).toBe('/curriculum');
     expect(hrefs[2]).toBe('/review');
-    expect(hrefs[3]).toBe('/writing');
-    expect(hrefs[4]).toBe('/reading/dashboard');
-    expect(hrefs[5]).toBe('/dashboard');
+    expect(hrefs[3]).toBe('/vocab');
+    expect(hrefs[4]).toBe('/writing');
+    expect(hrefs[5]).toBe('/reading/dashboard');
+    expect(hrefs[6]).toBe('/dashboard');
 
     // Quick action data attributes identify reading and writing
     const quickTypes = Array.from(quickCards).map((card) => card.getAttribute('data-quick'));
-    expect(quickTypes).toEqual(['reading', 'curriculum', 'reading', 'writing', 'reading', 'writing']);
+    expect(quickTypes).toEqual(['reading', 'curriculum', 'reading', 'reading', 'writing', 'reading', 'writing']);
 
     // Each quick action card has an icon and text
     quickCards.forEach((card) => {
