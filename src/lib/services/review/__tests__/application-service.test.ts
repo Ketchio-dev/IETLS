@@ -156,4 +156,19 @@ describe('review application service', () => {
     expect(summary.masteredCount).toBe(1);
     expect(summary.weakestType?.type).toBe(Q0.type);
   });
+
+  it('loads dashboard analytics through the service', async () => {
+    const reviewRepository = createMemoryReviewRepository([trackedItem('2026-06-16T00:00:00.000Z')]);
+    const service = createReviewApplicationService({
+      reviewRepository,
+      readingRepository: readingRepositoryStub,
+      now: () => '2026-06-16T01:00:00.000Z',
+    });
+
+    const dashboard = await service.loadDashboardData();
+
+    expect(dashboard.summary.totalTracked).toBe(1);
+    expect(dashboard.forecast.dueNow).toBe(1);
+    expect(dashboard.typeProgress[0]?.type).toBe(Q0.type);
+  });
 });

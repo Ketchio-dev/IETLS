@@ -99,3 +99,36 @@ export interface ReviewResultRevealed {
 export type SubmitReviewResultResult =
   | { ok: true; payload: ReviewResultRevealed }
   | { ok: false; error: string; status: 400 | 404 };
+
+export interface ReviewDueForecast {
+  dueNow: number;
+  next24h: number;
+  next7d: number;
+  later: number;
+}
+
+export interface ReviewTypeProgress {
+  type: string;
+  tracked: number;
+  mastered: number;
+  due: number;
+  masteryPct: number;
+  accuracyPct: number | null;
+}
+
+export interface ReviewActivity {
+  totalReviews: number;
+  totalCorrect: number;
+  accuracyPct: number | null;
+  totalLapses: number;
+  lastReviewedAt: string | null;
+}
+
+export interface ReviewDashboardData {
+  summary: ReviewDeckSummary;
+  forecast: ReviewDueForecast;
+  typeProgress: ReviewTypeProgress[];
+  activity: ReviewActivity;
+  masteryPct: number;
+  generatedAt: string;
+}

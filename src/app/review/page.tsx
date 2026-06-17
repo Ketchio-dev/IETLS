@@ -51,6 +51,11 @@ export default async function ReviewPage() {
               {summary.weakestType.due === 1 ? '' : 's'}).
             </p>
           ) : null}
+          <div className="dashboard-actions">
+            <Link className="secondary-link-button" href="/review/dashboard">
+              View review dashboard
+            </Link>
+          </div>
         </div>
       </section>
 

@@ -6,16 +6,18 @@ import { createReviewRepository, type ReviewRepository } from '@/lib/server/revi
 import type { ImportedReadingSet } from '@/lib/services/reading-imports/types';
 import { isReadingAnswerCorrect } from '@/lib/services/reading/grading';
 
+import { buildReviewDashboardModel, buildReviewDeckSummary } from './dashboard';
 import { isReviewItemDue, scheduleReviewItem } from './scheduler';
 import type {
+  ReviewDashboardData,
   ReviewDeckSummary,
-  ReviewItem,
   ReviewPageData,
   ReviewQuestionView,
-  ReviewTypeWeakness,
   SubmitReviewResultInput,
   SubmitReviewResultResult,
 } from './types';
+
+export { buildReviewDeckSummary };
 
 const DEFAULT_DUE_LIMIT = 20;
 
@@ -23,55 +25,6 @@ interface ReviewApplicationServiceOptions {
   reviewRepository?: ReviewRepository;
   readingRepository?: ReadingAssessmentRepository;
   now?: () => string;
-}
-
-export function buildReviewDeckSummary(items: ReviewItem[], now: string): ReviewDeckSummary {
-  const typeMap = new Map<string, ReviewTypeWeakness>();
-  let dueCount = 0;
-  let learningCount = 0;
-  let reviewCount = 0;
-  let masteredCount = 0;
-  let nextDueAt: string | null = null;
-
-  for (const item of items) {
-    const bucket = typeMap.get(item.questionType) ?? { type: item.questionType, tracked: 0, due: 0, mastered: 0 };
-    bucket.tracked += 1;
-
-    if (isReviewItemDue(item, now)) {
-      dueCount += 1;
-      bucket.due += 1;
-    }
-
-    if (item.status === 'mastered') {
-      masteredCount += 1;
-      bucket.mastered += 1;
-    } else if (item.status === 'learning') {
-      learningCount += 1;
-    } else {
-      reviewCount += 1;
-    }
-
-    if (item.status !== 'mastered' && (nextDueAt === null || item.dueAt < nextDueAt)) {
-      nextDueAt = item.dueAt;
-    }
-
-    typeMap.set(item.questionType, bucket);
-  }
-
-  const typeBreakdown = [...typeMap.values()].sort(
-    (left, right) => right.due - left.due || right.tracked - left.tracked || left.type.localeCompare(right.type),
-  );
-
-  return {
-    totalTracked: items.length,
-    dueCount,
-    learningCount,
-    reviewCount,
-    masteredCount,
-    nextDueAt,
-    weakestType: typeBreakdown.find((entry) => entry.due > 0) ?? typeBreakdown[0] ?? null,
-    typeBreakdown,
-  };
 }
 
 export function createReviewApplicationService({
@@ -82,6 +35,11 @@ export function createReviewApplicationService({
   async function loadDeckSummary(): Promise<ReviewDeckSummary> {
     const items = await reviewRepository.listItems();
     return buildReviewDeckSummary(items, now());
+  }
+
+  async function loadDashboardData(): Promise<ReviewDashboardData> {
+    const items = await reviewRepository.listItems();
+    return buildReviewDashboardModel(items, now());
   }
 
   async function loadReviewPageData(limit = DEFAULT_DUE_LIMIT): Promise<ReviewPageData> {
@@ -179,6 +137,7 @@ export function createReviewApplicationService({
 
   return {
     loadDeckSummary,
+    loadDashboardData,
     loadReviewPageData,
     submitReviewResult,
   };
@@ -188,4 +147,5 @@ const defaultReviewApplicationService = createReviewApplicationService();
 
 export const loadReviewPageData = defaultReviewApplicationService.loadReviewPageData;
 export const loadReviewDeckSummary = defaultReviewApplicationService.loadDeckSummary;
+export const loadReviewDashboardData = defaultReviewApplicationService.loadDashboardData;
 export const submitReviewResult = defaultReviewApplicationService.submitReviewResult;
