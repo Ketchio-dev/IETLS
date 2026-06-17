@@ -1,7 +1,7 @@
 import type { ReviewRepository } from '@/lib/server/review-repository';
 import type { ReadingAssessmentReport } from '@/lib/services/reading/types';
 
-import { createReviewItem } from './scheduler';
+import { createReviewItem, scheduleReviewItem } from './scheduler';
 import type { ReviewItem } from './types';
 
 /** Stable cross-set identity for a tracked question. */
@@ -10,13 +10,9 @@ export function buildReviewItemId(setId: string, questionId: string): string {
 }
 
 /**
- * Derive the review items a graded Reading report should add to the deck.
- *
- * Phase-1 boundary: ingestion only *adds* questions the learner missed and that
- * are not already tracked. It never mutates an already-scheduled item — grading
- * that advances or resets the schedule happens exclusively in dedicated review
- * sessions, so a stray correct/incorrect answer during normal practice cannot
- * silently disturb the spacing.
+ * Derive the *new* review items a graded Reading report should add to the deck:
+ * questions the learner missed that are not already tracked. Items that are
+ * already in the deck are handled by {@link deriveReadingReviewUpdates}, not here.
  */
 export function deriveReadingReviewIngest(
   report: ReadingAssessmentReport,
@@ -56,20 +52,62 @@ export function deriveReadingReviewIngest(
 }
 
 /**
- * Best-effort persistence wrapper used by the Reading submit flow. Returns the
- * newly-added items (empty when nothing new was missed).
+ * Treat normal Reading practice as a retrieval event for questions already in
+ * the deck: a correct answer advances the schedule, a miss resets it. Blank
+ * answers carry no retrieval signal (a time-pressure skip should not punish
+ * existing progress), so they are ignored. Untracked questions are left to
+ * {@link deriveReadingReviewIngest}.
+ */
+export function deriveReadingReviewUpdates(
+  report: ReadingAssessmentReport,
+  existingById: ReadonlyMap<string, ReviewItem>,
+  now: string,
+): ReviewItem[] {
+  const updates: ReviewItem[] = [];
+  const seen = new Set<string>();
+
+  for (const review of report.questionReviews) {
+    if (review.userAnswer.trim().length === 0) {
+      continue;
+    }
+
+    const id = buildReviewItemId(report.setId, review.questionId);
+    const existing = existingById.get(id);
+    if (!existing || seen.has(id)) {
+      continue;
+    }
+
+    seen.add(id);
+    updates.push(scheduleReviewItem(existing, review.isCorrect ? 'correct' : 'incorrect', now));
+  }
+
+  return updates;
+}
+
+export interface ReviewIngestResult {
+  additions: ReviewItem[];
+  updates: ReviewItem[];
+}
+
+/**
+ * Best-effort persistence for a graded Reading report: add newly missed
+ * questions and re-schedule any tracked questions the learner just answered.
  */
 export async function ingestReadingReviewItems(
   report: ReadingAssessmentReport,
   now: string,
   reviewRepository: ReviewRepository,
-): Promise<ReviewItem[]> {
+): Promise<ReviewIngestResult> {
   const existing = await reviewRepository.listItems();
-  const additions = deriveReadingReviewIngest(report, new Set(existing.map((item) => item.id)), now);
+  const existingById = new Map(existing.map((item) => [item.id, item] as const));
 
-  if (additions.length > 0) {
-    await reviewRepository.upsertItems(additions);
+  const additions = deriveReadingReviewIngest(report, new Set(existingById.keys()), now);
+  const updates = deriveReadingReviewUpdates(report, existingById, now);
+  const mutations = [...additions, ...updates];
+
+  if (mutations.length > 0) {
+    await reviewRepository.upsertItems(mutations);
   }
 
-  return additions;
+  return { additions, updates };
 }
