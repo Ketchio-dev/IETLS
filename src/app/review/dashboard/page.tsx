@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 import { formatDateTime } from '@/components/dashboard/dashboard-formatting';
-import { loadReviewDashboardData } from '@/lib/services/review/application-service';
+import { loadReviewDashboardData, loadReviewStreak } from '@/lib/services/review/application-service';
 
 function describeType(type: string) {
   return type
@@ -11,7 +11,10 @@ function describeType(type: string) {
 }
 
 export default async function ReviewDashboardPage() {
-  const { summary, forecast, typeProgress, activity, masteryPct } = await loadReviewDashboardData();
+  const [{ summary, forecast, typeProgress, activity, masteryPct }, streak] = await Promise.all([
+    loadReviewDashboardData(),
+    loadReviewStreak(),
+  ]);
 
   const headlineStats = [
     { label: 'Tracked', value: String(summary.totalTracked) },
@@ -32,6 +35,13 @@ export default async function ReviewDashboardPage() {
     { label: 'Correct', value: String(activity.totalCorrect) },
     { label: 'Lapses', value: String(activity.totalLapses) },
     { label: 'Last review', value: activity.lastReviewedAt ? formatDateTime(activity.lastReviewedAt) : 'No reviews yet' },
+  ];
+
+  const streakCards = [
+    { label: 'Current streak', value: `${streak.currentStreak} day${streak.currentStreak === 1 ? '' : 's'}` },
+    { label: 'Longest streak', value: `${streak.longestStreak} day${streak.longestStreak === 1 ? '' : 's'}` },
+    { label: 'Today', value: `${streak.todayCount}/${streak.goal}` },
+    { label: 'Active days', value: String(streak.activeDays) },
   ];
 
   return (
@@ -85,6 +95,26 @@ export default async function ReviewDashboardPage() {
         </section>
       ) : (
         <>
+          <section className="workspace-column">
+            <div className="panel primary-section-header">
+              <p className="eyebrow">Consistency</p>
+              <h2>{streak.currentStreak > 0 ? `${streak.currentStreak}-day review streak` : 'Start a review streak today'}</h2>
+              <p className="summary-copy">
+                {streak.goalMet
+                  ? `Daily goal hit — ${streak.todayCount} reviews done today. Keep the streak alive tomorrow.`
+                  : `${streak.todayCount} of ${streak.goal} daily reviews done${streak.todayCount > 0 ? `, ${streak.goal - streak.todayCount} to go` : ''}.`}
+              </p>
+            </div>
+            <div className="module-stat-grid">
+              {streakCards.map((card) => (
+                <div className="module-stat-card" key={card.label}>
+                  <span>{card.label}</span>
+                  <strong>{card.value}</strong>
+                </div>
+              ))}
+            </div>
+          </section>
+
           <section className="workspace-column">
             <div className="panel primary-section-header">
               <p className="eyebrow">Headline</p>

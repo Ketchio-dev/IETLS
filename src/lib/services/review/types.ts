@@ -132,3 +132,18 @@ export interface ReviewDashboardData {
   masteryPct: number;
   generatedAt: string;
 }
+
+/** Per-user log of how many review answers were submitted on each UTC date. */
+export interface ReviewActivityLog {
+  days: Record<string, number>;
+}
+
+export interface ReviewStreak {
+  currentStreak: number;
+  longestStreak: number;
+  todayCount: number;
+  goal: number;
+  goalMet: boolean;
+  activeDays: number;
+  lastActiveDate: string | null;
+}

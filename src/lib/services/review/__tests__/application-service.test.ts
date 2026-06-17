@@ -44,6 +44,19 @@ function createMemoryReviewRepository(initial: ReviewItem[] = []): ReviewReposit
   };
 }
 
+function createMemoryActivityRepository(initial: Record<string, number> = {}) {
+  const days: Record<string, number> = { ...initial };
+  return {
+    days,
+    repository: {
+      read: async () => ({ days: { ...days } }),
+      recordReview: async (dateKey: string) => {
+        days[dateKey] = (days[dateKey] ?? 0) + 1;
+      },
+    },
+  };
+}
+
 const readingRepositoryStub = {
   getSet: async (setId: string) => (setId === SET.id ? SET : null),
 } as unknown as ReadingAssessmentRepository;
@@ -67,9 +80,11 @@ describe('review application service', () => {
 
   it('grades a correct review, reveals the key, and schedules it forward', async () => {
     const reviewRepository = createMemoryReviewRepository([trackedItem('2026-06-16T00:00:00.000Z')]);
+    const activity = createMemoryActivityRepository();
     const service = createReviewApplicationService({
       reviewRepository,
       readingRepository: readingRepositoryStub,
+      reviewActivityRepository: activity.repository,
       now: () => '2026-06-16T00:00:00.000Z',
     });
 
@@ -88,6 +103,7 @@ describe('review application service', () => {
 
     const stored = await reviewRepository.listItems();
     expect(stored[0]).toMatchObject({ repetitions: 1, status: 'review', timesCorrect: 1 });
+    expect(activity.days['2026-06-16']).toBe(1);
   });
 
   it('grades a wrong answer as a lapse that stays due', async () => {
@@ -95,6 +111,7 @@ describe('review application service', () => {
     const service = createReviewApplicationService({
       reviewRepository,
       readingRepository: readingRepositoryStub,
+      reviewActivityRepository: createMemoryActivityRepository().repository,
       now: () => '2026-06-16T00:00:00.000Z',
     });
 
@@ -170,5 +187,19 @@ describe('review application service', () => {
     expect(dashboard.summary.totalTracked).toBe(1);
     expect(dashboard.forecast.dueNow).toBe(1);
     expect(dashboard.typeProgress[0]?.type).toBe(Q0.type);
+  });
+
+  it('computes the review streak from logged activity', async () => {
+    const activity = createMemoryActivityRepository({ '2026-06-15': 4, '2026-06-16': 11 });
+    const service = createReviewApplicationService({
+      reviewRepository: createMemoryReviewRepository([]),
+      readingRepository: readingRepositoryStub,
+      reviewActivityRepository: activity.repository,
+      now: () => '2026-06-16T09:00:00.000Z',
+    });
+
+    const streak = await service.loadStreak();
+
+    expect(streak).toMatchObject({ currentStreak: 2, todayCount: 11, goalMet: true });
   });
 });

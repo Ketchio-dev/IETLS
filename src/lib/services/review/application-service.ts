@@ -2,17 +2,23 @@ import {
   createReadingAssessmentRepository,
   type ReadingAssessmentRepository,
 } from '@/lib/server/reading-assessment-repository';
+import {
+  createReviewActivityRepository,
+  type ReviewActivityRepository,
+} from '@/lib/server/review-activity-repository';
 import { createReviewRepository, type ReviewRepository } from '@/lib/server/review-repository';
 import type { ImportedReadingSet } from '@/lib/services/reading-imports/types';
 import { isReadingAnswerCorrect } from '@/lib/services/reading/grading';
 
 import { buildReviewDashboardModel, buildReviewDeckSummary } from './dashboard';
 import { isReviewItemDue, scheduleReviewItem } from './scheduler';
+import { buildReviewStreak, toUtcDate } from './streak';
 import type {
   ReviewDashboardData,
   ReviewDeckSummary,
   ReviewPageData,
   ReviewQuestionView,
+  ReviewStreak,
   SubmitReviewResultInput,
   SubmitReviewResultResult,
 } from './types';
@@ -24,14 +30,21 @@ const DEFAULT_DUE_LIMIT = 20;
 interface ReviewApplicationServiceOptions {
   reviewRepository?: ReviewRepository;
   readingRepository?: ReadingAssessmentRepository;
+  reviewActivityRepository?: ReviewActivityRepository;
   now?: () => string;
 }
 
 export function createReviewApplicationService({
   reviewRepository = createReviewRepository(),
   readingRepository = createReadingAssessmentRepository(),
+  reviewActivityRepository = createReviewActivityRepository(),
   now = () => new Date().toISOString(),
 }: ReviewApplicationServiceOptions = {}) {
+  async function loadStreak(): Promise<ReviewStreak> {
+    const log = await reviewActivityRepository.read();
+    return buildReviewStreak(log.days, now());
+  }
+
   async function loadDeckSummary(): Promise<ReviewDeckSummary> {
     const items = await reviewRepository.listItems();
     return buildReviewDeckSummary(items, now());
@@ -114,6 +127,13 @@ export function createReviewApplicationService({
 
     await reviewRepository.upsertItems([updated]);
 
+    // Log the review for streak/goal tracking; best-effort so it never fails grading.
+    try {
+      await reviewActivityRepository.recordReview(toUtcDate(nowIso));
+    } catch (error) {
+      console.error('[review] Failed to record review activity.', error);
+    }
+
     const remainingDueCount = items
       .map((candidate) => (candidate.id === updated.id ? updated : candidate))
       .filter((candidate) => isReviewItemDue(candidate, nowIso)).length;
@@ -138,6 +158,7 @@ export function createReviewApplicationService({
   return {
     loadDeckSummary,
     loadDashboardData,
+    loadStreak,
     loadReviewPageData,
     submitReviewResult,
   };
@@ -148,4 +169,5 @@ const defaultReviewApplicationService = createReviewApplicationService();
 export const loadReviewPageData = defaultReviewApplicationService.loadReviewPageData;
 export const loadReviewDeckSummary = defaultReviewApplicationService.loadDeckSummary;
 export const loadReviewDashboardData = defaultReviewApplicationService.loadDashboardData;
+export const loadReviewStreak = defaultReviewApplicationService.loadStreak;
 export const submitReviewResult = defaultReviewApplicationService.submitReviewResult;
