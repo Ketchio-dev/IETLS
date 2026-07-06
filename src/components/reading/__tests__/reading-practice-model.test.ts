@@ -4,6 +4,7 @@ import type { ReadingAssessmentReport, ReadingAttemptSnapshot } from '@/lib/serv
 
 import {
   buildReadingHeroActionCopy,
+  buildReadingPaceSummary,
   buildReadingReportAnnouncement,
   buildReadingSubmitButtonLabel,
   buildReadingSubmitCopy,
@@ -103,5 +104,35 @@ describe('reading practice model', () => {
       isRetryModeActive: false,
       isSubmitting: true,
     })).toBe('Scoring…');
+  });
+
+  it('builds IELTS reading pace summaries for normal and retry practice', () => {
+    expect(buildReadingPaceSummary({
+      answeredQuestionCount: 1,
+      elapsedSeconds: 60,
+      isRetryModeActive: false,
+      questionCount: 6,
+    })).toEqual({
+      label: 'On pace',
+      detail: '8m target time left at 90s per question.',
+    });
+    expect(buildReadingPaceSummary({
+      answeredQuestionCount: 0,
+      elapsedSeconds: 210,
+      isRetryModeActive: false,
+      questionCount: 6,
+    })).toEqual({
+      label: 'Behind pace',
+      detail: '5m 30s target time left. Move on after one evidence check.',
+    });
+    expect(buildReadingPaceSummary({
+      answeredQuestionCount: 2,
+      elapsedSeconds: 30,
+      isRetryModeActive: true,
+      questionCount: 2,
+    })).toEqual({
+      label: 'Ready to score',
+      detail: 'Target window was 3m for this retry.',
+    });
   });
 });

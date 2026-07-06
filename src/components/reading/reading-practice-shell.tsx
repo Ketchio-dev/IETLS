@@ -29,6 +29,7 @@ import {
 import { ReadingAssessmentReportPanel } from './reading-assessment-report';
 import {
   buildReadingHeroActionCopy,
+  buildReadingPaceSummary,
   buildReadingReportAnnouncement,
   buildReadingSubmitButtonLabel,
   buildReadingSubmitCopy,
@@ -119,6 +120,42 @@ function ElapsedTimeMetric({
   }, [initialSeconds, onTick]);
 
   return <strong>{formatClockDuration(elapsedSeconds)}</strong>;
+}
+
+function ReadingPaceMetric({
+  answeredQuestionCount,
+  initialSeconds,
+  isRetryModeActive,
+  questionCount,
+}: {
+  answeredQuestionCount: number;
+  initialSeconds: number;
+  isRetryModeActive: boolean;
+  questionCount: number;
+}) {
+  const [elapsedSeconds, setElapsedSeconds] = useState(initialSeconds);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setElapsedSeconds((current) => current + 1);
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [initialSeconds]);
+
+  const paceSummary = buildReadingPaceSummary({
+    answeredQuestionCount,
+    elapsedSeconds,
+    isRetryModeActive,
+    questionCount,
+  });
+
+  return (
+    <>
+      <strong>{paceSummary.label}</strong>
+      <small>{paceSummary.detail}</small>
+    </>
+  );
 }
 
 const RecentAttemptsPanel = memo(function RecentAttemptsPanel({
@@ -545,6 +582,16 @@ export function ReadingPracticeShell({
           <div className="metric-card">
             <span>{isRetryModeActive ? 'Retry focus' : 'Completion'}</span>
             <strong>{isRetryModeActive ? `${retryMissCount} missed` : `${completionPercentage}%`}</strong>
+          </div>
+          <div className="metric-card metric-card--wide">
+            <span>Pace</span>
+            <ReadingPaceMetric
+              key={`reading-pace-${timerVersion}`}
+              answeredQuestionCount={answeredQuestionCount}
+              initialSeconds={timerSeed}
+              isRetryModeActive={isRetryModeActive}
+              questionCount={questionCount}
+            />
           </div>
         </div>
       </section>

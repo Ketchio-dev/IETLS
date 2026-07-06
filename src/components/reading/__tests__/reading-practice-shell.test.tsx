@@ -197,6 +197,8 @@ describe('ReadingPracticeShell', () => {
     expect(screen.getAllByText(/urban bee corridors and rooftop planting/i)[0]).toBeInTheDocument();
     expect(screen.getAllByText(/true false not given/i)[0]).toBeInTheDocument();
     expect(screen.getByText('0/6 answered · 6 left before your next score pass.')).toBeInTheDocument();
+    expect(screen.getByText('On pace')).toBeInTheDocument();
+    expect(screen.getByText('9m target time left at 90s per question.')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /use the same 3-step review loop for every set/i })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: /answer questions/i }));
@@ -290,6 +292,8 @@ describe('ReadingPracticeShell', () => {
     expect(screen.getByText(/retry the 1 missed question/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /re-score missed questions/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /return to full set/i })).toBeInTheDocument();
+    expect(screen.getAllByText('Ready to score').length).toBeGreaterThan(0);
+    expect(screen.getByText('Target window was 1m 30s for this retry.')).toBeInTheDocument();
     expect(screen.getAllByText(set.questions[2]!.prompt).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('button', { name: /jump to question/i })).toHaveLength(1);
     expect(screen.queryByRole('radiogroup', { name: set.questions[0]!.prompt })).not.toBeInTheDocument();

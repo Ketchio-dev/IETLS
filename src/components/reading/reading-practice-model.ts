@@ -1,5 +1,68 @@
 import type { ReadingAssessmentReport, ReadingAttemptSnapshot } from '@/lib/services/reading/types';
 
+const READING_TARGET_SECONDS_PER_QUESTION = 90;
+
+function formatPaceDuration(totalSeconds: number) {
+  const safeSeconds = Math.max(Math.round(totalSeconds), 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+
+  if (minutes === 0) {
+    return `${seconds}s`;
+  }
+
+  return seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`;
+}
+
+export function buildReadingPaceSummary({
+  answeredQuestionCount,
+  elapsedSeconds,
+  isRetryModeActive,
+  questionCount,
+}: {
+  answeredQuestionCount: number;
+  elapsedSeconds: number;
+  isRetryModeActive: boolean;
+  questionCount: number;
+}) {
+  if (questionCount === 0) {
+    return {
+      label: 'No pace target',
+      detail: 'Select a set to calculate reading pace.',
+    };
+  }
+
+  const targetSeconds = questionCount * READING_TARGET_SECONDS_PER_QUESTION;
+  const remainingSeconds = targetSeconds - elapsedSeconds;
+  const expectedAnsweredCount = Math.min(questionCount, Math.floor(elapsedSeconds / READING_TARGET_SECONDS_PER_QUESTION));
+
+  if (answeredQuestionCount >= questionCount) {
+    return {
+      label: 'Ready to score',
+      detail: `Target window was ${formatPaceDuration(targetSeconds)} for this ${isRetryModeActive ? 'retry' : 'set'}.`,
+    };
+  }
+
+  if (remainingSeconds <= 0) {
+    return {
+      label: 'Over target',
+      detail: `${questionCount - answeredQuestionCount} still open. Mark hard items and finish the pass.`,
+    };
+  }
+
+  if (answeredQuestionCount < expectedAnsweredCount) {
+    return {
+      label: 'Behind pace',
+      detail: `${formatPaceDuration(remainingSeconds)} target time left. Move on after one evidence check.`,
+    };
+  }
+
+  return {
+    label: isRetryModeActive ? 'Focused pace' : 'On pace',
+    detail: `${formatPaceDuration(remainingSeconds)} target time left at 90s per question.`,
+  };
+}
+
 export function buildReadingReportAnnouncement({
   activeAttempt,
   isRetryModeActive,
